@@ -386,6 +386,8 @@ for d in kn_tai_lap kn_giam_sat_streaming kn_tinh_ab kn_bao_tri kn_pipeline_hang
 done
 ```
 
+Lưu ý: Airflow 3 tạo ngay một lần chạy cho mốc lịch gần nhất đã qua khi DAG vừa được bật (đo ngày 10/11: bật lúc 23:21, cả `kn_pipeline_hang_ngay` lẫn `kn_bao_tri`, `kn_tinh_ab` chạy luôn, không chờ 02:00/04:00). Muốn DAG 1 chạy đúng giờ thì bật sau mốc 02:00 của ngày hôm đó, hoặc chấp nhận lần chạy ngay này.
+
 Giới hạn số driver Spark chạy đồng thời trên master bằng pool mặc định của Airflow. Ban đêm, khi DAG 1 huấn luyện và 3 luồng vẫn chạy, đặt 1 chỗ; lúc demo cần DAG giám sát chạy song song với DAG khác thì nâng lên 2 (sau khi `free -h` cho thấy còn đủ RAM):
 
 ```bash
