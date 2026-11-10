@@ -117,6 +117,10 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
   - **Coverage 3,4% < 10%** nhưng không do giới hạn cấu trúc: trần là 10 × 9.467 user test / 126.230 item trong train = 75%. Nguyên nhân là popularity bias: 99,2% suất gợi ý của ALS rơi vào 10% item phổ biến nhất. Re-ranking novelty β = 0,3 tăng cả NDCG@10 (0,0680 → 0,0746) lẫn coverage (3,44% → 4,14%) nhưng chỉ xếp lại 50 ứng viên đầu nên chưa tới 10%. Thêm `jobs/kiem_tra/thu_xep_lai.py`: quét β ∈ {0; 0,1; 0,3; 0,5; 1; 2} × số ứng viên ∈ {50; 200} trên đúng mô hình và features của lần chạy, in đường đánh đổi NDCG–coverage.
   - **A/B thiếu mẫu**: A/B chỉ tính impression của chiến lược ALS, mà chỉ khoảng 3% trong 5.000 user mô phỏng có gợi ý ALS, nên mỗi nhóm chỉ khoảng 3.000 impression. Gộp 7 ngày: CTR A 1,85% (66/3.560), B 1,95% (57/2.920), z = 0,29, p = 0,77; cần khoảng 79.000 impression mỗi nhóm để phát hiện mức tăng 10%. Thêm `mo_phong_hien_thi.py --chi-als` (chỉ user có gợi ý ALS: 8.592 user × 4 phiên × 10 vị trí ≈ 344.000 impression) và phần gộp A/B kèm cỡ mẫu cần thiết trong `xuat_ket_qua.py`.
   - `scripts/thu_nghiem_bo_sung.sh` chạy cả hai thí nghiệm rồi xuất lại số liệu, khởi động từ laptop trong tmux.
+- 17:47–17:53: `thu_nghiem_bo_sung.sh` chạy xong (6 phút). Kết quả (chi tiết ở MO_HINH.md mục 12.2, 12.3):
+  - Re-ranking: **200 ứng viên, β = 1,0** cho NDCG@10 0,0865 (+27% so với ALS gốc) và coverage 6,47% (+88%), suất gợi ý vào N1 giảm từ 99,2% xuống 80,8%. β = 2,0: coverage 7,21%, N1 47,5% nhưng NDCG giảm còn 0,0518. Không cấu hình nào đạt coverage 10%.
+  - A/B đủ mẫu (343.680 impression mô phỏng cho 8.592 user ALS): CTR A 2,094%, B 1,978%, z = −2,43, p = 0,015 (B thấp hơn khoảng 5,5%), cần 76.972 impression mỗi nhóm và mẫu đã đủ; chuyển đổi p = 0,75. Theo từng ngày không ngày nào có ý nghĩa.
+  - Sự cố thao tác: lệnh lọc log có `!!` trong ngoặc kép bị Git Bash hiểu là "lặp lệnh trước" (history expansion) và chèn cả lệnh cũ vào; dán lẫn dòng `$ ssh ... > ket_qua_bo_sung.md` từ terminal làm bash xóa trắng tệp đích trước khi báo `$: command not found`. Từ nay lệnh lọc không dùng `!!`.
 
 ---
 

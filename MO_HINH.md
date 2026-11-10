@@ -313,14 +313,39 @@ Số liệu xuất bằng `jobs/kiem_tra/xuat_ket_qua.py` từ `gold.lich_su_hua
 
 - Trần coverage về cấu trúc: 10 gợi ý × 9.467 user test / 126.230 item = **75%**. ALS chỉ dùng 4.346 item, nên coverage thấp không do thiếu ô gợi ý.
 - Phân phối độ phổ biến (tỷ lệ suất gợi ý rơi vào nhóm 10% item phổ biến nhất, N1): ALS **99,2%**, re-ranking β = 0,3: 98,3%, baseline danh mục 86,5%, baseline toàn sàn 100%. Đây là popularity bias điển hình của matrix factorization trên dữ liệu thưa: item ít tương tác có vector yếu nên hiếm khi lọt top-10.
-- Re-ranking novelty (mục 3.10 của đề) tăng **cả coverage lẫn độ chính xác**: β = 0,3 cho NDCG@10 0,0746 (+9,7% so với ALS) và coverage 4,14%. Tập test chứa nhiều item không quá phổ biến nên đẩy item mới hơn lên không làm mất độ chính xác. Tuy vậy re-ranking chỉ xếp lại 50 ứng viên đầu của ALS, vốn đã là item phổ biến, nên chưa đưa coverage tới 10%.
-- Thí nghiệm bổ sung: quét β lớn hơn và tập ứng viên rộng hơn để vẽ đường đánh đổi NDCG–coverage (`jobs/kiem_tra/thu_xep_lai.py`).
+- Re-ranking novelty (mục 3.10 của đề) tăng **cả coverage lẫn độ chính xác**. Quét thêm β và cỡ tập ứng viên trên đúng mô hình và features của lần chạy (`jobs/kiem_tra/thu_xep_lai.py`):
+
+| Ứng viên | β | P@10 | R@10 | NDCG@10 | MAP@10 | Coverage | Số item | Suất gợi ý vào N1 |
+|---|---|---|---|---|---|---|---|---|
+| 50 | 0 (ALS gốc) | 0,0161 | 0,0921 | 0,0680 | 0,0531 | 3,44% | 4.346 | 99,2% |
+| 50 | 0,3 | 0,0173 | 0,1001 | 0,0746 | 0,0589 | 4,14% | 5.221 | 98,3% |
+| 50 | 0,5 | 0,0179 | 0,1037 | 0,0797 | 0,0642 | 4,65% | 5.875 | 97,4% |
+| 50 | 1,0 | 0,0180 | 0,1067 | 0,0854 | 0,0709 | 5,67% | 7.152 | 94,7% |
+| 50 | 2,0 | 0,0148 | 0,0892 | 0,0683 | 0,0557 | 6,30% | 7.950 | 92,7% |
+| 200 | 0,5 | 0,0178 | 0,1037 | 0,0789 | 0,0633 | 4,74% | 5.977 | 96,0% |
+| **200** | **1,0** | **0,0182** | **0,1089** | **0,0865** | **0,0716** | **6,47%** | **8.162** | **80,8%** |
+| 200 | 2,0 | 0,0118 | 0,0753 | 0,0518 | 0,0402 | 7,21% | 9.099 | 47,5% |
+
+- **200 ứng viên, β = 1,0 trội hơn ALS gốc trên mọi tiêu chí**: NDCG@10 +27% (0,0680 → 0,0865), coverage +88% (3,44% → 6,47%), suất gợi ý vào 10% item phổ biến nhất giảm từ 99,2% xuống 80,8%. Tập test của RetailRocket chứa nhiều item ít phổ biến, nên đưa item "lạ" hơn lên vừa đa dạng hơn vừa trúng hơn.
+- Quá ngưỡng đó (β = 2,0), danh sách đa dạng hẳn (N1 còn 47,5%, coverage 7,21%) nhưng NDCG giảm 24% so với ALS gốc; vẫn cao hơn baseline 1 và 2. Đây là đường đánh đổi chính xác – đa dạng điển hình.
+- Tập ứng viên rộng hơn (200 so với 50) chỉ có tác dụng khi β đủ lớn (từ 1,0): với β nhỏ, các item ngoài top-50 không vượt lên được.
+- **Không cấu hình nào đạt Coverage 10%** (cao nhất 7,21%). Lý do gốc: trong 126.230 item của train, phần lớn chỉ có 1–2 tương tác nên vector ẩn gần 0 và không lọt nổi top-200 của bất kỳ user nào. Muốn vượt 10% cần nguồn ứng viên khác ngoài ALS: ứng viên theo danh mục (baseline danh mục một mình đã đạt 5,28%), item mới (đã có ở bước trộn: 20% vị trí cuối), hoặc mở rộng lưới (coverage tăng theo rank và alpha: rank 100, alpha 80).
+- Lưu ý phương pháp: β và cỡ tập ứng viên được chọn trên chính tập test, nên số liệu của cấu hình tốt nhất là lạc quan. Quy trình đúng là tách thêm một tập validation theo thời gian (ví dụ 30 ngày cuối của giai đoạn train) để chọn β, rồi báo cáo trên test.
+- Đề xuất: dùng re-ranking 200 ứng viên, β = 1,0 cho danh sách ALS phục vụ (hiện `sinh_goi_y_toan_bo.py` lấy 20 ứng viên, chưa xếp lại).
 
 ### 12.3 A/B (traffic mô phỏng, `tang_thinh_hanh` = 0)
 
-- Lần mô phỏng mặc định sinh 200.000 impression cho 5.000 user lấy theo thứ tự băm, nhưng A/B chỉ tính impression của chiến lược ALS (`common/ab.py`: user cold start nhận cùng một kiểu danh sách dù ở nhóm nào). Chỉ khoảng 3% user đó có gợi ý ALS, nên mỗi nhóm chỉ có khoảng 3.000 impression trong 7 ngày.
-- Gộp 7 ngày: A 3.560 impression, 66 click, CTR 1,85%; B 2.920 impression, 57 click, CTR 1,95%; z = 0,29, **p = 0,77**: chưa có bằng chứng khác biệt. Điều này đúng với thiết kế mô phỏng (không cộng điểm cho item thịnh hành), nhưng mẫu quá nhỏ: để phát hiện mức tăng tương đối 10% với CTR nền khoảng 2% (α = 5%, power 80%) cần khoảng **79.000 impression mỗi nhóm** (`thong_ke.co_mau_can_thiet`), tức nhiều hơn khoảng 25 lần.
-- Thí nghiệm bổ sung: mô phỏng riêng cho toàn bộ 8.592 user có gợi ý ALS (`mo_phong_hien_thi.py --chi-als`), khoảng 170.000 impression mỗi nhóm.
+- Lần mô phỏng mặc định (5.000 user lấy theo thứ tự băm) chỉ có khoảng 3% user có gợi ý ALS, mà A/B chỉ tính impression của chiến lược ALS: mỗi nhóm khoảng 3.000 impression trong 7 ngày, gộp lại p = 0,77, thiếu mẫu khoảng 25 lần.
+- Mô phỏng bổ sung cho toàn bộ 8.592 user có gợi ý ALS (`mo_phong_hien_thi.py --chi-als --hat-giong 7`): 343.680 impression, 7.008 click. Kết quả gộp 7 ngày (CDF đến phiên bản dữ liệu 2):
+
+| Nhóm | Impression | Click | CTR | Mua | Chuyển đổi |
+|---|---|---|---|---|---|
+| A: ALS thuần | 175.960 | 3.685 | 2,094% | 412 | 0,234% |
+| B: ALS + 30% thịnh hành | 174.200 | 3.446 | 1,978% | 417 | 0,239% |
+
+- CTR: z = −2,43, **p = 0,015**: B thấp hơn A khoảng 5,5% tương đối, khác biệt có ý nghĩa ở mức 5%. Cỡ mẫu cần cho mức tăng 10% là 76.972 impression mỗi nhóm, mẫu hiện tại đủ. Tỷ lệ chuyển đổi: p = 0,75, chưa có khác biệt.
+- Kiểm định theo từng ngày đều không có ý nghĩa (p từ 0,07 đến 0,85): mỗi ngày chỉ khoảng 25.000 impression mỗi nhóm, trong khi phát hiện mức chênh 5,5% cần khoảng 250.000. Kiểm định chính là kiểm định gộp cả giai đoạn đã định trước; biểu đồ theo ngày chỉ để theo dõi, không dùng để kết luận sớm (tránh "nhìn trộm" và so sánh bội).
+- Diễn giải: trong mô phỏng, xác suất click phụ thuộc vào việc item có thuộc các item user thật sự tương tác ở tháng test hay không, và không cộng điểm cho item thịnh hành. Thay 30% ô ALS cá nhân hóa bằng item thịnh hành chung (ở lần chạy này là nguồn dự phòng "xem nhiều 24 giờ", vì luồng thịnh hành 15 phút chưa bật) làm giảm số ô trúng, nên B thua A. Kết luận chỉ đúng trong giả định của mô phỏng (100% traffic là mô phỏng, có nhãn trên web), không phải bằng chứng về hành vi người dùng thật. Có thể làm thêm phân tích độ nhạy: tăng `--tang-thinh-hanh` để tìm mức hấp dẫn của item thịnh hành mà ở đó B hòa A.
 
 ### 12.4 OPTIMIZE / ZORDER (`gold.goi_y_nguoi_dung`, 5,3 triệu dòng, 30 truy vấn theo user)
 
