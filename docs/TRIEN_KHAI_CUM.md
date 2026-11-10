@@ -179,6 +179,14 @@ docker exec spark-master ls /opt/spark/jars | grep -E "delta|kafka"     # phải
 
 ### 2.2. Airflow
 
+Cách nhanh, không sửa tay tệp nào (tạo `.env` với khóa JWT, khóa Fernet, GID nhóm docker, đường dẫn dự án, và `mat_khau.json` với mật khẩu admin ngẫu nhiên in ra một lần):
+
+```bash
+cd ~/bd03_khuyen_nghi && bash scripts/cum/tao_cau_hinh_airflow.sh && bash scripts/cum/khoi_dong_may.sh
+```
+
+Hoặc làm tay từng bước:
+
 ```bash
 cd ~/bd03_khuyen_nghi/ha_tang/airflow
 cp .env.mau .env
