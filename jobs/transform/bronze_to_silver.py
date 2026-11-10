@@ -34,6 +34,21 @@ def loc_bot(df, nguong=ch.NGUONG_BOT_MOI_GIO):
     return df.join(bot, "ma_nguoi_dung", "left_anti")
 
 
+COT_NOI_DUNG = ["ma_nguoi_dung", "ma_san_pham", "loai_su_kien", "thoi_diem"]
+
+
+def bo_ban_sao_noi_dung(df):
+    """Bỏ các dòng trùng cả user, item, loại lẫn thời điểm (tới mili giây).
+
+    ma_su_kien băm cả offset Kafka, nên khi bộ phát chạy lại một đoạn dữ liệu đã phát, cùng
+    một sự kiện gốc mang ma_su_kien mới và lọt qua bước bỏ trùng theo ma_su_kien. Phải bỏ
+    chúng TRƯỚC khi lọc bot: nếu không, số sự kiện mỗi giờ của user bị nhân đôi và user
+    thật có 251-500 sự kiện/giờ bị coi nhầm là bot. Hai sự kiện thật trùng tới mili giây
+    vốn cũng bị khu_trung_lap bỏ (cách nhau 0 giây), nên bước này không bỏ thêm dữ liệu thật.
+    """
+    return df.dropDuplicates(COT_NOI_DUNG)
+
+
 def khu_trung_lap(df, so_giay=ch.GIAY_KHU_TRUNG):
     """Bỏ sự kiện cùng user - item - loại xảy ra trong vòng so_giay so với lần trước đó."""
     cua_so = Window.partitionBy("ma_nguoi_dung", "ma_san_pham", "loai_su_kien").orderBy("thoi_diem")
@@ -55,7 +70,7 @@ def gan_trong_so(df):
 
 def lam_sach(bronze):
     """Chuỗi làm sạch đầy đủ từ bronze ra lược đồ silver."""
-    df = bronze.dropDuplicates(["ma_su_kien"])
+    df = bo_ban_sao_noi_dung(bronze.dropDuplicates(["ma_su_kien"]))
     df = gan_trong_so(khu_trung_lap(loc_bot(df)))
     return df.select(
         "ma_nguoi_dung", "ma_san_pham", "thoi_diem", "loai_su_kien", "trong_so", "ngay", "_nguon"

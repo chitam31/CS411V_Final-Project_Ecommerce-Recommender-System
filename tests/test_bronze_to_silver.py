@@ -56,6 +56,28 @@ def test_lam_sach_day_du(spark):
     assert sorted((r["ma_san_pham"], r["trong_so"]) for r in kq.collect()) == [("a", 1.0), ("b", 5.0)]
 
 
+def test_phat_lai_lan_hai_khong_bien_user_that_thanh_bot(spark):
+    """Bộ phát chạy lại một đoạn: mỗi sự kiện có thêm một bản sao với ma_su_kien khác
+    (offset Kafka mới). User thật 300 sự kiện/giờ không được bị coi là bot, và silver
+    phải giống hệt lúc chỉ phát một lần."""
+    goc = [dong("a{}".format(i), "nguoi", "sp{}".format(i % 40), i * 12) for i in range(300)]
+    ban_sao = [("r" + r[0],) + r[1:] for r in goc]
+    mot_lan = lam_sach(spark.createDataFrame(goc, COT))
+    hai_lan = lam_sach(spark.createDataFrame(goc + ban_sao, COT))
+    assert hai_lan.count() == mot_lan.count() == 300
+    assert {r["ma_nguoi_dung"] for r in hai_lan.collect()} == {"nguoi"}
+
+
+def test_bo_ban_sao_noi_dung_giu_su_kien_khac_mili_giay(spark):
+    from transform.bronze_to_silver import bo_ban_sao_noi_dung
+
+    df = spark.createDataFrame(
+        [dong("1", "u", "a", 0), dong("2", "u", "a", 0), dong("3", "u", "a", 0.001), dong("4", "u", "a", 0, "them_gio")],
+        COT,
+    )
+    assert bo_ban_sao_noi_dung(df).count() == 3
+
+
 def test_ghi_phan_vung_moi_ngay_mot_tep(spark, tmp_path):
     """gom_theo_phan_vung: dữ liệu rải trên nhiều task vẫn ghi đúng một tệp cho mỗi ngày."""
     import os

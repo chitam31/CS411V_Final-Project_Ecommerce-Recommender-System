@@ -45,6 +45,7 @@ Thuộc tính sản phẩm đã bị ẩn danh. Dự án dùng `categoryid`, `av
 | Bước | Quy tắc | Lý do |
 |---|---|---|
 | Bỏ trùng theo `ma_su_kien` | `dropDuplicates` | File sink và Kafka có thể giao lại cùng một thông điệp |
+| Bỏ trùng theo nội dung | `dropDuplicates` trên user–item–loại–thời điểm (mili giây), **trước** khi lọc bot | `ma_su_kien` băm cả offset Kafka; khi bộ phát chạy lại một đoạn đã phát (chuẩn bị demo), mỗi sự kiện gốc có thêm bản sao mang mã mới. Không bỏ thì số sự kiện/giờ bị nhân đôi và user thật 251–500 sự kiện/giờ bị coi nhầm là bot |
 | Lọc bot | User có **ít nhất một giờ > 500 sự kiện** bị loại toàn bộ | Đúng ngưỡng đề tài; bot làm méo cả độ phổ biến lẫn ma trận |
 | Khử trùng lặp | Bỏ sự kiện cùng user–item–loại cách lần trước **≤ 5 giây** | Bấm đúp, tải lại trang |
 | Trọng số | `xem = 1`, `them_gio = 3`, `mua = 5`; `bo_gio` bị loại | `bo_gio` không phải tín hiệu quan tâm |
