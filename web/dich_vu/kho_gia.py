@@ -178,7 +178,8 @@ class KhoGia:
 
     def do_zorder(self):
         return [
-            {"giai_doan": "truoc_zorder", "so_tep": 200, "trung_vi_ms": 900.0, "p95_ms": 1300.0, "tep_doc_trung_binh": 200},
+            {"giai_doan": "truoc_toi_uu", "so_tep": 200, "trung_vi_ms": 900.0, "p95_ms": 1300.0, "tep_doc_trung_binh": 200},
+            {"giai_doan": "sau_optimize", "so_tep": 8, "trung_vi_ms": 420.0, "p95_ms": 560.0, "tep_doc_trung_binh": 8},
             {"giai_doan": "sau_zorder", "so_tep": 8, "trung_vi_ms": 300.0, "p95_ms": 420.0, "tep_doc_trung_binh": 1},
         ]
 

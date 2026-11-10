@@ -13,7 +13,7 @@ Kịch bản dưới đây đi qua đủ 8 mục nghiệm thu, mỗi mục ghi r
 - [ ] Đã chạy `transform/tien_hoa_luoc_do.py` rồi chạy lại pipeline một lần nữa, để có cả mô hình v1 lẫn v2 trong lịch sử.
 - [ ] `gold.ket_qua_ab` có ít nhất 3 ngày (mô phỏng `--so-ngay 7` đã sinh đủ).
 - [ ] Đã chạy DAG `kn_tai_lap` ít nhất một lần thành công (bảng `gold.ket_qua_tai_lap` có dòng `trung_khop = true`).
-- [ ] Đã chạy `bao_tri/do_zorder.py` (bảng `gold.do_hieu_nang_zorder` có 2 dòng `truoc` / `sau`).
+- [ ] Đã chạy `bao_tri/do_zorder.py` (bảng `gold.do_hieu_nang_zorder` có 3 dòng `truoc_toi_uu` / `sau_optimize` / `sau_zorder`: so dòng 2 với dòng 3 để thấy tác dụng riêng của ZORDER, tách khỏi tác dụng gộp tệp).
 - [ ] Chọn sẵn: 1 user quen (có ALS, nhóm A), 1 user quen nhóm B, 1 sản phẩm **ít người xem** (không nằm trong khối thịnh hành) để demo độ trễ. Lấy user mẫu ở `http://10.68.71.205:8000/api/nguoi-dung-mau`; xem nhóm A/B ngay trên trang chủ.
 - [ ] Chụp màn hình dự phòng mọi màn hình web.
 
