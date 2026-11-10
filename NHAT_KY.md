@@ -79,6 +79,8 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - `khoi_dong_may.sh` kiểm tra container cũ trùng tên thuộc project compose khác và dừng sớm kèm hướng dẫn. `ssh_tat_ca.sh --dong-bo-ma`: đẩy mã từ laptop sang 6 máy bằng `git push` qua SSH (`receive.denyCurrentBranch=updateInstead`), máy lab không cần token GitHub; có kiểm thử trên repo tạm, gồm cả trường hợp máy đích có tệp sửa tay (phải từ chối, không ghi đè).
 - 10:45: labsoe-11 mất kết nối (ping không trả lời) trong khi 5 máy còn lại vẫn thông, nghi máy tự ngủ. Thêm hướng dẫn tắt chế độ ngủ (`systemctl mask sleep.target ...`, docs/TRIEN_KHAI_CUM.md mục 1.2b). `khoi_dong_may.sh --in-thu` giờ cũng báo trước container trùng tên (chỉ đọc).
 - 10:55: đồng bộ mã lên 5 worker thành công (`c6574b2`); chạy thử `khoi_dong_may.sh` trên labsit12, labsit-may25, labsit-may26, labsoe-18 không có xung đột (HDFS `hadoop-custom`, Spark `spark-cluster` khớp). SSH thỉnh thoảng timeout ở lần nối đầu sau khi để yên (ZeroTier đi qua relay, ping 160–420 ms): tăng `ConnectTimeout` lên 20 giây, `ConnectionAttempts=3`. Lệnh cấp quyền Docker cho labsit chưa chạy được vì timeout.
+- 11:10: bật thật 5 worker (ảnh `bd03/spark:3.5.3` build trên từng máy); Kafka tạo lại với volume mới (tin nhắn cũ trong topic không giữ được vì bản cũ ghi vào thư mục tạm), tạo topic `retailrocket-events`, `hien-thi` (3 phân vùng). Tắt chế độ ngủ trên cả 6 máy. Bật master: NameNode tạo lại với volume metadata cũ, Spark Master chạy ảnh mới.
+- 11:20: `kiem_tra_cum.sh` báo 0 DataNode, 0 worker: lỗi 13 và 14 (mục 4). `zerotier-cli peers` trên labsoe-11: chỉ labsoe-18 nối thẳng (DIRECT qua LAN 192.168.80.x); labsit12, labsit, labsit-may25, labsit-may26 và laptop đều RELAY (độ trễ tới hơn 1 giây). Hai phòng lab nhiều khả năng ở hai mạng con không nối thẳng được: rủi ro lớn về tốc độ HDFS và Spark, cần xử lý trước khi chạy dữ liệu thật.
 
 ---
 
@@ -98,6 +100,9 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 | 10 | Thiếu mô hình v2 lọc tầm giá | Rà soát lại đề tài ngày 10/11 | Mục 3 |
 | 11 | DAG 2 ghi `logs/canh_bao.log` khi thư mục chưa tồn tại | Rà soát khi viết tài liệu | `mkdir -p` trước khi ghi |
 | 12 | `khoi_dong_may.sh` ghi đè `.env` của web, mất `AIRFLOW_PASS` | Rà soát khi viết hướng dẫn triển khai | Cơ chế `.env.rieng` |
+| 13 | `hdfs-site.xml` dùng chung để `dfs.namenode.rpc-address = 0.0.0.0:8020`: DataNode đi tìm NameNode tại 0.0.0.0 | Log DataNode khi bật cụm thật 10/11 | Quảng bá `10.68.71.113:8020`, lắng nghe bằng `rpc-bind-host = 0.0.0.0` (tương tự cho HTTP) |
+| 14 | Spark Master mạng bridge với `--host 0.0.0.0` tự quảng bá `spark://0.0.0.0:7077`, worker bị từ chối | Log Spark worker khi bật cụm thật 10/11 | Master chạy `network_mode: host`, `--host 10.68.71.113` |
+| 15 | Đổi nội dung XML cấu hình HDFS nhưng compose không tạo lại container | Khi sửa lỗi 13 | Đưa mã băm `config/*.xml` vào biến môi trường container (`CAU_HINH_HDFS`) |
 
 ---
 

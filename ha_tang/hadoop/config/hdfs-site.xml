@@ -2,13 +2,26 @@
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 <!-- Một tệp dùng chung cho NameNode và mọi DataNode, thay cho hai tệp cũ. -->
 <configuration>
+    <!-- Địa chỉ NameNode mà DataNode và client dùng để kết nối, phải khớp fs.defaultFS.
+         Tệp này dùng chung cho NameNode và DataNode: KHÔNG được để 0.0.0.0 ở đây, nếu không
+         DataNode sẽ đi tìm NameNode tại 0.0.0.0:8020 (lỗi gặp ngày 10/11/2026). -->
     <property>
         <name>dfs.namenode.rpc-address</name>
-        <value>0.0.0.0:8020</value>
+        <value>10.68.71.113:8020</value>
     </property>
     <property>
         <name>dfs.namenode.http-address</name>
-        <value>0.0.0.0:9870</value>
+        <value>10.68.71.113:9870</value>
+    </property>
+    <!-- NameNode chạy trong container mạng bridge, không có IP ZeroTier bên trong: lắng nghe
+         mọi giao diện, còn địa chỉ quảng bá vẫn là hai dòng trên. -->
+    <property>
+        <name>dfs.namenode.rpc-bind-host</name>
+        <value>0.0.0.0</value>
+    </property>
+    <property>
+        <name>dfs.namenode.http-bind-host</name>
+        <value>0.0.0.0</value>
     </property>
     <property>
         <name>dfs.datanode.data.dir</name>

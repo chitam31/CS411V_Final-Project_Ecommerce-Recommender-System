@@ -57,7 +57,10 @@ ghi_env() {
   [ -f "$1.rieng" ] && cat "$1.rieng" >> "$1"
   return 0
 }
-ghi_env "$THU_MUC/ha_tang/hadoop/.env" "NODE_IP=$NODE_IP" "COMPOSE_PROJECT_NAME=$DU_AN_HDFS"
+# Mã băm cấu hình HDFS: compose không tự nhận ra nội dung tệp XML được mount đã đổi, nên đưa
+# mã băm vào biến môi trường của container để XML đổi thì container được tạo lại.
+CAU_HINH_HDFS="$(cat "$THU_MUC"/ha_tang/hadoop/config/*.xml | sha1sum | cut -c1-12)"
+ghi_env "$THU_MUC/ha_tang/hadoop/.env" "NODE_IP=$NODE_IP" "COMPOSE_PROJECT_NAME=$DU_AN_HDFS" "CAU_HINH_HDFS=$CAU_HINH_HDFS"
 ghi_env "$THU_MUC/ha_tang/spark/.env" "NODE_IP=$NODE_IP" "SPARK_MASTER_IP=$SPARK_MASTER_IP" "SO_LOI=$SO_LOI" "BO_NHO=$BO_NHO" \
   "HDFS_GOC=$HDFS_GOC" "KAFKA_BROKER=$KAFKA_BROKER"
 ghi_env "$THU_MUC/ha_tang/kafka/.env" "NODE_IP=$NODE_IP"

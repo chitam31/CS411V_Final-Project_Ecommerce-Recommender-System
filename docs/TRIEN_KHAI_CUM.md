@@ -369,6 +369,9 @@ docker exec bd03-airflow-airflow-scheduler-1 airflow dags trigger kn_tai_lap -c 
 | Máy lab chậm hẳn, `free -h` gần hết RAM | 7 GB RAM dùng chung với giao diện và dịch vụ khác | Đóng trình duyệt trên máy lab; giảm `bo_nho` của máy đó trong `cum.env`; chạy batch khi không chạy luồng `hien_thi` |
 | `Could not obtain block` / ghi HDFS chậm rồi lỗi | Client không nối được cổng 9866 của DataNode, hoặc DataNode khai sai hostname | `hdfs dfsadmin -report` phải thấy IP ZeroTier của từng DataNode; mở tường lửa |
 | Executor lỗi "Failed to connect to 10.68.71.113:404x" | Cổng driver của container spark-master chưa mở hoặc bị trùng | Compose mới mở 4041–4060; mỗi hồ sơ một cổng; không chạy hai job cùng hồ sơ |
+| Log DataNode: `Retrying connect to server: 0.0.0.0/0.0.0.0:8020` | `dfs.namenode.rpc-address` trong `hdfs-site.xml` (tệp dùng chung với DataNode) để `0.0.0.0` | Để `10.68.71.113:8020`, còn `rpc-bind-host = 0.0.0.0` (đã sửa trong repo); chạy lại `khoi_dong_may.sh` trên mọi máy |
+| Log Spark worker: `Connection refused: /0.0.0.0:7077` | Spark Master chạy mạng bridge với `--host 0.0.0.0`, tự quảng bá địa chỉ 0.0.0.0 | Master chạy `network_mode: host`, `--host 10.68.71.113` (đã sửa trong repo) |
+| Cụm chạy rất chậm, ping giữa các máy lab hàng trăm ms | ZeroTier không nối thẳng được giữa hai phòng lab, phải đi qua máy chuyển tiếp | Mục 10b |
 | Kafka: `Connection to node -1 could not be established` | Sai `KAFKA_ADVERTISED_LISTENERS` hoặc cổng 9092 bị chặn | `ha_tang/kafka/.env` phải có `NODE_IP=10.68.71.204` |
 | Luồng streaming lỗi sau khi sửa mã | Checkpoint cũ không tương thích với truy vấn mới | Đổi tên checkpoint trong job (hậu tố `_v2`...) hoặc xóa `/lake/checkpoints/<ten>` |
 | `ConcurrentAppendException` khi hai job ghi cùng bảng | Chạy tay một job trong lúc DAG đang chạy job đó | Chờ DAG xong; các DAG đặt `max_active_runs=1` |
@@ -376,6 +379,14 @@ docker exec bd03-airflow-airflow-scheduler-1 airflow dags trigger kn_tai_lap -c 
 | Airflow task: `permission denied ... docker.sock` | `DOCKER_GID` sai | `getent group docker`, sửa `ha_tang/airflow/.env`, `docker compose up -d` lại |
 | Thịnh hành không cập nhật dù bấm nút | Luồng `tinh_thinh_hanh` không chạy, hoặc đồng hồ các máy lệch | `scripts/luong.sh log thinh_hanh`; `timedatectl` trên máy Kafka và master |
 | Web báo lỗi Delta / HDFS | Web không nối được DataNode hoặc bảng chưa tạo | `kiem_tra/khoi_tao_bang.py`; web phải chạy `network_mode: host` |
+
+### 10b. Đường nối ZeroTier giữa các máy: DIRECT hay RELAY
+
+```bash
+bash scripts/cum/ssh_tat_ca.sh --tty "sudo zerotier-cli peers"
+```
+
+Cột `link` cho biết hai máy nối thẳng (`DIRECT`, kèm địa chỉ LAN hoặc địa chỉ công cộng) hay phải đi qua máy chuyển tiếp của ZeroTier trên Internet (`RELAY`, độ trễ hàng trăm đến hơn một nghìn ms, băng thông thấp). HDFS và shuffle của Spark cần các máy trong cụm nối thẳng với nhau. Khi hai phòng lab ở hai mạng con khác nhau và mạng trường chặn UDP giữa hai phòng, ZeroTier chỉ còn đường RELAY. Cách xử lý, theo thứ tự ưu tiên: nhờ phòng máy mở UDP cổng 9993 giữa các phòng lab; hoặc đặt master và các worker trong cùng một phòng (cùng mạng LAN) để chúng nối thẳng với nhau.
 
 ---
 

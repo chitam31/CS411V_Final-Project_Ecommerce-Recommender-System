@@ -34,7 +34,8 @@
 - Spark Worker chạy `network_mode: host` và khai báo đúng IP ZeroTier của máy (`--host $NODE_IP`), nên executor trên máy khác nối được.
 - DataNode khai báo `dfs.datanode.hostname = ${env.NODE_IP}` và client dùng `dfs.client.use.datanode.hostname=true`: client (driver, executor, web) nối tới DataNode bằng IP ZeroTier, không bằng IP nội bộ của container.
 - `dfs.replication = 2`: mất một máy lab vẫn còn bản sao.
-- Spark driver chạy bên trong container `spark-master` (client mode, do `submit.sh` gọi `docker exec`). Mỗi hồ sơ job có cổng driver riêng để nhiều job chạy song song.
+- Spark Master chạy `network_mode: host` với `--host 10.68.71.113` để quảng bá đúng địa chỉ cho worker. Spark driver chạy bên trong container `spark-master` (client mode, do `submit.sh` gọi `docker exec`), nên dùng chung mạng của máy master. Mỗi hồ sơ job có cổng driver riêng để nhiều job chạy song song.
+- NameNode chạy trong mạng bridge: `dfs.namenode.rpc-address = 10.68.71.113:8020` là địa chỉ quảng bá (DataNode đọc dòng này để tìm NameNode), còn `rpc-bind-host = 0.0.0.0` để lắng nghe bên trong container.
 - Web chạy Spark cục bộ `local[2]` ngay trong tiến trình FastAPI để đọc Delta trực tiếp từ HDFS; không chiếm lõi của cụm.
 
 ### Hồ sơ tài nguyên (`ha_tang/spark/submit.sh`)
