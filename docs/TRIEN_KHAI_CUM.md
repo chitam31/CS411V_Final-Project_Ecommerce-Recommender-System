@@ -89,18 +89,20 @@ Mọi máy đã chung mạng ZeroTier nên máy cá nhân (Windows 10.68.71.59) 
 sudo apt-get install -y openssh-server tmux
 sudo systemctl enable --now ssh
 sudo ufw allow in on zt+ to any port 22 proto tcp     # nếu dùng ufw: chỉ mở SSH trên giao diện ZeroTier
-whoami                                                # ghi lại tên tài khoản của máy này
+whoami                                                # tên tài khoản: khai báo vào TAI_KHOAN_SSH trong cau_hinh/cum.env
 ```
 
-**Trên máy cá nhân, mở Git Bash trong thư mục repo:**
+**Trên máy cá nhân, mở cửa sổ Git Bash** (menu Start → *Git Bash*). Không gõ `bash ...` trong PowerShell: lệnh đó gọi WSL chứ không phải Git Bash (lỗi `Bash/Service/RPC_S_CALL_FAILED`), và PowerShell 5.1 ghi `>` / `>>` theo mã UTF-16 làm hỏng `~/.ssh/config`.
 
 ```bash
-ssh-keygen -t ed25519 -C "bd03"                                   # Enter để giữ đường dẫn mặc định
-bash scripts/cum/ssh_tat_ca.sh --tao-config >> ~/.ssh/config      # sinh khối Host cho mọi máy theo cum.env
-notepad ~/.ssh/config                                             # sửa dòng User cho đúng tài khoản từng máy
+cd "/d/BIG DATA/bd03_khuyen_nghi" && git pull                     # thư mục chứa repo trên máy Windows
+ssh-keygen -t ed25519 -C "bd03"                                   # nếu chưa có khóa; Enter để giữ mặc định
+bash scripts/cum/ssh_tat_ca.sh --tao-config > ~/.ssh/config       # ghi đè: Host, IP, tài khoản lấy từ cum.env
 bash scripts/cum/ssh_tat_ca.sh --chep-khoa                        # nhập mật khẩu mỗi máy một lần
 bash scripts/cum/ssh_tat_ca.sh hostname                           # không còn hỏi mật khẩu là xong
 ```
+
+Nếu `~/.ssh/config` đang có cấu hình của việc khác, sao lưu trước (`cp ~/.ssh/config ~/.ssh/config.bak`) rồi chép phần cần giữ vào sau. Cấu hình sinh ra có `StrictHostKeyChecking accept-new`: lần đầu nối tới máy nào thì tự ghi nhận khóa của máy đó, nhưng vẫn từ chối nếu khóa đã biết bị thay đổi.
 
 Khi đăng nhập bằng khóa đã chạy trên mọi máy, nên tắt đăng nhập bằng mật khẩu: sửa `PasswordAuthentication no` trong `/etc/ssh/sshd_config`, rồi `sudo systemctl restart ssh`. Chỉ làm khi phiên SSH bằng khóa đang mở, để không tự khóa mình ở ngoài.
 

@@ -66,6 +66,8 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - Cài Claude GitHub App cho riêng repo này. Bản clone từ GitHub trùng khớp 100% với bản đã kiểm thử; chạy lại pytest trên bản clone: 58 đạt, 1 bỏ qua.
 - `khoi_dong_may.sh` chỉ build ảnh `bd03/spark` khi máy chưa có (tùy chọn `--build` để buộc build lại). Trước đó mỗi lần chạy đều build lại và tải lại jar từ Maven, nên máy lab không ra Internet thì không bật được worker. Thêm hướng dẫn `docker save` / `docker load` để chép ảnh từ master sang worker (docs/TRIEN_KHAI_CUM.md, mục 2.1) và một kiểm thử. Toàn bộ: **59 đạt, 1 bỏ qua** (PySpark), **9/9 đạt** (Airflow).
 - Thêm `scripts/cum/ssh_tat_ca.sh`: điều khiển cả cụm từ máy cá nhân qua SSH (Git Bash trên Windows hoặc bash trên Linux) — sinh `~/.ssh/config` từ `cum.env`, chép khóa công khai, chạy lệnh lần lượt hoặc song song theo vai trò hay tên máy. Hướng dẫn ở docs/TRIEN_KHAI_CUM.md, mục 1.5; thêm một kiểm thử dùng lệnh `ssh` giả.
+- Cả 6 máy lab đã cài `openssh-server` và `tmux`, mở cổng 22 trên giao diện ZeroTier. Tài khoản: labsoe-11 `hduser`, labsit12 `labsit12`, labsit / labsit-may25 / labsit-may26 `labsit`, labsoe-18 `labsoe-18` (khai báo ở `TAI_KHOAN_SSH` trong `cum.env`; `--tao-config` tự điền). labsit-may26 chạy Ubuntu 24.04, 5 máy còn lại Ubuntu 22.04.
+- Lỗi khi điều khiển từ Windows: gõ `bash ...` trong PowerShell gọi WSL (chưa cài) thay vì Git Bash, và `>>` của PowerShell 5.1 ghi `~/.ssh/config` theo UTF-16. Sửa hướng dẫn: dùng cửa sổ Git Bash, ghi đè cấu hình bằng `>`.
 
 ---
 

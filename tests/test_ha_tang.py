@@ -108,6 +108,9 @@ def test_ssh_tat_ca_chon_may_va_thu_tu(tmp_path):
     assert ss.count("=====") == 6 and "[labsoe-18] may=labsoe-18 lenh=nproc" in ss
     cfg = chay("--tao-config").stdout
     assert cfg.count("Host ") == 7 and "HostName 10.68.71.205" in cfg and "10.68.71.59" not in cfg
+    khoi = {b.split()[0]: b for b in cfg.split("Host ")[1:]}  # "HostName" không có dấu cách sau "Host"
+    assert "User labsit12" in khoi["labsit12"] and "User hduser" in khoi["labsoe-11"] and "User labsit" in khoi["labsit-may26"]
+    assert "chưa khai báo tài khoản" in cfg and "StrictHostKeyChecking accept-new" in cfg
 
 
 def test_dags_airflow():

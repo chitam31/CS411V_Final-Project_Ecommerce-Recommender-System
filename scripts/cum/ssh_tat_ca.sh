@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # ssh_tat_ca.sh - điều khiển nhiều máy của cụm từ MỘT máy qua SSH.
-# Windows: chạy trong Git Bash (có sẵn khi cài Git for Windows). Linux: chạy bằng bash.
+# Windows: chạy trong cửa sổ Git Bash (có sẵn khi cài Git for Windows). KHÔNG gõ "bash ..." trong
+# PowerShell: lệnh đó gọi WSL chứ không phải Git Bash, và PowerShell 5.1 ghi ">" theo UTF-16
+# làm hỏng ~/.ssh/config. Linux: chạy bằng bash.
 #
 # Danh sách máy và IP lấy từ cau_hinh/cum.env. Tên SSH của mỗi máy chính là tên trong danh bạ
 # (labsoe-11, labsit12, ...), khai báo trong ~/.ssh/config bằng --tao-config.
 #
-#   bash scripts/cum/ssh_tat_ca.sh --tao-config >> ~/.ssh/config   # một lần, rồi sửa User cho đúng
+#   bash scripts/cum/ssh_tat_ca.sh --tao-config > ~/.ssh/config    # một lần (tài khoản lấy từ TAI_KHOAN_SSH)
 #   bash scripts/cum/ssh_tat_ca.sh --chep-khoa                       # một lần: chép khóa công khai sang từng máy
 #   bash scripts/cum/ssh_tat_ca.sh hostname                          # chạy LẦN LƯỢT trên 6 máy lab, master trước
 #   bash scripts/cum/ssh_tat_ca.sh --song-song "nproc; free -g"      # chạy ĐỒNG THỜI, gom kết quả theo máy
@@ -58,13 +60,25 @@ chon_may() {  # in "ten ip" của các máy được chọn, đúng thứ tự t
 }
 
 # ---------------------------------------------------------------- sinh ~/.ssh/config
+tai_khoan() {  # tài khoản SSH của máy $1 theo TAI_KHOAN_SSH trong cum.env
+  local cap
+  for cap in ${TAI_KHOAN_SSH:-}; do
+    [ "${cap%%=*}" = "$1" ] && { echo "${cap#*=}"; return; }
+  done
+  echo "$SSH_USER_MAC_DINH"
+}
+
 if [ "$CHE_DO" = "tao_config" ]; then
   TAT_CA=1
   mapfile -t CAC_MAY < <(chon_may)
-  echo "# --- Cụm bd03, sinh từ cau_hinh/cum.env. Sửa User cho đúng tài khoản trên từng máy. ---"
+  echo "# --- Cụm bd03, sinh từ cau_hinh/cum.env (tài khoản theo TAI_KHOAN_SSH) ---"
   for dong in "${CAC_MAY[@]}"; do
-    printf 'Host %s\n    HostName %s\n    User %s\n    IdentityFile ~/.ssh/id_ed25519\n    ServerAliveInterval 30\n\n' \
-      "${dong%% *}" "${dong#* }" "$SSH_USER_MAC_DINH"
+    ten="${dong%% *}"
+    [[ " ${TAI_KHOAN_SSH:-} " == *" $ten="* ]] || echo "# $ten: chưa khai báo tài khoản trong TAI_KHOAN_SSH, đang dùng mặc định"
+    # accept-new: tự nhận khóa của máy lần đầu kết nối (mạng riêng ZeroTier), nhưng vẫn
+    # từ chối nếu khóa của máy đã biết bị thay đổi.
+    printf 'Host %s\n    HostName %s\n    User %s\n    IdentityFile ~/.ssh/id_ed25519\n    StrictHostKeyChecking accept-new\n    ServerAliveInterval 30\n\n' \
+      "$ten" "${dong#* }" "$(tai_khoan "$ten")"
   done
   exit 0
 fi
