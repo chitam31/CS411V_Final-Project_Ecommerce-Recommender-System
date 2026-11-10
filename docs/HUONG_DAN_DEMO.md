@@ -27,7 +27,7 @@ bash scripts/luong.sh khoi_dong tat_ca    # nếu có luồng không chạy
 Trên máy labsit, bật bộ phát ở tốc độ thật để khối thịnh hành có dữ liệu "sống" trong lúc demo:
 
 ```bash
-python3 producer/phat_lai_su_kien.py --tep /data/retailrocket/events.csv --tu-ngay-ms <mốc giữa dữ liệu>
+python3 producer/phat_lai_su_kien.py --tep ~/du_lieu/retailrocket/events.csv --tu-ngay-ms <mốc giữa dữ liệu>
 ```
 
 Mở sẵn các tab: web (`:8000`), Spark Master (`:8080`), Kafka UI (`10.68.71.204:8080`), Airflow (`:8088`), HDFS (`:9870`).

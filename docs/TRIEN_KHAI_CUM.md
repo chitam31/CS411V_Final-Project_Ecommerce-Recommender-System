@@ -235,13 +235,10 @@ Kafka quảng bá `PLAINTEXT://10.68.71.204:9092`. Bản compose mới thêm `KA
 
 ### 4.2. Dữ liệu cho bộ phát
 
+`events.csv` được chép sẵn vào `~/du_lieu/retailrocket/` của máy này bởi `scripts/cum/chep_du_lieu.sh` chạy trên laptop (mục 7). Bộ phát cần thêm thư viện Kafka:
+
 ```bash
-mkdir -p /data/retailrocket
-# Cách 1: chép từ máy master sau khi tải ở bước 7
-scp <user>@10.68.71.113:/data/retailrocket/events.csv /data/retailrocket/
-# Cách 2: tải trực tiếp (cần ~/.kaggle/kaggle.json)
-pip3 install --user kaggle && kaggle datasets download -d retailrocket/ecommerce-dataset -p /data/retailrocket --unzip
-pip3 install --user kafka-python
+pip3 install --user kafka-python   # Ubuntu 23.04 trở lên báo "externally-managed-environment": thêm --break-system-packages
 ```
 
 Bộ phát được bật ở bước 8.
@@ -297,11 +294,15 @@ bash scripts/cum/kiem_tra_cum.sh
 
 Kết quả mong đợi: mọi cổng `OK`, `DataNode sống: 5`, `Worker sống: 5` (labsit12, labsit, labsit-may25, labsit-may26, labsoe-18), không có dòng `DONG`.
 
-Tải RetailRocket và đưa lên HDFS:
+Tải RetailRocket và đưa lên HDFS. Khóa Kaggle (`kaggle.json`) **để trên laptop, không chép lên máy lab**: tài khoản lab dùng chung, ai đăng nhập cũng đọc được. Laptop tải tệp zip (khoảng 300 MB, giữ lại ở thư mục cha của repo để lần sau khỏi tải) rồi chép sang hai máy:
 
 ```bash
-pip3 install --user kaggle            # cần ~/.kaggle/kaggle.json (Kaggle → Settings → API → Create New Token)
-bash scripts/tai_du_lieu.sh /data/retailrocket
+# Trên laptop (Git Bash). Mặc định đọc khóa ở ../kaggle.json, cạnh thư mục repo
+bash scripts/cum/chep_du_lieu.sh                     # hoặc --khoa <tệp kaggle.json>, --zip <tệp zip có sẵn>
+# -> labsoe-11: ~/du_lieu/retailrocket/ đủ 4 tệp CSV; labsit: ~/du_lieu/retailrocket/events.csv
+
+# Trên máy master
+bash scripts/tai_du_lieu.sh                          # ~/du_lieu/retailrocket -> HDFS /lake/landing/retailrocket
 docker exec hadoop-master hdfs dfs -ls -h /lake/landing/retailrocket
 ```
 
@@ -313,7 +314,7 @@ docker exec hadoop-master hdfs dfs -ls -h /lake/landing/retailrocket
 
 ```bash
 tmux new -s phat_lai
-python3 ~/bd03_khuyen_nghi/producer/phat_lai_su_kien.py --tep /data/retailrocket/events.csv
+python3 ~/bd03_khuyen_nghi/producer/phat_lai_su_kien.py --tep ~/du_lieu/retailrocket/events.csv
 ```
 
 Muốn có dữ liệu nhanh để thử pipeline, phát hết mức bằng `--giay-moi-ngay 0`.

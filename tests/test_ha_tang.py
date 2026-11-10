@@ -240,6 +240,57 @@ def test_chay_lan_dau_tu_buoc(tmp_path):
     assert kq.returncode == 0 and job[0] == "ml/sinh_goi_y_toan_bo.py --ma-chay r20261110T120000"
 
 
+def test_chep_du_lieu(tmp_path):
+    """chep_du_lieu.sh: tải zip trên laptop (khóa không nằm trên dòng lệnh curl), chép sang master
+    đủ 4 CSV và sang máy Kafka chỉ events.csv; zip có thư mục con vẫn tìm được tệp."""
+    import json
+    import shutil
+    repo = tmp_path / "BIG DATA" / "repo"  # có dấu cách như đường dẫn thật D:\BIG DATA
+    (repo / "scripts" / "cum").mkdir(parents=True)
+    (repo / "cau_hinh").mkdir()
+    for t in ("chep_du_lieu.sh", "ssh_tat_ca.sh"):
+        shutil.copy(os.path.join(GOC, "scripts", "cum", t), repo / "scripts" / "cum")
+    shutil.copy(os.path.join(GOC, "cau_hinh", "cum.env"), repo / "cau_hinh")
+    (tmp_path / "BIG DATA" / "kaggle.json").write_text(json.dumps({"username": "sv", "key": "KHOA_BI_MAT_123"}))
+
+    bin_gia, goc_may = tmp_path / "bin", tmp_path / "may"
+    bin_gia.mkdir()
+    lenh_gia = {
+        # curl giả: ghi lại đối số, đọc stdin (cấu hình -K -), tạo zip ~2 MB có thư mục con
+        "curl": "echo \"$*\" >> \"$NHAT_KY\"; cat > \"$NHAT_KY.stdin\"\n"
+                "while [ $# -gt 0 ]; do [ \"$1\" = -o ] && ra=\"$2\"; shift; done\n"
+                "python3 -c \"import sys,zipfile,os\nz=zipfile.ZipFile(sys.argv[1],'w')\n"
+                "[z.writestr('archive/'+t,'a,b\\n'+'x'*700000) for t in "
+                "('events.csv','item_properties_part1.csv','item_properties_part2.csv','category_tree.csv')]\" \"$ra\"\n",
+        "scp": "while [ $# -gt 0 ]; do case \"$1\" in -o) shift 2;; *) break;; esac; done\n"
+               "h=\"${2%%:*}\"; mkdir -p \"$GOC_MAY/$h\"; cp \"$1\" \"$GOC_MAY/$h/${2#*:}\"\n",
+        "ssh": "while [ $# -gt 0 ]; do case \"$1\" in -o) shift 2;; -*) shift;; *) break;; esac; done\n"
+               "h=\"$1\"; shift; mkdir -p \"$GOC_MAY/$h\"; HOME=\"$GOC_MAY/$h\" exec bash -c \"$*\"\n",
+    }
+    for ten, noi_dung in lenh_gia.items():
+        (bin_gia / ten).write_text("#!/bin/bash\n" + noi_dung)
+        (bin_gia / ten).chmod(0o755)
+    nhat_ky = tmp_path / "curl.log"
+    mt = dict(os.environ, PATH="{}:{}".format(bin_gia, os.environ["PATH"]), GOC_MAY=str(goc_may), NHAT_KY=str(nhat_ky))
+    kq = subprocess.run(["bash", str(repo / "scripts" / "cum" / "chep_du_lieu.sh")], capture_output=True, text=True, env=mt)
+    assert kq.returncode == 0, kq.stdout + kq.stderr
+
+    assert "KHOA_BI_MAT_123" not in nhat_ky.read_text()          # không lộ trên dòng lệnh
+    assert "sv:KHOA_BI_MAT_123" in (tmp_path / "curl.log.stdin").read_text()
+    assert (tmp_path / "BIG DATA" / "retailrocket.zip").exists()  # giữ lại ngoài repo
+    master = goc_may / "labsoe-11" / "du_lieu" / "retailrocket"
+    assert sorted(os.listdir(master)) == ["category_tree.csv", "events.csv", "item_properties_part1.csv",
+                                          "item_properties_part2.csv"]
+    assert os.listdir(goc_may / "labsit" / "du_lieu" / "retailrocket") == ["events.csv"]
+    assert not (goc_may / "labsoe-11" / "retailrocket.zip").exists()  # zip trên máy đích đã xóa
+
+    # Lần hai: zip đã có (>100 MB thì dùng lại; ở đây nhỏ nên tải lại), --zip dùng tệp có sẵn không gọi curl
+    nhat_ky.unlink()
+    kq = subprocess.run(["bash", str(repo / "scripts" / "cum" / "chep_du_lieu.sh"), "--zip",
+                         str(tmp_path / "BIG DATA" / "retailrocket.zip")], capture_output=True, text=True, env=mt)
+    assert kq.returncode == 0 and not nhat_ky.exists(), kq.stdout + kq.stderr
+
+
 def test_dags_airflow():
     pytest.importorskip("airflow.sdk")  # thư mục airflow/ của dự án không phải gói Airflow
     from airflow.dag_processing.dagbag import DagBag

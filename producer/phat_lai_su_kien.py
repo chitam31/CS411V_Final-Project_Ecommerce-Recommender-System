@@ -11,7 +11,7 @@ itemid, transactionid) để job nap_su_kien_bronze.py cũ của nhóm vẫn đ�
 trường "nguon" để phân biệt phat_lai / nguoi_moi / web.
 
 Chạy trên máy Kafka (labsit):
-    python3 producer/phat_lai_su_kien.py --tep /data/retailrocket/events.csv
+    python3 producer/phat_lai_su_kien.py --tep ~/du_lieu/retailrocket/events.csv
 Thử không cần Kafka (ghi JSON Lines cho chế độ --nguon tep của job streaming):
     python3 producer/phat_lai_su_kien.py --tep events.csv --ra-thu-muc /tmp/su_kien --giay-moi-ngay 0
 """

@@ -143,11 +143,13 @@ bash scripts/cum/ssh_tat_ca.sh "cd ~/bd03_khuyen_nghi && bash scripts/cum/khoi_d
 # Từ bất kỳ máy nào: kiểm tra toàn cụm
 bash scripts/cum/kiem_tra_cum.sh
 
+# Trên laptop: tải RetailRocket bằng khóa Kaggle của laptop, chép sang master và máy Kafka
+bash scripts/cum/chep_du_lieu.sh
 # Trên máy master (labsoe-11), lần đầu:
-bash scripts/tai_du_lieu.sh /data/retailrocket     # Kaggle -> HDFS /lake/landing
+bash scripts/tai_du_lieu.sh                        # ~/du_lieu/retailrocket -> HDFS /lake/landing
 # Trên máy Kafka (labsit):
 bash scripts/tao_topic.sh
-python3 producer/phat_lai_su_kien.py --tep /data/retailrocket/events.csv &
+python3 producer/phat_lai_su_kien.py --tep ~/du_lieu/retailrocket/events.csv &
 # Trên máy master:
 bash scripts/chay_lan_dau.sh                       # toàn bộ pipeline theo thứ tự của DAG 1
 bash scripts/luong.sh khoi_dong tat_ca             # 3 luồng streaming chạy liên tục

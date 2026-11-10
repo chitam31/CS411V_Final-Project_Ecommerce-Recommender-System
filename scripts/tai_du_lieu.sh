@@ -1,13 +1,23 @@
 #!/usr/bin/env bash
-# tai_du_lieu.sh - tải RetailRocket từ Kaggle về máy master và đưa lên HDFS /lake/landing.
-# Cần: pip install kaggle, và tệp ~/.kaggle/kaggle.json (Kaggle -> Settings -> API -> Create New Token).
+# tai_du_lieu.sh - đưa 4 tệp CSV của RetailRocket từ đĩa máy master lên HDFS /lake/landing.
 #
-#   bash scripts/tai_du_lieu.sh /data/retailrocket
+# Cách đưa CSV về máy master, nên dùng: chạy TRÊN LAPTOP  bash scripts/cum/chep_du_lieu.sh
+# (tải bằng khóa Kaggle trên laptop rồi chép sang ~/du_lieu/retailrocket của master và máy Kafka;
+# khóa không nằm trên máy lab dùng chung). Nếu master có sẵn lệnh kaggle và ~/.kaggle/kaggle.json
+# thì script tự tải khi chưa có CSV.
+#
+#   bash scripts/tai_du_lieu.sh                       # mặc định ~/du_lieu/retailrocket
+#   bash scripts/tai_du_lieu.sh /duong/dan/thu_muc_csv
 set -euo pipefail
-DICH="${1:-/data/retailrocket}"
+DICH="${1:-$HOME/du_lieu/retailrocket}"
 mkdir -p "$DICH"
 if [ ! -f "$DICH/events.csv" ]; then
-  kaggle datasets download -d retailrocket/ecommerce-dataset -p "$DICH" --unzip
+  if command -v kaggle > /dev/null && [ -f "$HOME/.kaggle/kaggle.json" ]; then
+    kaggle datasets download -d retailrocket/ecommerce-dataset -p "$DICH" --unzip
+  else
+    echo "Chưa có $DICH/events.csv. Trên laptop chạy: bash scripts/cum/chep_du_lieu.sh" >&2
+    exit 1
+  fi
 fi
 ls -lh "$DICH"
 
@@ -24,4 +34,4 @@ for t in events.csv item_properties_part1.csv item_properties_part2.csv category
   docker exec hadoop-master rm -f "/tmp/$t"
 done
 docker exec hadoop-master hdfs dfs -ls -h /lake/landing/retailrocket
-echo "events.csv cũng cần có trên máy Kafka (labsit) để chạy bộ phát: scp $DICH/events.csv <user>@10.68.71.204:/data/retailrocket/"
+echo "Bộ phát trên máy Kafka (labsit) đọc ~/du_lieu/retailrocket/events.csv: chep_du_lieu.sh đã chép sẵn."
