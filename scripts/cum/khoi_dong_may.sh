@@ -8,16 +8,18 @@
 #   bash scripts/cum/khoi_dong_may.sh --dung       # dừng các dịch vụ của máy này
 #   bash scripts/cum/khoi_dong_may.sh --build      # buộc build lại ảnh bd03/spark (sau khi sửa Dockerfile)
 #   ZT_MTU=1280 bash scripts/cum/khoi_dong_may.sh   # máy ở ngoài trường: hạ MTU card ZeroTier (cần sudo)
+#   bash scripts/cum/khoi_dong_may.sh --chi=web     # chỉ bật/dừng MỘT vai trò, không đụng dịch vụ khác của máy
 set -euo pipefail
 THU_MUC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$THU_MUC/cau_hinh/cum.env"
 
-IN_THU=0; DUNG=0; BUILD_LAI=0; TEN_CHI_DINH=""
+IN_THU=0; DUNG=0; BUILD_LAI=0; TEN_CHI_DINH=""; CHI_VAI=""
 for a in "$@"; do
   case "$a" in
     --in-thu) IN_THU=1 ;;
     --dung) DUNG=1 ;;
     --build) BUILD_LAI=1 ;;
+    --chi=*) CHI_VAI="${a#--chi=}" ;;
     *) TEN_CHI_DINH="$a" ;;
   esac
 done
@@ -37,6 +39,14 @@ if [ -z "$DONG" ]; then
   exit 1
 fi
 IFS='|' read -r TEN NODE_IP VAI_TRO SO_LOI BO_NHO <<< "$DONG"
+if [ -n "$CHI_VAI" ]; then
+  # Chỉ một vai trò: dùng khi máy đang chạy dịch vụ khác của cụm (vd. thêm web vào một worker
+  # mà không để compose tạo lại DataNode/Spark worker đang phục vụ job).
+  if [[ ",$VAI_TRO," != *",$CHI_VAI,"* ]]; then
+    echo "Máy $TEN không có vai trò '$CHI_VAI' (vai trò: $VAI_TRO)."; exit 1
+  fi
+  VAI_TRO="$CHI_VAI"
+fi
 
 du_an_hdfs() {  # project compose của HDFS trên máy này (để dùng lại đúng volume dữ liệu cũ)
   local cap
@@ -155,6 +165,7 @@ if co_vai web; then
   chay $WEB up -d --build
 fi
 if co_vai may-demo; then
-  echo "Máy demo: mở trình duyệt tới http://10.68.71.205:8000 (web), http://$SPARK_MASTER_IP:8080 (Spark), :9870 (HDFS), :8088 (Airflow)"
+  IP_WEB="$(for b in $(compgen -v MAY_); do IFS='|' read -r _ ip v _ _ <<< "${!b}"; [[ ",$v," == *",web,"* ]] && echo "$ip"; done | head -1)"
+  echo "Máy demo: mở trình duyệt tới http://${IP_WEB:-?}:8000 (web), http://$SPARK_MASTER_IP:8080 (Spark), :9870 (HDFS), :8088 (Airflow)"
 fi
 echo "== Xong. Kiểm tra toàn cụm: bash scripts/cum/kiem_tra_cum.sh"

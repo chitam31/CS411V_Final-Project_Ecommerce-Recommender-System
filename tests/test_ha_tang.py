@@ -547,3 +547,15 @@ def test_khoi_dong_may_ha_mtu_zerotier(tmp_path):
     assert "+ sudo ip link set ztabc123 mtu 1280" in kq.stdout
     kq = subprocess.run(lenh, capture_output=True, text=True, env=mt)
     assert kq.returncode == 0 and "mtu" not in kq.stdout
+
+
+def test_khoi_dong_may_chi_mot_vai_tro():
+    """--chi=<vai_tro>: chỉ bật đúng vai trò đó (không chạm DataNode/Spark worker đang chạy);
+    vai trò máy không có thì dừng với mã lỗi."""
+    tep = os.path.join(GOC, "scripts", "cum", "khoi_dong_may.sh")
+    kq = subprocess.run(["bash", tep, "labsit", "--chi=kafka", "--in-thu"], capture_output=True, text=True)
+    assert kq.returncode == 0, kq.stdout + kq.stderr
+    lenh = [d for d in kq.stdout.splitlines() if d.startswith("+ docker")]
+    assert lenh and all("kafka/docker-compose.yml" in d for d in lenh)
+    kq = subprocess.run(["bash", tep, "labsit12", "--chi=namenode", "--in-thu"], capture_output=True, text=True)
+    assert kq.returncode == 1 and "không có vai trò 'namenode'" in kq.stdout
