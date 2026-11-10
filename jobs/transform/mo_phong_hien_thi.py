@@ -9,6 +9,12 @@ Mô hình xác suất (position-based model):
     P(liên quan) cao nếu item nằm trong các item user thật sự tương tác ở tháng test.
 
 Mặc định KHÔNG cộng thêm điểm cho item thịnh hành, tức không giả định sẵn nhóm B tốt hơn.
+
+--chi-als: chỉ mô phỏng cho user có gợi ý ALS. A/B chỉ tính impression của chiến lược ALS
+(common/ab.py), mà trên dữ liệu thật chỉ khoảng 3% user có gợi ý ALS: lấy 5.000 user bất kỳ
+thì mỗi nhóm chỉ còn khoảng 3.000 impression, quá ít để z-test có ý nghĩa (cần khoảng 79.000
+mỗi nhóm để phát hiện mức tăng 10% với CTR nền 2%). Đổi --hat-giong khi chạy thêm lần nữa để
+mã impression không trùng lần trước.
 """
 import argparse
 import hashlib
@@ -64,9 +70,17 @@ def mo_phong_mot_nguoi(ma_nguoi_dung, goi_y, thuc_te, ngay_goc, tham_so):
     return dong
 
 
+def chon_nguoi(goi_y, so_nguoi, chi_als=False):
+    """Lấy so_nguoi user theo thứ tự băm (ổn định giữa các lần chạy); chi_als: chỉ user có ô ALS."""
+    if chi_als:
+        goi_y = goi_y.filter(F.exists("goi_y", lambda g: g["nguon"] == "als"))
+    return goi_y.orderBy(F.md5("ma_nguoi_dung")).limit(so_nguoi)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--so-nguoi", type=int, default=5000)
+    ap.add_argument("--chi-als", action="store_true", help="Chỉ user có gợi ý ALS (đủ mẫu cho A/B)")
     ap.add_argument("--so-phien", type=int, default=4)
     ap.add_argument("--so-ngay", type=int, default=7)
     ap.add_argument("--p-lien-quan", type=float, default=0.40)
@@ -86,9 +100,8 @@ def main():
                 F.collect_list(F.struct("xep_hang", "ma_san_pham", "diem_du_doan", "nguon"))
             ).alias("goi_y")
         )
-        .orderBy(F.md5("ma_nguoi_dung"))
-        .limit(args.so_nguoi)
     )
+    goi_y = chon_nguoi(goi_y, args.so_nguoi, args.chi_als)
     silver = doc_delta(spark, "silver.tuong_tac")
     ngay_max = silver.filter(F.col("_nguon") != "web").agg(F.max("ngay")).first()[0]
     tu_ngay = ngay_max - timedelta(days=ch.SO_NGAY_TEST)
@@ -125,7 +138,8 @@ def main():
     tong = hien_thi.agg(
         F.count("*").alias("hien_thi"), F.sum(F.col("da_click").cast("long")).alias("click")
     ).first()
-    in_ket_qua({"so_hien_thi": tong["hien_thi"], "so_click": tong["click"], "nguon": "mo_phong"})
+    in_ket_qua({"so_hien_thi": tong["hien_thi"], "so_click": tong["click"], "nguon": "mo_phong",
+                "chi_als": args.chi_als, "hat_giong": args.hat_giong})
 
 
 if __name__ == "__main__":

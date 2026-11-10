@@ -17,6 +17,7 @@ import json
 from pyspark.sql import functions as F
 
 from common.spark_utils import bang_ton_tai, doc_delta, tao_spark
+from common.thong_ke import co_mau_can_thiet, ztest_hai_ty_le
 
 COT_CHI_SO = [
     ("precision_at_10", "P@10"),
@@ -120,6 +121,39 @@ def bang_tuning(cac_dong):
     return bang + "\n\nTổng thời gian huấn luyện + đánh giá {} tổ hợp: {:.1f} phút.".format(len(cac_dong), tong / 60)
 
 
+def tong_hop_ab_gop(cac_dong):
+    """Gộp các ngày: tổng impression/click mỗi nhóm, z-test trên tổng, cỡ mẫu cần cho mức tăng 10%."""
+    tong = {}
+    for d in cac_dong:
+        t = tong.setdefault(d["nhom_ab"], [0, 0])
+        t[0] += d["so_hien_thi"] or 0
+        t[1] += d["so_click"] or 0
+    if "A" not in tong or "B" not in tong:
+        return None
+    (n_a, c_a), (n_b, c_b) = tong["A"], tong["B"]
+    z, p = ztest_hai_ty_le(c_a, n_a, c_b, n_b)
+    ctr_a = c_a / float(n_a) if n_a else 0.0
+    can = co_mau_can_thiet(ctr_a, 0.10) if ctr_a > 0 else None
+    return {"n_a": n_a, "c_a": c_a, "n_b": n_b, "c_b": c_b, "ctr_a": ctr_a,
+            "ctr_b": c_b / float(n_b) if n_b else 0.0, "z": z, "p": p, "can_moi_nhom": can}
+
+
+def mo_ta_ab_gop(g, so_ngay):
+    if g is None:
+        return "- Chưa đủ hai nhóm để gộp."
+    du = g["can_moi_nhom"] is not None and min(g["n_a"], g["n_b"]) >= g["can_moi_nhom"]
+    return "\n".join([
+        "- Gộp {} ngày: A {} impression, {} click, CTR {}; B {} impression, {} click, CTR {}.".format(
+            so_ngay, so(g["n_a"]), so(g["c_a"]), phan_tram(g["ctr_a"]), so(g["n_b"]), so(g["c_b"]),
+            phan_tram(g["ctr_b"])),
+        "- z-test hai tỷ lệ trên tổng: z = {}, p-value = {} → {}.".format(
+            so(g["z"], 3), so(g["p"]), "khác biệt có ý nghĩa (p < 0,05)" if g["p"] is not None and g["p"] < 0.05
+            else "chưa có bằng chứng khác biệt"),
+        "- Cỡ mẫu cần để phát hiện mức tăng tương đối 10% (α = 5%, power 80%): {} impression mỗi nhóm → "
+        "mẫu hiện tại {}.".format(so(g["can_moi_nhom"]), "đủ" if du else "CHƯA ĐỦ"),
+    ])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ma-chay", default=None, help="Mặc định: lần huấn luyện mới nhất")
@@ -145,9 +179,10 @@ def main():
             ra += ["", "## Tuning (`ma_chay` = {})".format(ma_chay), "", bang_tuning(dong)]
 
     if bang_ton_tai(spark, "gold.ket_qua_ab"):
-        ab = [r.asDict() for r in doc_delta(spark, "gold.ket_qua_ab").orderBy(F.desc("ngay"), "nhom_ab").limit(20).collect()]
+        ab = [r.asDict() for r in doc_delta(spark, "gold.ket_qua_ab").orderBy(F.desc("ngay"), "nhom_ab").limit(14).collect()]
         if ab:
-            ra += ["", "## A/B (các ngày mới nhất)", "", bang_md(
+            ra += ["", "## A/B (7 ngày mới nhất)", "", mo_ta_ab_gop(tong_hop_ab_gop(ab), len({d["ngay"] for d in ab})),
+                   "", bang_md(
                 ["Ngày", "Nhóm", "Hiển thị", "Click", "Mua", "CTR", "Chuyển đổi", "p-value CTR",
                  "p-value chuyển đổi", "Tỷ lệ mô phỏng", "Phiên bản Delta"],
                 [[d["ngay"], d["nhom_ab"], so(d["so_hien_thi"]), so(d["so_click"]), so(d["so_mua"]),

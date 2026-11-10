@@ -46,3 +46,29 @@ def test_bang_pho_bien_va_tuning():
     assert bang.index("| 10 |") < bang.index("| **50** |")  # sắp theo rank, in đậm tổ hợp tốt nhất
     assert "2 tổ hợp: 2.0 phút" in bang
     assert bang_md(["a"], [["x"]]) == "| a |\n|---|\n| x |"
+
+
+def test_ab_gop_khop_so_lieu_that():
+    """Số liệu 7 ngày của lần chạy thật 10/11: gộp lại p ≈ 0,77, cần ~79 nghìn impression mỗi nhóm."""
+    from kiem_tra.xuat_ket_qua import mo_ta_ab_gop, tong_hop_ab_gop
+
+    a = [(460, 11), (490, 11), (480, 6), (470, 8), (530, 7), (590, 12), (540, 11)]
+    b = [(360, 10), (420, 8), (490, 9), (450, 5), (380, 10), (410, 7), (410, 8)]
+    dong = [{"nhom_ab": "A", "so_hien_thi": n, "so_click": c} for n, c in a]
+    dong += [{"nhom_ab": "B", "so_hien_thi": n, "so_click": c} for n, c in b]
+    g = tong_hop_ab_gop(dong)
+    assert (g["n_a"], g["c_a"], g["n_b"], g["c_b"]) == (3560, 66, 2920, 57)
+    assert abs(g["p"] - 0.773) < 0.01 and 75000 < g["can_moi_nhom"] < 90000
+    mo_ta = mo_ta_ab_gop(g, 7)
+    assert "CHƯA ĐỦ" in mo_ta and "chưa có bằng chứng" in mo_ta
+    assert tong_hop_ab_gop([{"nhom_ab": "A", "so_hien_thi": 1, "so_click": 0}]) is None
+
+
+def test_dong_ket_qua_xep_lai():
+    from kiem_tra.thu_xep_lai import dong_ket_qua
+
+    m = {"precision_at_10": 0.017, "recall_at_10": 0.1, "ndcg_at_10": 0.0746, "map_at_10": 0.059,
+         "coverage": 0.12, "novelty": 11.1, "so_item_duoc_goi_y": 15000}
+    d = dong_ket_qua(200, 1.0, m, 0.0051, 417053, 0.8)
+    assert d[-1] == "đạt" and d[-2] == "+1363%" and d[6] == "12.00%" and d[10] == "80.0%"
+    assert dong_ket_qua(50, 0.3, dict(m, coverage=0.04), 0.0051, 417053, 0.98)[-1] == "chưa"

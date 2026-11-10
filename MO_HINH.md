@@ -283,23 +283,56 @@ Mỗi lần huấn luyện ghi vào `gold.lich_su_huan_luyen` đủ thông tin �
 
 ---
 
-## 12. Kết quả (điền sau khi chạy trên cụm)
+## 12. Kết quả trên cụm (dữ liệu thật RetailRocket, 10/11/2026)
 
-Lấy từ màn hình "Chất lượng mô hình" hoặc truy vấn `gold.lich_su_huan_luyen` và `gold.ket_qua_tuning`. **Không điền số ước lượng.**
+Số liệu xuất bằng `jobs/kiem_tra/xuat_ket_qua.py` từ `gold.lich_su_huan_luyen`, `gold.ket_qua_tuning`, `gold.ket_qua_ab`, `gold.do_hieu_nang_zorder`. Diễn biến lần chạy: NHAT_KY.md, ngày 10/11/2026.
 
-| Phương pháp | P@10 | R@10 | NDCG@10 | MAP@10 | Coverage | Coverage toàn sàn | Novelty |
-|---|---|---|---|---|---|---|---|
-| Baseline 1: bán chạy toàn sàn | | | | | | | |
-| Baseline 2: bán chạy theo danh mục | | | | | | | |
-| ALS (rank=…, reg=…, alpha=…) | | | | | | | |
-| ALS + re-ranking β = 0,1 | | | | | | | |
-| ALS + re-ranking β = 0,3 | | | | | | | |
-| Mô hình v2: ALS + lọc tầm giá | | | | | | | |
+- `ma_chay` = `r20261110T075240`, mô hình `als_r20261110T075240`, `phien_ban_features` = 0, `phien_ban_silver` = 0. Toàn bộ pipeline 8 bước: 2 giờ 8 phút trên 5 worker (34 lõi).
+- Dữ liệu: 2.894.238 sự kiện (2.756.101 gốc + 138.137 của 48.376 người dùng mới mô phỏng), silver 2.882.479 dòng / 139 ngày. Ngày cắt 2015-08-19, test 30 ngày đến 2015-09-18.
+- Ma trận: 179.999 user (≥ 3 tương tác), 746.350 cặp train (độ dày ≈ 1,8 × 10⁻⁵), 32.804 cặp test. Đánh giá trên 9.467 user test; 126.230 item có trong train (mẫu số của Coverage); toàn sàn 417.053 item.
+- Tuning 27 tổ hợp: 78,4 phút (khoảng 75 giây mỗi tổ hợp ở rank 10, 160 giây ở rank 30, 290 giây ở rank 50). Tốt nhất **rank = 50, regParam = 1,0, alpha = 40**, maxIter = 10, seed = 42.
 
-- `ma_chay`: … · `phien_ban_features`: … · số user train/test: … · thời gian tuning 27 tổ hợp: …
-- Uplift NDCG so với baseline 1: … % → `dat_nguong` = …
-- Kết quả A/B (ngày …, phiên bản Delta …): CTR A = …, CTR B = …, p-value = …, tỷ lệ traffic mô phỏng = … → kết luận: …
-- Tái lập: độ lệch lớn nhất = … (trung_khop = …)
+| Phương pháp | P@10 | R@10 | NDCG@10 | MAP@10 | Coverage | Coverage toàn sàn | Novelty | Số item được gợi ý |
+|---|---|---|---|---|---|---|---|---|
+| Baseline 1: bán chạy toàn sàn | 0,0017 | 0,0066 | 0,0051 | 0,0036 | 0,01% | 0,002% | 8,91 | 10 |
+| Baseline 2: bán chạy theo danh mục | 0,0122 | 0,0706 | 0,0475 | 0,0352 | 5,28% | 1,60% | 11,88 | 6.660 |
+| ALS (rank = 50, reg = 1,0, alpha = 40) | 0,0161 | 0,0921 | **0,0680** | 0,0531 | 3,44% | 1,04% | 10,86 | 4.346 |
+| ALS + re-ranking β = 0,1 | 0,0166 | 0,0952 | 0,0702 | 0,0549 | 3,65% | 1,10% | 10,93 | 4.607 |
+| ALS + re-ranking β = 0,3 | 0,0173 | 0,1001 | **0,0746** | 0,0589 | 4,14% | 1,25% | 11,09 | 5.221 |
+| Mô hình v2: ALS + lọc tầm giá | chưa chạy (cần lần schema evolution) | | | | | | | |
+
+- Uplift NDCG@10 so với baseline 1: **+1.237%** (ngưỡng ≥ 30%: đạt); so với baseline 2 (mạnh hơn nhiều): +43%. Coverage 3,44% < 10% → `dat_nguong` = false. Lần huấn luyện đầu nên `cai_thien` = true, mô hình vẫn được triển khai; `dat_nguong` chỉ ghi lại để báo cáo.
+
+### 12.1 Nhận xét về tuning
+
+- NDCG@10 tăng đơn điệu theo **rank** (tốt nhất mỗi rank: 0,024 → 0,050 → 0,068) và theo **alpha** (với cùng rank và regParam, alpha 40 luôn tốt nhất). Với implicit feedback, alpha lớn làm độ tin cậy của các cặp có tương tác (nhất là mua, trọng số 5) vượt hẳn các ô bằng 0, nên mô hình học được tín hiệu từ dữ liệu thưa tốt hơn.
+- regParam ảnh hưởng nhỏ khi alpha lớn (rank 50, alpha 40: 0,0668 / 0,0662 / 0,0680), nhưng làm hỏng mô hình khi alpha = 1 (regParam = 1 cho NDCG thấp nhất ở mọi rank, novelty cao bất thường 12,2–12,6: mô hình bị kéo về gần 0 và gợi ý gần như ngẫu nhiên các item hiếm).
+- Tổ hợp tốt nhất nằm ở **biên lưới** về rank và alpha: điểm tối ưu thật có thể nằm ngoài lưới. Hướng tiếp theo: thêm rank 100, alpha 80. Chi phí tăng gần tuyến tính theo rank.
+
+### 12.2 Coverage thấp: popularity bias, không phải giới hạn cấu trúc
+
+- Trần coverage về cấu trúc: 10 gợi ý × 9.467 user test / 126.230 item = **75%**. ALS chỉ dùng 4.346 item, nên coverage thấp không do thiếu ô gợi ý.
+- Phân phối độ phổ biến (tỷ lệ suất gợi ý rơi vào nhóm 10% item phổ biến nhất, N1): ALS **99,2%**, re-ranking β = 0,3: 98,3%, baseline danh mục 86,5%, baseline toàn sàn 100%. Đây là popularity bias điển hình của matrix factorization trên dữ liệu thưa: item ít tương tác có vector yếu nên hiếm khi lọt top-10.
+- Re-ranking novelty (mục 3.10 của đề) tăng **cả coverage lẫn độ chính xác**: β = 0,3 cho NDCG@10 0,0746 (+9,7% so với ALS) và coverage 4,14%. Tập test chứa nhiều item không quá phổ biến nên đẩy item mới hơn lên không làm mất độ chính xác. Tuy vậy re-ranking chỉ xếp lại 50 ứng viên đầu của ALS, vốn đã là item phổ biến, nên chưa đưa coverage tới 10%.
+- Thí nghiệm bổ sung: quét β lớn hơn và tập ứng viên rộng hơn để vẽ đường đánh đổi NDCG–coverage (`jobs/kiem_tra/thu_xep_lai.py`).
+
+### 12.3 A/B (traffic mô phỏng, `tang_thinh_hanh` = 0)
+
+- Lần mô phỏng mặc định sinh 200.000 impression cho 5.000 user lấy theo thứ tự băm, nhưng A/B chỉ tính impression của chiến lược ALS (`common/ab.py`: user cold start nhận cùng một kiểu danh sách dù ở nhóm nào). Chỉ khoảng 3% user đó có gợi ý ALS, nên mỗi nhóm chỉ có khoảng 3.000 impression trong 7 ngày.
+- Gộp 7 ngày: A 3.560 impression, 66 click, CTR 1,85%; B 2.920 impression, 57 click, CTR 1,95%; z = 0,29, **p = 0,77**: chưa có bằng chứng khác biệt. Điều này đúng với thiết kế mô phỏng (không cộng điểm cho item thịnh hành), nhưng mẫu quá nhỏ: để phát hiện mức tăng tương đối 10% với CTR nền khoảng 2% (α = 5%, power 80%) cần khoảng **79.000 impression mỗi nhóm** (`thong_ke.co_mau_can_thiet`), tức nhiều hơn khoảng 25 lần.
+- Thí nghiệm bổ sung: mô phỏng riêng cho toàn bộ 8.592 user có gợi ý ALS (`mo_phong_hien_thi.py --chi-als`), khoảng 170.000 impression mỗi nhóm.
+
+### 12.4 OPTIMIZE / ZORDER (`gold.goi_y_nguoi_dung`, 5,3 triệu dòng, 30 truy vấn theo user)
+
+| Giai đoạn | Số tệp | Tệp đọc mỗi truy vấn | Trung vị (ms) | p95 (ms) |
+|---|---|---|---|---|
+| Phân mảnh (mô phỏng nhiều ngày MERGE) | 200 | 200 | 10.793 | 13.420 |
+| Chỉ OPTIMIZE (gộp tệp, tối đa 1 MB) | 67 | 67 | 8.280 | 9.524 |
+| OPTIMIZE ZORDER BY (ma_nguoi_dung) | 55 | 1,07 | **980** | 1.387 |
+
+Chỉ gộp tệp thì mỗi tệp vẫn chứa user rải khắp dải giá trị nên không bỏ qua được tệp nào. ZORDER xếp user liền nhau, min/max của mỗi tệp hẹp lại và Delta chỉ đọc khoảng 1 tệp: **nhanh hơn 8,4 lần so với chỉ gộp tệp**, 11 lần so với lúc phân mảnh.
+
+- Tái lập bằng time travel: chưa chạy (DAG `kn_tai_lap`).
 
 ---
 

@@ -80,3 +80,17 @@ def test_tron_nguoi_quen_v2_loai_mon_ngoai_tam_gia(spark):
     # Không truyền giá: mô hình v1 giữ nguyên thứ tự ALS.
     v1 = [r["ma_san_pham"] for r in sorted(tron_nguoi_quen(spark, als, dm_item, moi, bc).collect(), key=lambda r: r["xep_hang"])]
     assert v1[:3] == ["a1", "a2", "a3"] and "a4" in v1
+
+
+def test_chon_nguoi_chi_als(spark):
+    """--chi-als chỉ giữ user có ít nhất một ô nguồn als; thứ tự băm ổn định giữa các lần chạy."""
+    from transform.mo_phong_hien_thi import chon_nguoi
+
+    dong = [("u{}".format(i), [(1, "sp", 0.5, "als" if i % 3 == 0 else "pho_bien_danh_muc")]) for i in range(30)]
+    df = spark.createDataFrame(
+        dong, "ma_nguoi_dung string, goi_y array<struct<xep_hang:int,ma_san_pham:string,diem_du_doan:double,nguon:string>>"
+    )
+    tat_ca = [r["ma_nguoi_dung"] for r in chon_nguoi(df, 100).collect()]
+    chi_als = [r["ma_nguoi_dung"] for r in chon_nguoi(df, 100, chi_als=True).collect()]
+    assert len(tat_ca) == 30 and sorted(chi_als) == sorted("u{}".format(i) for i in range(0, 30, 3))
+    assert [r["ma_nguoi_dung"] for r in chon_nguoi(df, 4, chi_als=True).collect()] == chi_als[:4]
