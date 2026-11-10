@@ -381,7 +381,16 @@ Số liệu A/B dưới đây đo trên danh sách **trước** khi bật xếp 
 
 Chỉ gộp tệp thì mỗi tệp vẫn chứa user rải khắp dải giá trị nên không bỏ qua được tệp nào. ZORDER xếp user liền nhau, min/max của mỗi tệp hẹp lại và Delta chỉ đọc khoảng 1 tệp: **nhanh hơn 8,4 lần so với chỉ gộp tệp**, 11 lần so với lúc phân mảnh.
 
-- Tái lập bằng time travel: chưa chạy (DAG `kn_tai_lap`).
+### 12.5 Tái lập bằng time travel (DAG `kn_tai_lap`, 10/11 23:13)
+
+Kích hoạt với `{"phien_ban_delta": 0, "che_do": "mo_hinh_chon"}`: đọc `features.ma_tran_tuong_tac` `VERSION AS OF 0` (phiên bản dựng cho lần chạy `r20261110T075240`), huấn luyện lại đúng siêu tham số đã chọn, đánh giá lại trên tập test nằm cùng phiên bản, so với `gold.ket_qua_tuning` và `gold.lich_su_huan_luyen`.
+
+| Loại so sánh | Khóa | Phiên bản Delta | Độ lệch lớn nhất | Trùng khớp |
+|---|---|---|---|---|
+| tuning | r20261110T075240, rank=50, reg=1.0, alpha=40.0 | 0 | 0,000000 | có |
+| huấn luyện + đánh giá | r20261110T075240 | 0 | 0,000000 | có |
+
+Độ lệch bằng 0 tới 6 chữ số thập phân (ngưỡng < 10⁻⁶). Trong lúc chạy lại, `silver.tuong_tac` đã sang phiên bản 2 (tiến hóa lược đồ) và bronze đã có thêm 857 nghìn sự kiện phát lại; kết quả vẫn trùng vì job chỉ đọc features ở phiên bản 0, nơi chứa đủ cả train lẫn ground truth (mục 3), cùng hạt giống ALS cố định (`seed = 42`) và chỉ mục user/item không đổi giữa các phiên bản (mục 3).
 
 ---
 
