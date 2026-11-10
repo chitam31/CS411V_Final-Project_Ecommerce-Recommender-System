@@ -411,6 +411,42 @@ def ty_le_tang(moi, nen):
     return (moi - nen) / nen
 
 
+def mo_hinh_dang_trien_khai(spark):
+    """Dòng lịch sử của mô hình đang phục vụ (trang_thai = trien_khai) gần nhất, hoặc None."""
+    if not bang_ton_tai(spark, "gold.lich_su_huan_luyen"):
+        return None
+    dong = (
+        doc_delta(spark, "gold.lich_su_huan_luyen")
+        .filter(F.col("trang_thai") == "trien_khai")
+        .orderBy(F.desc("thoi_diem"))
+        .first()
+    )
+    return dong.asDict() if dong else None
+
+
+def them_to_hop_dang_phuc_vu(cac_to_hop, dong_cu):
+    """Thêm siêu tham số của mô hình đang phục vụ vào CUỐI lưới nếu lưới chưa có.
+
+    Lưới tối thiểu của DAG hằng ngày cố định alpha = 10, còn mô hình đang phục vụ được chọn từ
+    lưới đầy đủ (alpha = 40). Nếu không đánh giá lại đúng tổ hợp đó, lần chạy hằng ngày trên
+    cùng dữ liệu không bao giờ bằng mô hình cũ và luôn rẽ sang giu_mo_hinh_cu, kể cả khi dữ liệu
+    hay lược đồ (mô hình v2) đã đổi. Thêm vào cuối để thứ tự các tổ hợp cũ không đổi (tái lập).
+    Trả về (danh_sach_moi, to_hop_da_them hoặc None).
+    """
+    ds = list(cac_to_hop)
+    if not dong_cu or dong_cu.get("rank") is None:
+        return ds, None
+    to_hop = {
+        "rank": int(dong_cu["rank"]),
+        "regParam": float(dong_cu["reg_param"]),
+        "alpha": float(dong_cu["alpha"]),
+    }
+    khoa = lambda t: (int(t["rank"]), float(t["regParam"]), float(t["alpha"]))  # noqa: E731
+    if any(khoa(t) == khoa(to_hop) for t in ds):
+        return ds, None
+    return ds + [to_hop], to_hop
+
+
 # ---------------------------------------------------------------------------
 # 7. Vòng tuning dùng chung cho huấn luyện và tái lập
 # ---------------------------------------------------------------------------

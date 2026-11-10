@@ -62,6 +62,8 @@ with DAG(
     params={
         "luoi": Param("toi_thieu", enum=["toi_thieu", "day_du"], description="9 hoặc 27 tổ hợp tuning"),
         "min_tuong_tac": Param(3, type="integer", minimum=1),
+        "bo_qua_cho_du_lieu": Param(False, type="boolean",
+                                    description="Chạy tay: bỏ qua sensor, chạy trên dữ liệu hiện có"),
     },
     tags=["bd03", "cs411"],
 ) as dag:

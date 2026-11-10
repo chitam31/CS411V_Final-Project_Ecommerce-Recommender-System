@@ -505,3 +505,28 @@ def test_tinh_trang_doc_json_spark(tmp_path):
     assert "worker sống: 5" in kq.stdout and "14/34" in kq.stdout
     assert "bd03-tinh-thinh-hanh" in kq.stdout and "bd03-tai-lap" in kq.stdout
     assert "không thấy container" in kq.stdout and "tien_hoa" in kq.stdout
+
+
+def test_sensor_dag1_bo_qua_cho_khi_chay_tay(monkeypatch):
+    """Sensor DAG 1: lần chạy tay với bo_qua_cho_du_lieu = true chạy ngay, không gọi WebHDFS;
+    lần chạy theo lịch vẫn so mốc bronze/silver như cũ."""
+    import importlib
+    import sys
+    import types
+
+    gia_pendulum = types.SimpleNamespace(timezone=lambda *a, **k: None, datetime=lambda *a, **k: None)
+    monkeypatch.setitem(sys.modules, "pendulum", gia_pendulum)
+    monkeypatch.syspath_prepend(os.path.join(GOC, "airflow", "dags"))
+    sys.modules.pop("bd03_chung", None)
+    chung = importlib.import_module("bd03_chung")
+
+    goi = []
+    moc = {"bronze": 2, "silver": 1}
+    monkeypatch.setattr(chung, "_webhdfs_mtime",
+                        lambda p: goi.append(p) or moc["bronze" if "bronze" in p else "silver"])
+    assert chung.co_du_lieu_moi(params={"bo_qua_cho_du_lieu": True}) is True and goi == []
+    assert chung.co_du_lieu_moi(params={"bo_qua_cho_du_lieu": False}) is True and len(goi) == 2
+    moc["bronze"] = 1
+    assert chung.co_du_lieu_moi(params={}) is False
+    assert chung.co_du_lieu_moi() is False
+    sys.modules.pop("bd03_chung", None)

@@ -17,11 +17,10 @@ from pyspark.ml.recommendation import ALSModel
 from pyspark.sql import functions as F
 
 from common import cau_hinh as ch
-from common.als_lib import chon_tot_nhat, danh_gia_day_du, doc_features, ty_le_tang
+from common.als_lib import chon_tot_nhat, danh_gia_day_du, doc_features, mo_hinh_dang_trien_khai, ty_le_tang
 from common.luoc_do import tao_df
 from common.tron import ten_phien_ban_mo_hinh
 from common.spark_utils import (
-    bang_ton_tai,
     doc_delta,
     ghi_delta,
     in_ket_qua,
@@ -40,19 +39,6 @@ def doc_lan_tuning(spark, ma_chay):
         raise SystemExit("Không tìm thấy kết quả tuning của ma_chay={}".format(ma_chay))
     ghi_chu = tim_ghi_chu_theo(spark, "gold.ket_qua_tuning", "ma_chay", ma_chay) or {}
     return dong, ghi_chu
-
-
-def mo_hinh_dang_trien_khai(spark):
-    """Dòng lịch sử của mô hình đang phục vụ (trang_thai = trien_khai) gần nhất."""
-    if not bang_ton_tai(spark, "gold.lich_su_huan_luyen"):
-        return None
-    dong = (
-        doc_delta(spark, "gold.lich_su_huan_luyen")
-        .filter(F.col("trang_thai") == "trien_khai")
-        .orderBy(F.desc("thoi_diem"))
-        .first()
-    )
-    return dong.asDict() if dong else None
 
 
 def quyet_dinh(ndcg_moi, dong_cu, dung_sai):

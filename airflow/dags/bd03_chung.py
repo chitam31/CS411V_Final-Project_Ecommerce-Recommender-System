@@ -72,13 +72,19 @@ def _webhdfs_mtime(duong_dan):
         return None
 
 
-def co_du_lieu_moi():
+def co_du_lieu_moi(params=None, **_):
     """Sensor của DAG 1: bronze có lô mới hơn lần ghi silver gần nhất chưa?
+
+    Lần chạy tay có thể đặt params.bo_qua_cho_du_lieu = true để chạy ngay trên dữ liệu hiện có
+    (vd. sau khi đổi lưới tuning hay mã huấn luyện); lần chạy theo lịch luôn chờ dữ liệu mới.
 
     File sink ghi một tệp vào bronze/su_kien_v2/_spark_metadata sau mỗi lô thành công;
     Delta ghi một tệp vào silver/tuong_tac/_delta_log sau mỗi commit. So hai mốc là đủ,
     không cần khởi động Spark chỉ để kiểm tra.
     """
+    if params and params.get("bo_qua_cho_du_lieu"):
+        nhat_ky.info("bo_qua_cho_du_lieu = true: chạy trên dữ liệu hiện có")
+        return True
     bronze = _webhdfs_mtime("/lake/bronze/su_kien_v2/_spark_metadata")
     silver = _webhdfs_mtime("/lake/silver/tuong_tac/_delta_log")
     nhat_ky.info("mtime bronze=%s silver=%s", bronze, silver)

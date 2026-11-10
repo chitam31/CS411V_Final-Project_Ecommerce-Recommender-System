@@ -14,6 +14,7 @@ from common.als_lib import (
     tam_gia_nguoi_dung,
     tao_als,
     thong_ke_pho_bien,
+    them_to_hop_dang_phuc_vu,
     tinh_chi_so,
     ty_le_tang,
 )
@@ -140,6 +141,23 @@ def test_chon_tot_nhat_va_ty_le_tang():
     assert chon_tot_nhat(dong)["rank"] == 10
     assert ty_le_tang(0.13, 0.10) == pytest.approx(0.30)
     assert ty_le_tang(0.1, 0) is None
+
+
+def test_them_to_hop_dang_phuc_vu():
+    """Lưới tối thiểu (alpha = 10) phải có thêm tổ hợp của mô hình đang phục vụ (alpha = 40) ở cuối,
+    nếu không lần chạy hằng ngày không bao giờ bằng được mô hình cũ trên cùng dữ liệu."""
+    from ml.huan_luyen_als import to_hop_tham_so
+
+    luoi = to_hop_tham_so("toi_thieu")
+    dang_phuc_vu = {"rank": 50, "reg_param": 1.0, "alpha": 40.0, "ndcg_at_10": 0.068}
+    moi, da_them = them_to_hop_dang_phuc_vu(luoi, dang_phuc_vu)
+    assert len(moi) == 10 and moi[:9] == luoi
+    assert moi[-1] == {"rank": 50, "regParam": 1.0, "alpha": 40.0} and da_them == moi[-1]
+    # đã có trong lưới (lưới đầy đủ) thì giữ nguyên
+    du = to_hop_tham_so("day_du")
+    assert them_to_hop_dang_phuc_vu(du, dang_phuc_vu) == (du, None)
+    # chưa có mô hình nào phục vụ
+    assert them_to_hop_dang_phuc_vu(luoi, None) == (luoi, None)
 
 
 def test_ghi_gold_danh_dau_hang_thua(spark):
