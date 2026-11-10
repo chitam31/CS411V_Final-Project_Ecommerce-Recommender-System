@@ -386,7 +386,18 @@ docker exec bd03-airflow-airflow-scheduler-1 airflow dags trigger kn_tai_lap -c 
 bash scripts/cum/ssh_tat_ca.sh --tty "sudo zerotier-cli peers"
 ```
 
-Cột `link` cho biết hai máy nối thẳng (`DIRECT`, kèm địa chỉ LAN hoặc địa chỉ công cộng) hay phải đi qua máy chuyển tiếp của ZeroTier trên Internet (`RELAY`, độ trễ hàng trăm đến hơn một nghìn ms, băng thông thấp). HDFS và shuffle của Spark cần các máy trong cụm nối thẳng với nhau. Khi hai phòng lab ở hai mạng con khác nhau và mạng trường chặn UDP giữa hai phòng, ZeroTier chỉ còn đường RELAY. Cách xử lý, theo thứ tự ưu tiên: nhờ phòng máy mở UDP cổng 9993 giữa các phòng lab; hoặc đặt master và các worker trong cùng một phòng (cùng mạng LAN) để chúng nối thẳng với nhau.
+Cột `link` cho biết hai máy nối thẳng (`DIRECT`, kèm địa chỉ LAN hoặc địa chỉ công cộng) hay phải đi qua máy chuyển tiếp của ZeroTier trên Internet (`RELAY`, độ trễ hàng trăm đến hơn một nghìn ms, băng thông thấp). HDFS và shuffle của Spark cần các máy trong cụm nối thẳng với nhau. Khi hai phòng lab ở hai mạng con khác nhau và mạng trường chặn UDP giữa hai phòng, ZeroTier chỉ còn đường RELAY. Kiểm tra nguyên nhân (mỗi máy hỏi mật khẩu sudo một lần):
+
+```bash
+bash scripts/cum/ssh_tat_ca.sh --tty 'sudo ufw status | head -1; ip -br link | grep -vE "^(lo|docker|br-|veth|zt)"; nmcli -t -f active,ssid dev wifi | grep "^yes"'
+```
+
+Máy nối Wi-Fi (`wlo1`, `wlp…`) mà không ping được IP mạng nội bộ của máy cùng phòng nghĩa là mạng Wi-Fi đó chặn các máy nói chuyện với nhau (client isolation): tình trạng của phòng labsit ngày 10/11/2026. Cách xử lý, không cần sửa cấu hình cụm vì IP ZeroTier giữ nguyên:
+
+1. Cắm cáp mạng vào cổng `enp44s0` (nếu phòng có ổ mạng dây), ZeroTier tự chuyển sang đường thẳng qua LAN.
+2. Đưa các máy vào cùng một mạng Wi-Fi cho phép các máy thấy nhau (ví dụ mạng mà phòng labsoe đang dùng). Đổi mạng Wi-Fi ngay tại máy, không đổi qua SSH: nếu mạng mới cần đăng nhập trang web thì máy sẽ mất kết nối từ xa.
+3. Dùng một router hoặc điểm phát Wi-Fi riêng cho các máy trong cụm.
+4. Nếu tường lửa đang bật, mở cổng ZeroTier: `sudo ufw allow 9993/udp`.
 
 ---
 
