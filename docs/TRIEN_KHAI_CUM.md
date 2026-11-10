@@ -399,6 +399,8 @@ Máy nối Wi-Fi (`wlo1`, `wlp…`) mà không ping được IP mạng nội b�
 3. Dùng một router hoặc điểm phát Wi-Fi riêng cho các máy trong cụm.
 4. Nếu tường lửa đang bật, mở cổng ZeroTier: `sudo ufw allow 9993/udp`.
 
+Trong lúc còn đi đường chuyển tiếp, giữ `HE_SO_SAO_CHEP=1` trong `cau_hinh/cum.env` để HDFS và Spark không phải chép bản sao qua mạng chậm. Khi các máy đã nối thẳng (`zerotier-cli peers` báo `DIRECT`), đổi thành 2, rồi `--dong-bo-ma` và chạy lại `khoi_dong_may.sh` trên mọi máy. Tệp cũ giữ số bản sao cũ; muốn nâng lên thì chạy `docker exec hadoop-master hdfs dfs -setrep -w 2 /lake`.
+
 ---
 
 ## 11. Khi nào cần dùng server của trường

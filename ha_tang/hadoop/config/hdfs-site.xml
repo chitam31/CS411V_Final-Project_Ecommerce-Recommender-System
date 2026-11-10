@@ -56,10 +56,11 @@
         <value>true</value>
     </property>
 
-    <!-- Từ 2 DataNode trở lên: mất một máy lab vẫn còn bản sao. -->
+    <!-- Số bản sao lấy từ HE_SO_SAO_CHEP trong cau_hinh/cum.env (2 khi mạng nối thẳng,
+         1 khi ZeroTier phải đi đường chuyển tiếp). -->
     <property>
         <name>dfs.replication</name>
-        <value>2</value>
+        <value>${env.HE_SO_SAO_CHEP}</value>
     </property>
     <!-- Mạng riêng ZeroTier của lớp: container Spark chạy user spark vẫn ghi được /lake. -->
     <property>

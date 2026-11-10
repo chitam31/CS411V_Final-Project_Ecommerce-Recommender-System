@@ -17,6 +17,7 @@ services:
       HADOOP_HEAPSIZE_MAX: 1g
       # Mã băm của config/*.xml (khoi_dong_may.sh tính): XML đổi thì compose tự tạo lại container.
       CAU_HINH_HDFS: ${CAU_HINH_HDFS:-}
+      HE_SO_SAO_CHEP: ${HE_SO_SAO_CHEP:-2}
     command: >
       bash -c "
         mkdir -p /tmp/hadoop-root/dfs/name &&
@@ -45,6 +46,7 @@ services:
       NODE_IP: ${NODE_IP:?Thieu NODE_IP}
       HADOOP_HEAPSIZE_MAX: 1g
       CAU_HINH_HDFS: ${CAU_HINH_HDFS:-}
+      HE_SO_SAO_CHEP: ${HE_SO_SAO_CHEP:-2}
     command: >
       bash -c "
         mkdir -p /tmp/hadoop-root/dfs/data &&
