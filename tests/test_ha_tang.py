@@ -167,6 +167,36 @@ def test_ssh_tat_ca_dong_bo_ma(tmp_path):
     assert (goc_may / "labsit12" / "bd03_khuyen_nghi" / "GHI_CHU.md").read_text() == "sua tay\n"
 
 
+def test_do_mang_chi_ping(tmp_path):
+    """do_mang.sh --chi-ping: gửi script sang 6 máy lab kèm đủ 6 IP ZeroTier, đánh giá độ trễ đúng ngưỡng."""
+    tep = os.path.join(GOC, "scripts", "cum", "ssh_tat_ca.sh")
+    ds = subprocess.run(["bash", tep, "--liet-ke"], capture_output=True, text=True, check=True).stdout.split("\n")
+    assert ds[0] == "labsoe-11 10.68.71.113" and len([d for d in ds if d]) == 6
+    bin_gia = tmp_path / "bin"
+    bin_gia.mkdir()
+    lenh_gia = {
+        # ssh giả: chạy lệnh ngay trên máy này, stdin (nội dung script) chuyển nguyên cho bash
+        "ssh": "while [ $# -gt 0 ]; do case \"$1\" in -o) shift 2;; -*) shift;; *) break;; esac; done\n"
+               "shift; exec bash -c \"$*\"\n",
+        "ip": "[ \"$1\" = route ] && echo 'default via 192.168.80.1' || echo '5: zt inet 10.68.71.198/24 scope global zt'\n",
+        "ping": "d=\"${@: -1}\"; echo '5 packets transmitted, 5 received, 0% packet loss'\n"
+                "[ \"$d\" = 10.68.71.204 ] && echo 'rtt min/avg/max/mdev = 200/312.5/700/90 ms' "
+                "|| echo 'rtt min/avg/max/mdev = 3/4.5/7/1 ms'\n",
+    }
+    for ten, noi_dung in lenh_gia.items():
+        (bin_gia / ten).write_text("#!/bin/bash\n" + noi_dung)
+        (bin_gia / ten).chmod(0o755)
+    mt = dict(os.environ, PATH="{}:{}".format(bin_gia, os.environ["PATH"]))
+    kq = subprocess.run(["bash", os.path.join(GOC, "scripts", "cum", "do_mang.sh"), "--chi-ping"],
+                        capture_output=True, text=True, env=mt)
+    assert kq.returncode == 0, kq.stdout + kq.stderr
+    assert kq.stdout.count("=====") == 6 and "Phần 2" not in kq.stdout
+    dong = [d for d in kq.stdout.splitlines() if d.startswith("[labsit12] ping")]
+    assert len(dong) == 5  # bỏ qua chính IP ZeroTier của máy (10.68.71.198 theo lệnh ip giả)
+    assert any("10.68.71.204" in d and "CHAM" in d for d in dong)
+    assert any("10.68.71.113" in d and "nhanh" in d for d in dong)
+
+
 def test_dags_airflow():
     pytest.importorskip("airflow.sdk")  # thư mục airflow/ của dự án không phải gói Airflow
     from airflow.dag_processing.dagbag import DagBag

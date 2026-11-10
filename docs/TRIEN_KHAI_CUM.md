@@ -139,6 +139,7 @@ bash scripts/cum/ssh_tat_ca.sh "cd ~/bd03_khuyen_nghi && bash scripts/cum/khoi_d
 bash scripts/cum/ssh_tat_ca.sh --song-song "nproc; free -g | head -2"
 bash scripts/cum/ssh_tat_ca.sh --tty "sudo apt-get install -y chrony"     # lệnh cần mật khẩu sudo
 bash scripts/cum/ssh_tat_ca.sh --song-song --chay-tep scripts/cum/khao_sat_may.sh   # khảo sát lõi, RAM, đĩa, Docker, repo của cả 6 máy
+bash scripts/cum/do_mang.sh                                                # đo mạng: Wi-Fi, ping chéo, tốc độ tải (mục 10b)
 ssh -t labsoe-11 tmux new -A -s bd03                                      # vào master trong tmux
 ```
 
@@ -382,6 +383,15 @@ docker exec bd03-airflow-airflow-scheduler-1 airflow dags trigger kn_tai_lap -c 
 
 ### 10b. Đường nối ZeroTier giữa các máy: DIRECT hay RELAY
 
+Đo nhanh từ máy điều khiển, không cần sudo:
+
+```bash
+bash scripts/cum/do_mang.sh              # Wi-Fi + IP LAN + ping chéo 6 máy, rồi tốc độ tải từ master về từng máy
+bash scripts/cum/do_mang.sh --chi-ping   # chỉ phần ping, vài giây
+```
+
+Ping trung bình dưới 20 ms giữa hai máy gần như chắc chắn là nối thẳng; vài chục đến hàng trăm ms là đi qua relay. Tốc độ tải ở phần 2 là con số quyết định HDFS và shuffle chạy nhanh hay chậm: cần vài MB/s trở lên (mốc ngày 10/11/2026 khi còn RELAY: khoảng 0,4 MB/s). Xác nhận chắc chắn bằng bảng đường nối của ZeroTier (mỗi máy hỏi mật khẩu sudo):
+
 ```bash
 bash scripts/cum/ssh_tat_ca.sh --tty "sudo zerotier-cli peers"
 ```
@@ -395,7 +405,7 @@ bash scripts/cum/ssh_tat_ca.sh --tty 'sudo ufw status | head -1; ip -br link | g
 Máy nối Wi-Fi (`wlo1`, `wlp…`) mà không ping được IP mạng nội bộ của máy cùng phòng nghĩa là mạng Wi-Fi đó chặn các máy nói chuyện với nhau (client isolation): tình trạng của phòng labsit ngày 10/11/2026. Cách xử lý, không cần sửa cấu hình cụm vì IP ZeroTier giữ nguyên:
 
 1. Cắm cáp mạng vào cổng `enp44s0` (nếu phòng có ổ mạng dây), ZeroTier tự chuyển sang đường thẳng qua LAN.
-2. Đưa các máy vào cùng một mạng Wi-Fi cho phép các máy thấy nhau (ví dụ mạng mà phòng labsoe đang dùng). Đổi mạng Wi-Fi ngay tại máy, không đổi qua SSH: nếu mạng mới cần đăng nhập trang web thì máy sẽ mất kết nối từ xa.
+2. Đưa các máy vào cùng một mạng Wi-Fi cho phép các máy thấy nhau (ví dụ mạng `LabSoe` mà phòng labsoe đang dùng). Đổi mạng Wi-Fi ngay tại máy, không đổi qua SSH: nếu mạng mới cần đăng nhập trang web thì máy sẽ mất kết nối từ xa. Đổi xong chờ khoảng một phút cho ZeroTier tìm lại đường, rồi chạy `do_mang.sh`. Nếu vẫn chậm, khởi động lại ZeroTier trên máy đó (`sudo systemctl restart zerotier-one`; IP ZeroTier giữ nguyên, cụm tự nối lại sau vài giây). Để máy tự chọn lại mạng này sau khi khởi động lại mà không tắt mạng cũ của người dùng khác: `sudo nmcli connection modify LabSoe connection.autoconnect-priority 100` (tên kết nối xem bằng `nmcli connection show`).
 3. Dùng một router hoặc điểm phát Wi-Fi riêng cho các máy trong cụm.
 4. Nếu tường lửa đang bật, mở cổng ZeroTier: `sudo ufw allow 9993/udp`.
 

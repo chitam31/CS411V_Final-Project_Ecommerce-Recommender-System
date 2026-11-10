@@ -16,6 +16,7 @@
 #   bash scripts/cum/ssh_tat_ca.sh --tty "sudo apt-get install -y chrony"   # lệnh cần gõ mật khẩu sudo
 #   bash scripts/cum/ssh_tat_ca.sh --song-song --chay-tep scripts/cum/khao_sat_may.sh   # chạy một script cục bộ trên từng máy
 #   bash scripts/cum/ssh_tat_ca.sh --dong-bo-ma        # đẩy mã (bản đã commit) sang ~/bd03_khuyen_nghi của từng máy
+#   bash scripts/cum/ssh_tat_ca.sh --liet-ke           # chỉ in "tên IP" của các máy được chọn (dùng trong script khác)
 #
 # Mặc định chọn các máy hạ tầng của cụm (namenode, datanode, spark-master, spark-worker, kafka),
 # tức 6 máy lab; --tat-ca chọn thêm máy web. Máy demo (Windows) không bao giờ được chọn vì đó
@@ -43,6 +44,7 @@ while [ $# -gt 0 ]; do
     --tao-config) CHE_DO="tao_config" ;;
     --chep-khoa) CHE_DO="chep_khoa" ;;
     --dong-bo-ma) CHE_DO="dong_bo_ma" ;;
+    --liet-ke) CHE_DO="liet_ke" ;;
     --) shift; break ;;
     -*) echo "Tùy chọn không hợp lệ: $1" >&2; exit 2 ;;
     *) break ;;
@@ -93,6 +95,7 @@ fi
 
 mapfile -t CAC_MAY < <(chon_may)
 [ ${#CAC_MAY[@]} -gt 0 ] || { echo "Không có máy nào khớp điều kiện chọn" >&2; exit 2; }
+[ "$CHE_DO" = "liet_ke" ] && { printf '%s\n' "${CAC_MAY[@]}"; exit 0; }
 
 # ---------------------------------------------------------------- chép khóa công khai
 if [ "$CHE_DO" = "chep_khoa" ]; then
