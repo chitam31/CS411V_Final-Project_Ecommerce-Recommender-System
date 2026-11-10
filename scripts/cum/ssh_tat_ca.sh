@@ -27,6 +27,10 @@ THU_MUC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SONG_SONG=0; TTY=0; TAT_CA=0; VAI_TRO=""; DS_MAY=""; TEP=""; CHE_DO="lenh"
 SSH_USER_MAC_DINH="${SSH_USER:-hduser}"
 KHOA="${KHOA:-$HOME/.ssh/id_ed25519.pub}"
+# ZeroTier qua máy chuyển tiếp (relay) có thể mất hơn 10 giây để dựng lại đường đi sau khi
+# để yên một lúc: chờ lâu hơn và tự thử lại vài lần thay vì báo "Connection timed out" ngay.
+SSH_CHO="${SSH_CHO:-20}"
+TUY_CHON_NOI=(-o "ConnectTimeout=$SSH_CHO" -o ConnectionAttempts=3)
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -81,7 +85,7 @@ if [ "$CHE_DO" = "tao_config" ]; then
     [[ " ${TAI_KHOAN_SSH:-} " == *" $ten="* ]] || echo "# $ten: chưa khai báo tài khoản trong TAI_KHOAN_SSH, đang dùng mặc định"
     # accept-new: tự nhận khóa của máy lần đầu kết nối (mạng riêng ZeroTier), nhưng vẫn
     # từ chối nếu khóa của máy đã biết bị thay đổi.
-    printf 'Host %s\n    HostName %s\n    User %s\n    IdentityFile ~/.ssh/id_ed25519\n    StrictHostKeyChecking accept-new\n    ServerAliveInterval 30\n\n' \
+    printf 'Host %s\n    HostName %s\n    User %s\n    IdentityFile ~/.ssh/id_ed25519\n    StrictHostKeyChecking accept-new\n    ConnectTimeout 20\n    ConnectionAttempts 3\n    ServerAliveInterval 30\n\n' \
       "$ten" "${dong#* }" "$(tai_khoan "$ten")"
   done
   exit 0
@@ -98,7 +102,7 @@ if [ "$CHE_DO" = "chep_khoa" ]; then
     ten="${dong%% *}"
     echo "===== $ten (${dong#* }): nhập mật khẩu tài khoản trên máy này, chỉ cần một lần"
     # Chỉ thêm khóa nếu chưa có, nên chạy lại nhiều lần cũng không bị trùng dòng.
-    ssh -o ConnectTimeout=8 "$ten" \
+    ssh "${TUY_CHON_NOI[@]}" "$ten" \
       'k=$(cat); mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && (grep -qxF "$k" ~/.ssh/authorized_keys || echo "$k" >> ~/.ssh/authorized_keys)' \
       < "$KHOA" || { echo "!! $ten: chép khóa thất bại"; LOI=1; }
   done
@@ -123,13 +127,13 @@ if [ "$CHE_DO" = "dong_bo_ma" ]; then
   for dong in "${CAC_MAY[@]}"; do
     ten="${dong%% *}"
     echo "===== $ten"
-    if ! ssh -n -o ConnectTimeout=8 "$ten" 'command -v git > /dev/null || { echo "Máy chưa có git: sudo apt-get install -y git"; exit 3; }
+    if ! ssh -n "${TUY_CHON_NOI[@]}" "$ten" 'command -v git > /dev/null || { echo "Máy chưa có git: sudo apt-get install -y git"; exit 3; }
       [ -d ~/bd03_khuyen_nghi/.git ] || git init -q -b main ~/bd03_khuyen_nghi
       git -C ~/bd03_khuyen_nghi config receive.denyCurrentBranch updateInstead'; then
       echo "!! $ten: chưa chuẩn bị được repo trên máy này"; LOI=1; continue
     fi
     if git -C "$THU_MUC" push -q "$ten:bd03_khuyen_nghi" HEAD:main; then
-      ssh -n -o ConnectTimeout=8 "$ten" 'git -C ~/bd03_khuyen_nghi log --oneline -1'
+      ssh -n "${TUY_CHON_NOI[@]}" "$ten" 'git -C ~/bd03_khuyen_nghi log --oneline -1'
     else
       echo "!! $ten: git push thất bại; thường do có tệp bị sửa tay ở đó (ssh $ten 'cd ~/bd03_khuyen_nghi && git status')"
       LOI=1
@@ -150,11 +154,11 @@ fi
 goi_ssh() {  # $1 = tên máy, phần còn lại = tùy chọn ssh bổ sung
   local ten="$1"; shift
   if [ -n "$TEP" ]; then
-    ssh "$@" -o ConnectTimeout=8 "$ten" "$LENH" < "$TEP"
+    ssh "$@" "${TUY_CHON_NOI[@]}" "$ten" "$LENH" < "$TEP"
   elif [ "$TTY" = "1" ]; then
-    ssh -t "$@" -o ConnectTimeout=8 "$ten" "$LENH"
+    ssh -t "$@" "${TUY_CHON_NOI[@]}" "$ten" "$LENH"
   else
-    ssh -n "$@" -o ConnectTimeout=8 "$ten" "$LENH"
+    ssh -n "$@" "${TUY_CHON_NOI[@]}" "$ten" "$LENH"
   fi
 }
 
