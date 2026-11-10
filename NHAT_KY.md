@@ -155,6 +155,7 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 | 19 | `do_zorder.py` hỏng khi ghi `gold.do_hieu_nang_zorder`: `statistics.mean([1, 1, ...])` trả về int 1, Spark từ chối int ở cột DOUBLE (`CANNOT_ACCEPT_OBJECT_IN_TYPE`) | Bước 8 pipeline mẫu trên cụm 10/11 | `tao_df` tự ép int sang float cho cột DOUBLE/FLOAT theo DDL (áp dụng cho mọi bảng); `do_zorder` in số đo ra log trước khi ghi; kiểm thử hồi quy |
 | 20 | Chạy lại bộ phát (bước chuẩn bị demo `--tu-ngay-ms`) sẽ làm hỏng silver: `ma_su_kien` băm cả offset Kafka nên bản phát lại có mã mới, lọt qua `dropDuplicates`; bước lọc bot đếm gấp đôi và loại nhầm user thật có 251–500 sự kiện/giờ. Người dùng mới `moi_<n>` (hạt giống cố định) cũng bị trùng mã với lần phát đầu | Rà soát trước khi bật bộ phát lần hai (10/11, tối) | `bo_ban_sao_noi_dung` trong `bronze_to_silver` bỏ trùng theo user–item–loại–thời điểm trước khi lọc bot; kiểm thử phát hai lần cho silver giống phát một lần. Lần phát lại dùng `--ty-le-nguoi-moi 0` |
 | 21 | `airflow-apiserver` khởi động lại liên tục: `PermissionError` khi mở `mat_khau.json` — SimpleAuthManager mở tệp mật khẩu ở chế độ `"a+"` (cần quyền ghi), còn container chạy bằng uid 50000 trong khi tệp thuộc hduser. Cùng nguyên nhân, task sẽ không ghi được `jobs/common.zip` vào thư mục dự án | Lần đầu bật Airflow trên master, 10/11 tối | Compose chạy Airflow bằng `AIRFLOW_UID` (uid chủ thư mục dự án, nhóm 0) như compose chính thức; `tao_cau_hinh_airflow.sh` ghi `AIRFLOW_UID`, bổ sung vào `.env` cũ, đặt `mat_khau.json` quyền 600; kiểm thử |
+| 22 | Rủi ro thiết kế: DAG bảo trì OPTIMIZE/DELETE `gold.thinh_hanh_15p` và `gold.nhat_ky_hien_thi` trong khi luồng streaming MERGE liên tục vào hai bảng đó. Delta kiểm soát đồng thời kiểu lạc quan: giao dịch commit sau bị từ chối (`Concurrent...Exception`), làm chết luồng (DAG giám sát chỉ tự bật lại luồng thịnh hành) hoặc làm hỏng task bảo trì | Rà soát trước buổi diễn tập, 10/11 tối | `thu_lai_khi_xung_dot` trong `common/spark_utils`: làm lại tối đa 5 lần, chờ tăng dần, chỉ với lỗi xung đột của Delta; dùng cho MERGE của 2 luồng và cho DELETE/OPTIMIZE của `toi_uu_delta`; kiểm thử |
 
 ---
 
@@ -194,11 +195,11 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - [ ] Sửa `so_loi`, `bo_nho` trong `cau_hinh/cum.env` theo `nproc`, `free -g` của từng máy.
 - [x] Push mã lên repo của nhóm (10/11/2026); mọi máy `git clone` cùng một bản.
 - [ ] Chạy `scripts/kiem_tra_cuc_bo.sh` trên một máy có Internet (xác nhận phần Delta).
-- [ ] Triển khai 8 máy theo docs/TRIEN_KHAI_CUM.md; `kiem_tra_cum.sh` không còn `DONG`.
-- [ ] Tải dữ liệu, chạy bộ phát, `chay_lan_dau.sh` với lưới 27 tổ hợp.
-- [ ] Chạy `tien_hoa_luoc_do.py` rồi pipeline lần hai (mô hình v2).
-- [ ] Chạy DAG 5, `do_zorder.py`; bật lịch 4 DAG còn lại.
-- [ ] Điền số liệu vào MO_HINH.md mục 12 và bảng dưới đây; chụp màn hình cho báo cáo.
+- [x] Triển khai cụm theo docs/TRIEN_KHAI_CUM.md (6 máy lab + laptop điều khiển; còn máy web Ctam).
+- [x] Tải dữ liệu, chạy bộ phát, `chay_lan_dau.sh` với lưới 27 tổ hợp (10/11).
+- [~] Chạy `tien_hoa_luoc_do.py` (xong, silver 0 → 2) rồi pipeline lần hai (DAG 1 đang chạy từ 10/11 23:21).
+- [x] Chạy DAG 5 (trùng khớp), `do_zorder.py`; bật lịch `kn_pipeline_hang_ngay`, `kn_tinh_ab`, `kn_bao_tri` (`kn_giam_sat_streaming` bật trước buổi diễn tập).
+- [~] Điền số liệu vào MO_HINH.md mục 12 (còn dòng mô hình v2) và bảng dưới đây; chụp màn hình cho báo cáo (cần web trên Ctam).
 - [ ] Tập dượt kịch bản docs/HUONG_DAN_DEMO.md.
 
 ### Bảng ghi các lần chạy trên cụm
@@ -207,5 +208,6 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 |---|---|---|---|---|---|---|---|
 | 10/11/2026 | Tâm | `chay_lan_dau.sh` (dữ liệu thật RetailRocket, lưới đủ) | `r20261110T075240` | 0 | 2 giờ 8 phút (tuning 78,4 phút) | rank 50, reg 1,0, alpha 40; NDCG@10 0,0680; baseline 0,0051 / 0,0475; uplift +1.237%; coverage 3,4% (`dat_nguong` false); ZORDER nhanh hơn 8,4 lần so với chỉ gộp tệp | Lần chạy chính cho báo cáo |
 | 10/11/2026 | Tâm | `LUOI=toi_thieu chay_lan_dau.sh` (dữ liệu mẫu), chạy lại từ bước 4 | `r20261110T063419` | 0 | bước 4–5: khoảng 29 phút | NDCG@10 0,445; baseline 0,039 / 0,315; coverage 0,70 | Kiểm chứng pipeline, dữ liệu tổng hợp; trước khi sửa lỗi 18 |
-| | | | | | | | |
+| 10/11/2026 | Tâm (từ nhà) | DAG `kn_tai_lap` `{"phien_ban_delta": 0, "che_do": "mo_hinh_chon"}` | `r20261110T075240` | 0 | 23:13–23:28 (bước huấn luyện lại) | Tuning và huấn luyện + đánh giá: độ lệch 0,000000, trùng khớp | MO_HINH mục 12.5 |
+| 10/11/2026 | Airflow (lịch) | DAG `kn_pipeline_hang_ngay`, lưới tối thiểu, sau `tien_hoa_luoc_do` | (đang chạy) | | từ 23:21 | | Mô hình v2 |
 | | | | | | | | |

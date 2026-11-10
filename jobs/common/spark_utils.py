@@ -4,11 +4,50 @@ Toàn bộ thao tác Delta đi qua SQL (MERGE, DESCRIBE HISTORY, VACUUM...) nên
 không cần gói Python delta-spark trên executor.
 """
 import json
+import time
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
 from . import cau_hinh as ch
+
+
+# Tên các ngoại lệ xung đột ghi đồng thời của Delta (optimistic concurrency). Xảy ra khi hai
+# giao dịch cùng sửa một bảng, ví dụ DAG bảo trì OPTIMIZE/DELETE gold.thinh_hanh_15p đúng lúc
+# luồng thịnh hành MERGE vào đó: giao dịch commit sau bị từ chối và phải làm lại.
+XUNG_DOT_DELTA = (
+    "ConcurrentAppendException",
+    "ConcurrentDeleteReadException",
+    "ConcurrentDeleteDeleteException",
+    "ConcurrentTransactionException",
+    "ConcurrentWriteException",
+    "MetadataChangedException",
+    "ProtocolChangedException",
+)
+
+
+def la_xung_dot_delta(loi):
+    """Ngoại lệ có phải xung đột ghi đồng thời của Delta không (qua PySpark, tên lớp Java
+    nằm trong thông điệp lỗi)."""
+    van_ban = "{} {}".format(type(loi).__name__, loi)
+    return any(ten in van_ban for ten in XUNG_DOT_DELTA)
+
+
+def thu_lai_khi_xung_dot(ham, so_lan=5, cho_giay=3.0, ngu=time.sleep):
+    """Gọi ham(); nếu Delta từ chối vì xung đột ghi đồng thời thì chờ rồi làm lại, tối đa so_lan.
+
+    An toàn vì giao dịch bị từ chối chưa ghi gì; các lệnh dùng hàm này đều là MERGE theo khóa
+    hoặc OPTIMIZE/DELETE, chạy lại cho cùng kết quả. Lỗi khác ném ra ngay.
+    """
+    for lan in range(1, so_lan + 1):
+        try:
+            return ham()
+        except Exception as loi:  # noqa: BLE001 - lọc bằng la_xung_dot_delta ngay dưới
+            if lan == so_lan or not la_xung_dot_delta(loi):
+                raise
+            print("[xung_dot_delta] lần {}: {}; thử lại sau {:.0f} giây".format(
+                lan, type(loi).__name__, cho_giay * lan), flush=True)
+            ngu(cho_giay * lan)
 
 
 def tao_spark(ten_app, cau_hinh_them=None):

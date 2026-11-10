@@ -16,7 +16,7 @@ from pyspark.sql import functions as F
 from common import cau_hinh as ch
 from common.luoc_do import LUOC_DO_SU_KIEN
 from common.nguon_luong import dat_nhip, doc_luong
-from common.spark_utils import bang_ton_tai, doc_delta, sql_bang, tao_spark
+from common.spark_utils import bang_ton_tai, doc_delta, sql_bang, tao_spark, thu_lai_khi_xung_dot
 
 
 def lay_su_kien(df_tho):
@@ -78,7 +78,8 @@ def ghi_lo(lo, so_lo):
     else:
         trung_binh = spark.createDataFrame([], "ma_san_pham string, trung_binh_24h double")
     tinh_diem(lo, trung_binh).createOrReplaceTempView("lo_thinh_hanh")
-    spark.sql(
+    # DAG bảo trì có thể OPTIMIZE/DELETE bảng này cùng lúc: làm lại thay vì để cả luồng dừng.
+    thu_lai_khi_xung_dot(lambda: spark.sql(
         """
         MERGE INTO {dich} AS t
         USING lo_thinh_hanh AS s
@@ -88,7 +89,7 @@ def ghi_lo(lo, so_lo):
         WHEN MATCHED THEN UPDATE SET *
         WHEN NOT MATCHED THEN INSERT *
         """.format(dich=sql_bang("gold.thinh_hanh_15p"))
-    )
+    ))
 
 
 def main():

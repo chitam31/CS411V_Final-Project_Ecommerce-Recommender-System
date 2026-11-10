@@ -13,7 +13,7 @@ from pyspark.sql import functions as F
 from common import cau_hinh as ch
 from common.luoc_do import LUOC_DO_HIEN_THI
 from common.nguon_luong import dat_nhip, doc_luong
-from common.spark_utils import sql_bang, tao_spark
+from common.spark_utils import sql_bang, tao_spark, thu_lai_khi_xung_dot
 
 
 def gop_theo_hien_thi(lo):
@@ -53,7 +53,8 @@ def ghi_lo(lo, so_lo):
     """Chèn impression mới và cập nhật cờ click/mua; chạy lại lô cũng không nhân đôi."""
     spark = lo.sparkSession
     gop_theo_hien_thi(lo).createOrReplaceTempView("lo_hien_thi")
-    spark.sql(
+    # DAG bảo trì có thể OPTIMIZE bảng này cùng lúc: làm lại thay vì để cả luồng dừng.
+    thu_lai_khi_xung_dot(lambda: spark.sql(
         """
         MERGE INTO {dich} AS t
         USING lo_hien_thi AS s
@@ -64,7 +65,7 @@ def ghi_lo(lo, so_lo):
         WHEN NOT MATCHED AND s.thoi_diem_hien_thi IS NOT NULL
           THEN INSERT *
         """.format(dich=sql_bang("gold.nhat_ky_hien_thi"))
-    )
+    ))
 
 
 def main():

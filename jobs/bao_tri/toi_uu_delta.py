@@ -6,7 +6,7 @@ cũ phục vụ tái lập không bị xóa sớm.
 """
 import argparse
 
-from common.spark_utils import bang_ton_tai, in_ket_qua, so_tep, sql_bang, tao_spark
+from common.spark_utils import bang_ton_tai, in_ket_qua, so_tep, sql_bang, tao_spark, thu_lai_khi_xung_dot
 
 # bảng -> cột ZORDER (None = chỉ gộp tệp nhỏ)
 BANG_TOI_UU = [
@@ -29,18 +29,20 @@ def main():
     ket_qua = {}
 
     # Xóa trước rồi mới gộp tệp, để OPTIMIZE không phải ghi lại dữ liệu sắp bị xóa.
+    # gold.thinh_hanh_15p và gold.nhat_ky_hien_thi đang được luồng streaming MERGE liên tục:
+    # mọi lệnh ghi ở đây đi qua thu_lai_khi_xung_dot để không hỏng vì xung đột ghi đồng thời.
     if bang_ton_tai(spark, "gold.goi_y_nguoi_dung"):
-        spark.sql(
+        thu_lai_khi_xung_dot(lambda: spark.sql(
             "DELETE FROM {} WHERE sinh_luc < current_timestamp() - INTERVAL {} DAYS".format(
                 sql_bang("gold.goi_y_nguoi_dung"), int(args.so_ngay_giu_goi_y)
             )
-        )
+        ))
     if bang_ton_tai(spark, "gold.thinh_hanh_15p"):
-        spark.sql(
+        thu_lai_khi_xung_dot(lambda: spark.sql(
             "DELETE FROM {} WHERE cua_so_ket_thuc < current_timestamp() - INTERVAL 2 DAYS".format(
                 sql_bang("gold.thinh_hanh_15p")
             )
-        )
+        ))
 
     for ten, cot_zorder in BANG_TOI_UU:
         if not bang_ton_tai(spark, ten):
@@ -49,7 +51,7 @@ def main():
         lenh = "OPTIMIZE {}".format(sql_bang(ten))
         if cot_zorder:
             lenh += " ZORDER BY ({})".format(cot_zorder)
-        spark.sql(lenh)
+        thu_lai_khi_xung_dot(lambda: spark.sql(lenh))
         if not args.bo_qua_vacuum:
             spark.sql("VACUUM {}".format(sql_bang(ten)))
         ket_qua[ten] = {"so_tep_truoc": truoc, "so_tep_sau": so_tep(spark, ten), "zorder": cot_zorder}
