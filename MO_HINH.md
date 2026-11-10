@@ -178,7 +178,15 @@ $$
 e^{-\lambda(c-d)} \cdot e^{-\lambda(e-c)} = e^{-\lambda(e-d)}.
 $$
 
-Chỉ sinh top-20 bằng `recommendForUserSubset` cho user **hoạt động trong 30 ngày cuối và có ≥ 5 tương tác** (rủi ro "recommendForAllUsers quá chậm", mục 3.10). User còn lại đi theo chiến lược cold start.
+Chỉ sinh gợi ý bằng `recommendForUserSubset` cho user **hoạt động trong 30 ngày cuối và có ≥ 5 tương tác** (rủi ro "recommendForAllUsers quá chậm", mục 3.10). User còn lại đi theo chiến lược cold start.
+
+**Xếp lại theo độ mới** (từ 10/11/2026, theo kết quả mục 12.2): lấy dư `SO_UNG_VIEN_XEP_LAI` = 200 ứng viên ALS mỗi user, chấm lại bằng
+
+$$
+\text{điểm mới} = \widehat{r}_{ui} + \beta \cdot \widehat{\text{nov}}_i, \qquad \beta = 1{,}0,
+$$
+
+trong đó $\widehat{r}_{ui}$ là điểm ALS và $\widehat{\text{nov}}_i = -\log_2(\text{tỷ lệ user đã tương tác với } i)$, cả hai chuẩn hóa min–max trong 200 ứng viên của chính user đó. Giữ 20 món đầu (40 với mô hình v2). Novelty tính trên đúng ma trận dùng để fit mô hình phục vụ. `diem_du_doan` vẫn là điểm ALS gốc; thứ tự mới nằm ở `xep_hang`, và bước trộn sắp ứng viên ALS theo `xep_hang`. `danh_gia.py` đo riêng đúng cấu hình này (`chi_tiet_json.phuc_vu`) bên cạnh ALS thuần; quyết định triển khai vẫn dựa trên ALS thuần để so được với các phiên bản trước. Đặt `BETA_XEP_LAI = 0` trong `cau_hinh.py` để quay về ALS thuần.
 
 ---
 
@@ -331,7 +339,7 @@ Số liệu xuất bằng `jobs/kiem_tra/xuat_ket_qua.py` từ `gold.lich_su_hua
 - Tập ứng viên rộng hơn (200 so với 50) chỉ có tác dụng khi β đủ lớn (từ 1,0): với β nhỏ, các item ngoài top-50 không vượt lên được.
 - **Không cấu hình nào đạt Coverage 10%** (cao nhất 7,21%). Lý do gốc: trong 126.230 item của train, phần lớn chỉ có 1–2 tương tác nên vector ẩn gần 0 và không lọt nổi top-200 của bất kỳ user nào. Muốn vượt 10% cần nguồn ứng viên khác ngoài ALS: ứng viên theo danh mục (baseline danh mục một mình đã đạt 5,28%), item mới (đã có ở bước trộn: 20% vị trí cuối), hoặc mở rộng lưới (coverage tăng theo rank và alpha: rank 100, alpha 80).
 - Lưu ý phương pháp: β và cỡ tập ứng viên được chọn trên chính tập test, nên số liệu của cấu hình tốt nhất là lạc quan. Quy trình đúng là tách thêm một tập validation theo thời gian (ví dụ 30 ngày cuối của giai đoạn train) để chọn β, rồi báo cáo trên test.
-- Đề xuất: dùng re-ranking 200 ứng viên, β = 1,0 cho danh sách ALS phục vụ (hiện `sinh_goi_y_toan_bo.py` lấy 20 ứng viên, chưa xếp lại).
+- Đã áp dụng cấu hình 200 ứng viên, β = 1,0 cho danh sách ALS phục vụ (mục 6, `BETA_XEP_LAI`, `SO_UNG_VIEN_XEP_LAI` trong `cau_hinh.py`); triển khai lại cho `r20261110T075240` bằng `scripts/trien_khai_lai.sh` (không tuning lại).
 
 ### 12.3 A/B (traffic mô phỏng, `tang_thinh_hanh` = 0)
 

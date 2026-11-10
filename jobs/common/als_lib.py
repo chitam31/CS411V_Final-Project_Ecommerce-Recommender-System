@@ -358,6 +358,16 @@ def danh_gia_day_du(spark, mo_hinh, train, thuc_te, ghi_chu, cac_beta=(0.1, 0.3)
         xep_lai[str(beta)] = tinh_chi_so(ds_r, thuc_te, pho_bien, so_item, so_nguoi_train, k)
         phan_phoi["xep_lai_beta_{}".format(beta)] = phan_phoi_pho_bien(ds_r, pho_bien, k)
 
+    # Đúng cấu hình xếp lại mà sinh_goi_y_toan_bo.py dùng để phục vụ (MO_HINH.md mục 6).
+    phuc_vu = None
+    if ch.BETA_XEP_LAI > 0:
+        ds_p = xep_lai_theo_novelty(
+            mo_hinh, thuc_te, pho_bien, so_nguoi_train, ch.BETA_XEP_LAI, k, ch.SO_UNG_VIEN_XEP_LAI
+        ).cache()
+        phuc_vu = tinh_chi_so(ds_p, thuc_te, pho_bien, so_item, so_nguoi_train, k)
+        phuc_vu.update({"beta": ch.BETA_XEP_LAI, "so_ung_vien": ch.SO_UNG_VIEN_XEP_LAI})
+        phan_phoi["phuc_vu"] = phan_phoi_pho_bien(ds_p, pho_bien, k)
+
     # Tổng toàn catalog để tính coverage trên toàn sàn (235.000 sản phẩm ở dữ liệu thật).
     so_item_toan_san = so_item
     if bang_ton_tai(spark, "silver.san_pham"):
@@ -380,6 +390,7 @@ def danh_gia_day_du(spark, mo_hinh, train, thuc_te, ghi_chu, cac_beta=(0.1, 0.3)
         "baseline_danh_muc": m_b2,
         "loc_tam_gia_v2": m_v2,
         "xep_lai_novelty": xep_lai,
+        "phuc_vu": phuc_vu,
         "phan_phoi_pho_bien": phan_phoi,
         "so_item_catalog_als": so_item,
         "so_item_toan_san": so_item_toan_san,

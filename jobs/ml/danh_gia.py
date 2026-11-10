@@ -136,6 +136,8 @@ def main():
             "coverage": m["coverage"],
             "ndcg_mo_hinh_cu": dong_cu.get("ndcg_at_10") if dong_cu else None,
             "ndcg_v2_loc_tam_gia": chi_tiet["loc_tam_gia_v2"]["ndcg_at_10"] if la_v2 else None,
+            "ndcg_phuc_vu": (chi_tiet.get("phuc_vu") or {}).get("ndcg_at_10"),
+            "coverage_phuc_vu": (chi_tiet.get("phuc_vu") or {}).get("coverage"),
         }
     )
 

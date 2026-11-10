@@ -103,6 +103,13 @@ SO_GIA_TOI_THIEU = 3        # cần ít nhất 3 tương tác có giá mới xá
 BIEN_TAM_GIA = 0.5
 HE_SO_UNG_VIEN_V2 = 2       # lấy dư gấp đôi ứng viên ALS để sau khi lọc vẫn đủ danh sách
 
+# Xếp lại danh sách ALS phục vụ theo độ mới (MO_HINH.md mục 6, 12.2): lấy dư 200 ứng viên,
+# điểm xếp lại = điểm ALS chuẩn hóa + 1,0 x novelty chuẩn hóa. Trên dữ liệu thật 10/11/2026,
+# cấu hình này cho NDCG@10 +27% và coverage +88% so với ALS thuần. BETA_XEP_LAI = 0 thì quay
+# về ALS thuần (xếp theo điểm ALS, đúng số ứng viên cần dùng).
+BETA_XEP_LAI = 1.0
+SO_UNG_VIEN_XEP_LAI = 200
+
 # Thời gian lưu lịch sử Delta: phải dài hơn khoảng cần tái lập thí nghiệm,
 # nếu không VACUUM mặc định 7 ngày sẽ xóa mất file của phiên bản cũ.
 GIU_FILE_DA_XOA = "interval 30 days"

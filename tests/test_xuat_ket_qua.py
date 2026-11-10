@@ -13,6 +13,7 @@ def _lich_su():
         "baseline_danh_muc": dict(m, ndcg_at_10=0.03),
         "loc_tam_gia_v2": None,
         "xep_lai_novelty": {"0.1": dict(m, coverage=0.05), "0.3": dict(m, coverage=0.09)},
+        "phuc_vu": dict(m, ndcg_at_10=0.0865, coverage=0.0647, beta=1.0, so_ung_vien=200),
         "phan_phoi_pho_bien": {"als": [0.6, 0.2, 0.1, 0.05, 0.05, 0, 0, 0, 0, 0]},
         "so_item_catalog_als": 235061, "so_item_toan_san": 417053, "so_nguoi_train": 179999, "so_nguoi_test": 9000,
     }
@@ -29,7 +30,8 @@ def test_dinh_dang_so():
 def test_bang_phuong_phap_va_thong_tin():
     bang = bang_phuong_phap(_lich_su())
     dong = bang.splitlines()
-    assert len(dong) == 2 + 5  # tiêu đề, gạch, 2 baseline, ALS, 2 re-ranking; v2 None thì không có dòng
+    assert len(dong) == 2 + 6  # tiêu đề, gạch, 2 baseline, ALS, 2 re-ranking, phục vụ; v2 None thì không có
+    assert "Phục vụ: ALS + xếp lại β = 1.0, 200 ứng viên" in bang and "0.0865" in bang
     assert "ALS (rank=50, reg=0.01, alpha=40.0)" in bang and "re-ranking novelty β = 0.3" in bang
     tt = thong_tin_mo_hinh(_lich_su())
     assert "235.061" in tt and "`dat_nguong` = không" in tt and "235.0%" in tt

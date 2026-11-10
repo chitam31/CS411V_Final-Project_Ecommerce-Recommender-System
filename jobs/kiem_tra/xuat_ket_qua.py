@@ -63,6 +63,9 @@ def bang_phuong_phap(lich_su):
     ]
     for beta, m in sorted((ct.get("xep_lai_novelty") or {}).items()):
         dong.append(("ALS + re-ranking novelty β = {}".format(beta), m))
+    if ct.get("phuc_vu"):
+        pv = ct["phuc_vu"]
+        dong.append(("**Phục vụ: ALS + xếp lại β = {}, {} ứng viên**".format(pv.get("beta"), pv.get("so_ung_vien")), pv))
     if ct.get("loc_tam_gia_v2"):
         dong.append(("Mô hình v2: ALS + lọc tầm giá", ct["loc_tam_gia_v2"]))
     return bang_md(
@@ -154,6 +157,28 @@ def mo_ta_ab_gop(g, so_ngay):
     ])
 
 
+def phu_danh_sach_phuc_vu(spark, lich_su):
+    """Độ phủ danh mục của danh sách thật sự phục vụ, trên mọi user (không chỉ user test).
+
+    Khác Coverage ở mục Mô hình (chỉ top-10 ALS của user test): đây là toàn bộ 20 vị trí của
+    mọi user trong gold, gồm cả ô thịnh hành và ô phổ biến theo danh mục.
+    """
+    gold = doc_delta(spark, "gold.goi_y_nguoi_dung")
+    tong = gold.agg(F.count("*").alias("dong"), F.countDistinct("ma_nguoi_dung").alias("nguoi"),
+                    F.countDistinct("ma_san_pham").alias("item")).first()
+    theo_nguon = gold.groupBy("nguon").agg(F.count("*").alias("dong"), F.countDistinct("ma_san_pham").alias("item")).collect()
+    ct = json.loads((lich_su or {}).get("chi_tiet_json") or "{}")
+    so_item_train = ct.get("so_item_catalog_als")
+    so_item_san = ct.get("so_item_toan_san")
+    dong = ["- {} user, {} dòng, {} sản phẩm khác nhau".format(so(tong["nguoi"]), so(tong["dong"]), so(tong["item"]))
+            + (" = {} số item trong train ({}), {} toàn sàn ({})".format(
+                phan_tram(tong["item"] / float(so_item_train)), so(so_item_train),
+                phan_tram(tong["item"] / float(so_item_san)), so(so_item_san)) if so_item_train and so_item_san else "")]
+    return "\n".join(dong) + "\n\n" + bang_md(
+        ["Nguồn", "Số ô", "Sản phẩm khác nhau"],
+        [[d["nguon"], so(d["dong"]), so(d["item"])] for d in sorted(theo_nguon, key=lambda d: -d["dong"])])
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ma-chay", default=None, help="Mặc định: lần huấn luyện mới nhất")
@@ -172,6 +197,9 @@ def main():
         ra += ["", "## Mô hình", "", thong_tin_mo_hinh(lich_su), "", bang_phuong_phap(lich_su),
                "", "### Phân phối độ phổ biến của danh sách gợi ý (N1 = 10% item phổ biến nhất)", "",
                bang_pho_bien(lich_su)]
+    if bang_ton_tai(spark, "gold.goi_y_nguoi_dung"):
+        ra += ["", "## Danh sách đang phục vụ (`gold.goi_y_nguoi_dung`)", "", phu_danh_sach_phuc_vu(spark, lich_su)]
+
     ma_chay = args.ma_chay or (lich_su or {}).get("ma_chay")
     if ma_chay and bang_ton_tai(spark, "gold.ket_qua_tuning"):
         dong = [r.asDict() for r in doc_delta(spark, "gold.ket_qua_tuning").filter(F.col("ma_chay") == ma_chay).collect()]

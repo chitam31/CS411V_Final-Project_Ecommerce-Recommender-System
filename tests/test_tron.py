@@ -13,6 +13,7 @@ from common.tron import (
     ten_phien_ban_mo_hinh,
     thay_o_thinh_hanh,
     xep_lai_novelty,
+    xep_ung_vien_phuc_vu,
 )
 
 
@@ -100,3 +101,14 @@ def test_ten_phien_ban_mo_hinh():
     assert ten_phien_ban_mo_hinh("r1", False) == "als_r1"
     assert ten_phien_ban_mo_hinh("r1", True) == "als_v2_r1"
     assert la_mo_hinh_v2("als_v2_r1") and not la_mo_hinh_v2("als_r1") and not la_mo_hinh_v2(None)
+
+
+def test_xep_ung_vien_phuc_vu():
+    """beta = 0 giữ thứ tự ALS và cắt đúng số món; beta > 0 xếp lại nhưng giữ điểm ALS gốc."""
+    ung_vien = [("pho_bien", 0.9), ("vua", 0.8), ("hiem", 0.7), ("rat_hiem", 0.1)]
+    nov = {"pho_bien": 1.0, "vua": 5.0, "hiem": 9.0, "rat_hiem": 12.0}
+    assert xep_ung_vien_phuc_vu(ung_vien, nov, 0.0, 2) == [("pho_bien", 0.9), ("vua", 0.8)]
+    ket_qua = xep_ung_vien_phuc_vu(ung_vien, nov, 1.0, 3)
+    assert len(ket_qua) == 3 and ket_qua[0] == ("hiem", 0.7)  # 0,75 + 0,73 cao nhất
+    assert dict(ket_qua) == {i: d for i, d in ung_vien if i in dict(ket_qua)}
+    assert xep_ung_vien_phuc_vu([], nov, 1.0, 3) == []

@@ -111,7 +111,7 @@ Job bổ sung: `streaming/ghi_hien_thi.py`, `transform/nhap_danh_muc.py`, `trans
 | ALS OOM với 1,4 triệu user | `--min-tuong-tac 3`; `--so-khoi` (numBlocks); hồ sơ `als` riêng | T |
 | Không đủ traffic cho A/B | `transform/mo_phong_hien_thi.py` (phụ thuộc vị trí + độ liên quan), nhãn `mo_phong`, `ty_le_mo_phong` trên web | T |
 | `recommendForAllUsers` quá chậm | `recommendForUserSubset` cho user hoạt động 30 ngày, còn lại fallback danh mục | T |
-| Coverage quá thấp | Phân tích phân phối độ phổ biến + re-ranking novelty (β = 0,1; 0,3) | T |
+| Coverage quá thấp | Phân tích phân phối độ phổ biến + re-ranking novelty (β = 0,1; 0,3); quét β × số ứng viên (`kiem_tra/thu_xep_lai.py`); danh sách phục vụ xếp lại với 200 ứng viên, β = 1,0 (`sinh_goi_y_toan_bo.py`, MO_HINH.md mục 6, 12.2) | T, C (số liệu) |
 
 ## 3.11 Danh mục nghiệm thu
 

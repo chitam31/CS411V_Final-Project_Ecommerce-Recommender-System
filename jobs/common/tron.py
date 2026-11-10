@@ -140,6 +140,18 @@ def thay_o_thinh_hanh(danh_sach, thinh_hanh_moi):
     return ket_qua
 
 
+def xep_ung_vien_phuc_vu(ung_vien, novelty_theo_item, beta, so_lay):
+    """Danh sách ALS phục vụ: (item, diem_als) đã sắp theo điểm ALS -> so_lay món.
+
+    beta > 0: xếp lại theo xep_lai_novelty trên toàn bộ ứng viên lấy dư; beta = 0: giữ thứ tự
+    ALS. Điểm trả về luôn là điểm ALS gốc (diem_du_doan), thứ tự mới nằm ở vị trí trong list.
+    """
+    if beta <= 0:
+        return list(ung_vien[:so_lay])
+    diem = dict(ung_vien)
+    return [(i, diem[i]) for i in xep_lai_novelty(ung_vien, novelty_theo_item, beta, so_lay)]
+
+
 def xep_lai_novelty(ung_vien, novelty_theo_item, beta, k):
     """Giảm popularity bias: điểm mới = điểm ALS chuẩn hóa + beta x novelty chuẩn hóa.
 
