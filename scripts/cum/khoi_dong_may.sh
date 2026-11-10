@@ -7,6 +7,7 @@
 #   bash scripts/cum/khoi_dong_may.sh --in-thu     # chỉ in lệnh, không chạy
 #   bash scripts/cum/khoi_dong_may.sh --dung       # dừng các dịch vụ của máy này
 #   bash scripts/cum/khoi_dong_may.sh --build      # buộc build lại ảnh bd03/spark (sau khi sửa Dockerfile)
+#   ZT_MTU=1280 bash scripts/cum/khoi_dong_may.sh   # máy ở ngoài trường: hạ MTU card ZeroTier (cần sudo)
 set -euo pipefail
 THU_MUC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$THU_MUC/cau_hinh/cum.env"
@@ -47,6 +48,18 @@ du_an_hdfs() {  # project compose của HDFS trên máy này (để dùng lại 
 }
 DU_AN_HDFS="$(du_an_hdfs)"
 echo "== Máy $TEN ($NODE_IP), vai trò: $VAI_TRO, project HDFS: $DU_AN_HDFS"
+
+# Đường mạng ngoài trường (vd. Wi-Fi ở nhà) làm rớt gói ZeroTier lớn: ping 1300 byte qua được,
+# 1400 byte thì mất hết, nên TCP treo khi đọc khối HDFS. Hạ MTU của card ZeroTier (mặc định 2800)
+# để mọi gói đủ nhỏ. Thiết lập mất khi khởi động lại máy/WSL hoặc dịch vụ ZeroTier.
+if [ -n "${ZT_MTU:-}" ]; then
+  CARD_ZT="$( (ip -4 -o addr show 2>/dev/null || true) | awk -v ip="$NODE_IP" '$4 ~ "^"ip"/" {print $2; exit}')"
+  if [ -n "$CARD_ZT" ]; then
+    chay sudo ip link set "$CARD_ZT" mtu "$ZT_MTU"
+  else
+    echo "!! Không thấy card mạng mang IP $NODE_IP, bỏ qua ZT_MTU"
+  fi
+fi
 
 # Tệp .env cho từng docker compose (không đưa lên Git). Tệp được sinh lại mỗi lần chạy;
 # cấu hình riêng của máy (mật khẩu, WEB_CHE_DO...) đặt trong .env.rieng cùng thư mục,

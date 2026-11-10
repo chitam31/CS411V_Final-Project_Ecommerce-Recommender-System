@@ -268,13 +268,25 @@ Bộ phát được bật ở bước 8.
 
 ## 5. Máy 7 — Ctam (10.68.71.205): web
 
+Ctam là Ubuntu 24.04 chạy trong WSL2 trên laptop `whitehathacker`, có ZeroTier riêng bên trong WSL
+(card `zt...` mang 10.68.71.205; Windows giữ 10.68.71.182). Mã lấy bằng cách clone repo trên ổ D,
+không cần tài khoản GitHub: `git clone "/mnt/d/BIG DATA/bd03_khuyen_nghi" ~/bd03_khuyen_nghi`;
+cập nhật thì `git pull` bên Windows trước rồi `git pull` trong WSL.
+
 ```bash
 cd ~/bd03_khuyen_nghi
 # Cấu hình riêng của máy: khoi_dong_may.sh nối tệp này vào ha_tang/web/.env mỗi lần chạy.
-echo "AIRFLOW_PASS=<mật khẩu admin Airflow>" > ha_tang/web/.env.rieng   # để nút "Chạy lại mô hình" gọi được DAG 5
-bash scripts/cum/khoi_dong_may.sh        # build bd03/spark nếu chưa có, rồi build và chạy bd03-web
+# Để nút "Chạy lại mô hình" gọi được DAG 5; read -s để mật khẩu không vào lịch sử lệnh.
+read -rs -p "Mật khẩu admin Airflow: " MK && printf 'AIRFLOW_PASS=%s\n' "$MK" > ha_tang/web/.env.rieng && chmod 600 ha_tang/web/.env.rieng; unset MK; echo
+bash scripts/cum/khoi_dong_may.sh                 # ở trường; ở nhà: ZT_MTU=1280 bash scripts/cum/khoi_dong_may.sh
 curl -s http://localhost:8000/api/suc-khoe        # {"che_do": "delta", "kafka": "GuiKafka"}
 ```
+
+**Chạy từ ngoài trường.** Đường mạng ở nhà làm rớt gói ZeroTier lớn (đo 11/11: `ping -M do -s 1300`
+tới master qua được, `-s 1400` mất 100 %), nên TCP treo khi đọc khối HDFS. `ZT_MTU=1280` hạ MTU
+card ZeroTier (mặc định 2800) trước khi bật web; thiết lập mất khi khởi động lại WSL. Kiểm tra:
+`ping -c 2 -M do -s 1200 10.68.71.113` phải qua. Trên laptop, mở web ở `http://localhost:8000`
+(WSL2 chuyển tiếp cổng sang Windows).
 
 Web dùng `network_mode: host` vì Spark cục bộ trong web phải nói chuyện trực tiếp với các DataNode qua ZeroTier.
 

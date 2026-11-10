@@ -134,6 +134,8 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - 00:11, 01:01: hai lượt `kn_tinh_ab` (23:21, 00:11) failed do `dagrun_timeout` 50 phút khi xếp hàng sau DAG 1 và DAG bảo trì trong pool 1 chỗ (lỗi 24); các lượt 01:01, 02:00, 03:00 thành công và đọc nối Change Data Feed nên không mất dữ liệu.
 - 03:44: đưa 2e8663a (thử lại khi xung đột Delta) lên master bằng `--may labsoe-11 --dong-bo-ma`, khởi động lại luồng thịnh hành và hiển thị trong tmux (`app-...-0066`, `-0065`); DAG bảo trì 04:00 chạy bằng mã mới.
 - 03:50: sửa lỗi 23 — lưới tuning luôn có thêm tổ hợp của mô hình đang phục vụ; DAG 1 có tham số `bo_qua_cho_du_lieu` cho lần chạy tay.
+- 04:05: kích hoạt tay DAG 1 (`bo_qua_cho_du_lieu: true`); lượt chờ vì `max_active_runs = 1` và lượt 02:00 còn giữ chỗ tới khi sensor hết hạn (08:00).
+- 04:15–04:20: chuẩn bị web trên Ctam (WSL2 trong laptop, ZeroTier 10.68.71.205). Từ nhà, ping 1300 byte tới master qua được, 1400 byte mất hết (lỗi 25); sau khi hạ MTU card ZeroTier xuống 1280, gói 1200 byte tới master, labsit, labsit12, labsoe-18 đều qua, cổng Kafka 9092 mở, tải tệp qua DataNode (WebHDFS) mã 200.
 
 ---
 
@@ -165,6 +167,7 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 | 22 | Rủi ro thiết kế: DAG bảo trì OPTIMIZE/DELETE `gold.thinh_hanh_15p` và `gold.nhat_ky_hien_thi` trong khi luồng streaming MERGE liên tục vào hai bảng đó. Delta kiểm soát đồng thời kiểu lạc quan: giao dịch commit sau bị từ chối (`Concurrent...Exception`), làm chết luồng (DAG giám sát chỉ tự bật lại luồng thịnh hành) hoặc làm hỏng task bảo trì | Rà soát trước buổi diễn tập, 10/11 tối | `thu_lai_khi_xung_dot` trong `common/spark_utils`: làm lại tối đa 5 lần, chờ tăng dần, chỉ với lỗi xung đột của Delta; dùng cho MERGE của 2 luồng và cho DELETE/OPTIMIZE của `toi_uu_delta`; kiểm thử |
 | 23 | Lần chạy hằng ngày không bao giờ thay được mô hình: lưới tối thiểu cố định alpha = 10, còn mô hình đang phục vụ chọn từ lưới đầy đủ có alpha = 40. Trên cùng dữ liệu, tổ hợp tốt nhất alpha = 10 (0,0574) luôn thấp hơn 0,0680 quá dung sai 1%, nên DAG luôn giữ mô hình cũ, kể cả khi lược đồ đổi sang v2 | Lượt DAG 1 đêm 10/11 (giữ mô hình cũ dù v2 tốt hơn v1 ở cùng siêu tham số) | `them_to_hop_dang_phuc_vu`: `huan_luyen_als` thêm tổ hợp của mô hình đang phục vụ vào cuối lưới nếu chưa có (ghi vào ghi chú commit của `gold.ket_qua_tuning`); `--khong-them-dang-phuc-vu` để tắt. Sensor DAG 1 nhận `bo_qua_cho_du_lieu` cho lần chạy tay; kiểm thử |
 | 24 | `kn_tinh_ab` (mỗi giờ, `dagrun_timeout` 50 phút) failed hai lượt liên tiếp khi task phải chờ chỗ trong pool 1 chỗ sau DAG 1 và DAG bảo trì | Lượt đêm 10/11 | Không mất dữ liệu (đọc nối CDF từ phiên bản đã xử lý). Giữ pool 1 chỗ ban đêm vì RAM master; ban ngày và khi demo đặt pool 2 chỗ (TRIEN_KHAI_CUM 2.2) |
+| 25 | Web chạy từ nhà sẽ treo khi đọc HDFS: đường mạng ngoài trường rớt gói ZeroTier lớn (ping 1300 byte qua, 1400 byte mất hết), cùng nguyên nhân SSH từ nhà treo ở bước trao khóa | Chuẩn bị web trên Ctam từ nhà, 11/11 sáng sớm | `ZT_MTU=1280 bash scripts/cum/khoi_dong_may.sh` hạ MTU card ZeroTier của máy trước khi bật dịch vụ (TRIEN_KHAI_CUM mục 5); kiểm thử |
 
 ---
 

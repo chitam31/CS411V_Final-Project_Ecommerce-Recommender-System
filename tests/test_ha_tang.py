@@ -530,3 +530,20 @@ def test_sensor_dag1_bo_qua_cho_khi_chay_tay(monkeypatch):
     assert chung.co_du_lieu_moi(params={}) is False
     assert chung.co_du_lieu_moi() is False
     sys.modules.pop("bd03_chung", None)
+
+
+def test_khoi_dong_may_ha_mtu_zerotier(tmp_path):
+    """ZT_MTU: tìm đúng card mang IP ZeroTier của máy và hạ MTU (chỉ in lệnh ở --in-thu);
+    không đặt ZT_MTU thì không đụng tới card mạng."""
+    gia = tmp_path / "ip"
+    gia.write_text("#!/bin/bash\necho '2: eth0    inet 172.19.209.111/20 brd 172.19.223.255 scope global eth0'\n"
+                   "echo '3: ztabc123    inet 10.68.71.205/24 brd 10.68.71.255 scope global ztabc123'\n")
+    gia.chmod(0o755)
+    mt = dict(os.environ, PATH="{}:{}".format(tmp_path, os.environ["PATH"]))
+    lenh = ["bash", os.path.join(GOC, "scripts", "cum", "khoi_dong_may.sh"), "--in-thu"]
+    kq = subprocess.run(lenh, capture_output=True, text=True, env=dict(mt, ZT_MTU="1280"))
+    assert kq.returncode == 0, kq.stdout + kq.stderr
+    assert "== Máy ctam (10.68.71.205)" in kq.stdout
+    assert "+ sudo ip link set ztabc123 mtu 1280" in kq.stdout
+    kq = subprocess.run(lenh, capture_output=True, text=True, env=mt)
+    assert kq.returncode == 0 and "mtu" not in kq.stdout
