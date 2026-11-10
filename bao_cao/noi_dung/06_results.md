@@ -181,11 +181,26 @@ Table: Reproduction of run r20261110T075240 with time travel {#tab:tai-lap w=30,
 
 The deviation is zero to six decimal places (tolerance 10^{−6}). This is a meaningful test: while the reproduction ran, `silver.tuong_tac` had already moved to version 2 through schema evolution and bronze had received 857,000 additional replayed events. The result is identical because the job reads only version 0 of the feature table, which contains both the training data and the ground truth (@sec:impl-train), because ALS uses a fixed seed, and because the append-only indexers guarantee that indices mean the same users and items in every version.
 
+The reproduction screen of the web application reads the same table (@fig:tai-lap-web). It shows the maximum deviation without rounding: exactly 0 for the training row and 1.78 × 10^{−15} for the tuning row, a difference in the last bits of a floating-point sum that the 10^{−6} tolerance is designed to absorb.
+
+![Reproduction screen of the web application: the two comparisons of DAG 5 on feature version 0](hinh/s02_tai_lap_web.png){#fig:tai-lap-web w=15.5}
+
 ## Streaming and Operations {#sec:res-streaming}
 
 On 10 November the three streaming jobs were started on the cluster and the producer replayed the last 48 days of data (1 August to 18 September 2015) a second time: 857,072 events in about 24 minutes. Thanks to content deduplication (@tab:lam-sach), these duplicates do not change silver. The check used by the stream monitor reported the trending table as live, with 2,203,504 (window, item) rows whose window ended within the last 15 minutes. With Airflow, the three streaming drivers and a reproduction job running together, the master host still had 1.8 GB of memory available (@fig:ram).
 
-> [!TODO] Insert the latency measured during the rehearsal with `scripts/demo_vong_khep_kin.py` (seconds from three clicks on *Add to cart* to the updated trending block; target ≤ 90 s) and the bronze rows of the demonstration user found with `kiem_tra/tim_su_kien_bronze.py` (closed loop), together with screenshots of the product page and of the Kafka UI.
+**Closed loop and latency.** The two streaming criteria were measured on 11 November between 05:20 and 05:36 (Vietnam time) with the web application running on labsoe-18, the producer stopped and no batch job running, so that the trending table changed only because of the test. Both measurements use the public API of the web application from the master host (@tab:do-tre). The first attempt sent three *Add to cart* events for product 320844: they reached bronze about ten seconds after the broker received them, but the trending block did not change within 180 seconds. The log showed two runs of the same trending query writing the same offset file: the stream restart earlier that night had cancelled the application through the Spark Master but left the client-mode driver alive, and the first new event made the old and the new driver collide on the checkpoint, which stopped both (issue 27). After the fix — stopping a stream now also stops its driver process — the streams were restarted. The three earlier clicks then appeared in the window starting 22:22 UTC: the checkpoint had kept the planned batch, and nothing was lost. The second measurement, on product 102605, saw the trending table updated **51 seconds** after the three clicks, within the 90-second target; the time is made of up to 20 seconds of trigger interval, the micro-batch (join with the product statistics and MERGE) and the 3-second polling of the script.
+
+Table: Closed-loop and latency measurements on the cluster (11 November 2026) {#tab:do-tre w=34,22,44}
+| Measurement | Product, user | Result |
+|---|---|---|
+| Kafka → bronze, three *Add to cart* events (`tim_su_kien_bronze.py`) | 320844, `demo_vong_kin` | 3 rows in bronze; 10.3–10.7 s from `kafka_ts` to `_ingest_ts` |
+| Click → updated trending table (`demo_vong_khep_kin.py`, three clicks) | 102605, `demo_vong_kin` | **51 s** (window ending 22:50 UTC); target ≤ 90 s |
+| Recovery after the stream failure | 320844 | the three clicks of the failed attempt counted in the window 22:22–22:37 UTC after restart |
+
+**Cold start on the live system.** A user created with the *New user (cold start)* button receives the strategy `nguoi_moi`: all ten "For you" slots come from the newest trending window and coincide with the trending block below, and ten impressions are logged for the A/B pipeline (@fig:cold-start-web).
+
+![Home page of a user created on the spot: strategy `nguoi_moi`, ten trending slots, ten impressions logged](hinh/s01_cold_start_web.png){#fig:cold-start-web w=15.5}
 
 ## Acceptance Checklist {#sec:res-checklist}
 
@@ -196,11 +211,11 @@ Table: Status of the acceptance criteria {#tab:ket-qua-nghiem-thu w=5,28,24,43}
 |---|---|---|---|
 | 1 | Tuning table, ≥ 9 combinations | Met | 27 combinations with NDCG@10 (@tab:tuning) |
 | 2 | ALS vs 2 baselines, 4 metrics + coverage + novelty | Met; coverage threshold not met, analysed | NDCG@10 +1,237 % over baseline 1; coverage 3.44 % (6.47 % served), analysis and re-ranking in @sec:res-coverage |
-| 3 | Three cold-start strategies | Implemented and unit-tested; live demonstration with a user created on the spot | @tab:cold-start; web home page |
-| 4 | Trending updated ≤ 90 s after a click | Stream live on the cluster; latency to be recorded at the rehearsal | @fig:streams, @sec:res-streaming |
-| 5 | Closed loop web → Kafka → bronze → trending | Implemented; to be recorded at the rehearsal | @fig:loop |
+| 3 | Three cold-start strategies | Met: brand-new user shown live; the other two strategies unit-tested and shown at the defence | @tab:cold-start, @fig:cold-start-web |
+| 4 | Trending updated ≤ 90 s after a click | Met | 51 s from three clicks to the updated table (@tab:do-tre) |
+| 5 | Closed loop web → Kafka → bronze → trending | Met | Web events in bronze 10.3 s after Kafka, in the trending table after 51 s (@tab:do-tre, @fig:loop) |
 | 6 | A/B result with p-value and conclusion | Met | CTR p = 0.015 (B lower), conversion p = 0.75 (@tab:ab) |
 | 7 | Reproduction with `VERSION AS OF` | Met | Deviation 0.000000 on version 0 (@tab:tai-lap) |
 | 8 | OPTIMIZE/Z-ORDER figures for the per-user lookup | Met | Files read 67 → 1.07, median 8.4× faster than compaction only (@tab:zorder) |
 
-> [!TODO] After the rehearsal, update rows 3–5 with the measured latency and add screenshots of the five web screens (home with group A and group B users, product page, A/B dashboard, model quality, reproduction).
+> [!TODO] After model version 2 is deployed (manual run of DAG 1, 11 November), add screenshots of the remaining web screens: home pages of a group A and a group B user with ALS lists, a product page, the A/B dashboard and the model-quality screen.

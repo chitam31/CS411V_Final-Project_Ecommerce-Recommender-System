@@ -130,7 +130,7 @@ Table: Demonstration sequence {#tab:demo w=5,25,40,30}
 
 # @D Requirements Traceability {#sec:app-trace}
 
-@tab:truy-vet maps each section of the specification to its implementation. Status: **T** = covered by automated tests on local Spark; **C** = verified on the cluster with the real data; **R** = to be recorded at the rehearsal.
+@tab:truy-vet maps each section of the specification to its implementation. Status: **T** = covered by automated tests on local Spark; **C** = verified on the cluster with the real data.
 
 Table: Traceability of the specification to the implementation {#tab:truy-vet w=10,42,38,10}
 | Spec section | Requirement | Implementation | Status |
@@ -147,9 +147,9 @@ Table: Traceability of the specification to the implementation {#tab:truy-vet w=
 | 3.5 | Blending ALS, trending and category popularity; cold start | `tron_goi_y`, `common/tron.py` | T, C |
 | 3.5 | Impression aggregation and two-proportion z-test | `tinh_ket_qua_ab`, `common/ab.py`, `common/thong_ke.py` | T, C |
 | 3.6 | ALS implicit with cold-start drop; grid ≥ 9; temporal split; 4 metrics + coverage + novelty; 2 baselines; thresholds | `als_lib`, `chi_so`, `danh_gia`; @tab:tuning, @tab:phuong-phap | T, C |
-| 3.6 | Three cold-start strategies | @tab:cold-start | T, R |
+| 3.6 | Three cold-start strategies | @tab:cold-start, @fig:cold-start-web | T, C |
 | 3.7 | MERGE, time travel, schema evolution, CDF, OPTIMIZE/Z-ORDER, partitioning | @tab:delta | T, C |
-| 3.8 | Five web screens and their APIs; stable A/B hash | `web/`, `common/tron.chon_nhom` | T, R |
+| 3.8 | Five web screens and their APIs; stable A/B hash | `web/`, `common/tron.chon_nhom` | T, C |
 | 3.9 | Five DAGs with the specified schedules and structure | `airflow/dags/` | T, C |
 | 3.10 | Risks: OOM, traffic, slow recommendation, low coverage | ≥ 3 interactions, numBlocks; simulation with labels; subset recommendation; analysis and re-ranking | T, C |
-| 3.11 | Eight acceptance items | @tab:ket-qua-nghiem-thu | C, R |
+| 3.11 | Eight acceptance items | @tab:ket-qua-nghiem-thu | C |

@@ -12,7 +12,7 @@ Against the acceptance criteria, the results on the real dataset are:
 - Z-ORDER reduces the files read by a per-user lookup from 67 to 1.07 and the median latency 8.4 times relative to compaction alone;
 - the reproduction DAG re-ran the selected experiment on Delta version 0 of the feature table with a deviation of 0.000000, after the source tables had evolved.
 
-The remaining demonstrations — the measured latency of the trending block, the closed loop through bronze and the live cold-start demonstration — depend on the web host and are scheduled for the rehearsal before the defence.
+On the live system, a click on the web page reached bronze about ten seconds after Kafka received it and the trending table after 51 seconds, within the 90-second target, and a user created on the spot received the brand-new-user strategy. All eight acceptance criteria have therefore been demonstrated on the cluster; what remains before the defence is the full rehearsal of the demonstration script.
 
 ## Limitations
 

@@ -139,6 +139,7 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - 04:29, 04:50: WSL trên laptop sập hai lần (lúc giải nén ảnh gốc Spark và ngay sau khi bật container web); lần đầu còn làm rỗng tệp của ảnh gốc trong bộ nhớ đệm build, `pip3` báo `No module named 'pip._vendor.six'` — `docker builder prune -af` rồi tải lại thì build được. Windows chỉ còn khoảng 4,1/15,3 GB RAM trống khi WSL tắt (Chrome, Meet), WSL giữ 3,8 GB (lỗi 26).
 - 05:00–05:08: chuyển web sang labsoe-18 (RAM khả dụng 5,7 GB, labsit12 5,2 GB) bằng `khoi_dong_may.sh --chi=web` — chỉ build lớp web (8 giây pip), không đụng DataNode/Spark worker của máy. `api/suc-khoe`: `{"che_do":"delta","kafka":"GuiKafka"}`. Từ nhà xem web qua `ssh -N -L 8001:localhost:8000 labsoe-18`.
 - 05:22: đo vòng khép kín từ web: 3 lượt "Thêm giỏ" sản phẩm 320844 vào bronze sau 10,3–10,7 giây (Kafka → `_ingest_ts`, `tim_su_kien_bronze.py`). Khối thịnh hành không cập nhật sau 180 giây: luồng thịnh hành và luồng hiển thị đều đã chết. Log: hai `runId` của cùng truy vấn cùng ghi `offsets/31` — `SparkConcurrentModificationException: Multiple streaming queries are concurrently using .../tinh_thinh_hanh_v1/offsets` (lỗi 27).
+- 05:33–05:36: đưa bản sửa lỗi 27 lên master, bật lại luồng thịnh hành và hiển thị. 3 lượt bấm lúc 05:22 được xử lý bù (sản phẩm 320844, cửa sổ 22:22–22:37 UTC, thêm giỏ 3). Đo lại trên sản phẩm 102605: **bảng thịnh hành cập nhật sau 51 giây** (cửa sổ kết thúc 22:50 UTC) → tiêu chí 4 và 5 đạt. Báo cáo: điền mục 6.9 (Bảng 6.9, Hình 6.7–6.8), cập nhật bảng nghiệm thu, kết luận, tóm tắt.
 
 ---
 
