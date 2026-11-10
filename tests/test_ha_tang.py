@@ -291,6 +291,74 @@ def test_chep_du_lieu(tmp_path):
     assert kq.returncode == 0 and not nhat_ky.exists(), kq.stdout + kq.stderr
 
 
+def test_don_du_lieu(tmp_path):
+    """don_du_lieu.sh: mặc định chỉ xem trước; --xoa cần gõ XOA; chỉ xóa đường dẫn của dự án,
+    giữ thư mục khác (dữ liệu cũ của nhóm); từ chối khi còn ứng dụng Spark đang chạy."""
+    import http.server
+    import threading
+    web = tmp_path / "web" / "json"
+    web.mkdir(parents=True)
+    (web / "index.html").write_text('{"activeapps": []}')
+    xu_ly = lambda *a, **k: http.server.SimpleHTTPRequestHandler(*a, directory=str(tmp_path / "web"), **k)
+    may_chu = http.server.ThreadingHTTPServer(("127.0.0.1", 0), xu_ly)
+    threading.Thread(target=may_chu.serve_forever, daemon=True).start()
+
+    goc_may, bin_gia, nhat_ky = tmp_path / "may", tmp_path / "bin", tmp_path / "docker.log"
+    for h in ("labsoe-11", "labsit"):
+        (goc_may / h).mkdir(parents=True)
+        os.symlink(GOC, goc_may / h / "bd03_khuyen_nghi")
+    bin_gia.mkdir()
+    ls_lake = "\\n".join("drwxr-xr-x   - u g 0 2026-11-10 12:00 " + d for d in (
+        "/lake/bronze", "/lake/bronze/su_kien", "/lake/bronze/su_kien_v2", "/lake/silver",
+        "/lake/silver/tuong_tac", "/lake/cu_nhom", "/lake/checkpoints", "/lake/checkpoints/nap_su_kien_v2"))
+    lenh_gia = {
+        "ssh": "while [ $# -gt 0 ]; do case \"$1\" in -o) shift 2;; -*) shift;; *) break;; esac; done\n"
+               "h=\"$1\"; shift; HOME=\"$GOC_MAY/$h\" exec bash -c \"$*\"\n",
+        "docker": "echo \"$*\" >> \"$NHAT_KY\"\n"
+                  "case \"$*\" in\n"
+                  "  *' -du '*) for p in \"$@\"; do case \"$p\" in *silver/tuong_tac|*landing/retailrocket) echo \"1.5 M  3.0 M  $p\";; esac; done;;\n"
+                  "  *' -ls -d '*) printf '" + ls_lake + "\\n';;\n"
+                  "  *kafka-get-offsets*) printf 'x:0:100\\nx:1:50\\n';;\n"
+                  "  *' --list'*) ;;\n"
+                  "esac\nexit 0\n",
+    }
+    for ten, noi_dung in lenh_gia.items():
+        (bin_gia / ten).write_text("#!/bin/bash\n" + noi_dung)
+        (bin_gia / ten).chmod(0o755)
+    mau = tmp_path / "mau"
+    mau.mkdir()
+    mt = dict(os.environ, PATH="{}:{}".format(bin_gia, os.environ["PATH"]), GOC_MAY=str(goc_may),
+              NHAT_KY=str(nhat_ky), SPARK_UI="http://127.0.0.1:{}".format(may_chu.server_port), THU_MUC_MAU=str(mau))
+    tep = os.path.join(GOC, "scripts", "cum", "don_du_lieu.sh")
+    chay = lambda *a, nhap="": subprocess.run(["bash", tep, *a], input=nhap, capture_output=True, text=True, env=mt)
+    try:
+        kq = chay()  # xem trước
+        assert kq.returncode == 0, kq.stdout + kq.stderr
+        assert "/lake/silver/tuong_tac" in kq.stdout and "1.5 M" in kq.stdout and "150 tin" in kq.stdout
+        giu = kq.stdout.split("GIỮ NGUYÊN")[1].split("#####")[0]
+        assert "/lake/bronze/su_kien\n" in giu and "/lake/cu_nhom" in giu
+        assert "su_kien_v2" not in giu and "/lake/silver" not in giu and "/lake/checkpoints" not in giu
+        assert " -rm " not in nhat_ky.read_text() and "--delete" not in nhat_ky.read_text() and mau.exists()
+
+        kq = chay("--xoa", nhap="khong\n")  # không gõ đúng XOA: không xóa
+        assert kq.returncode == 1 and " -rm " not in nhat_ky.read_text()
+
+        kq = chay("--xoa", nhap="XOA\n")
+        assert kq.returncode == 0, kq.stdout + kq.stderr
+        dong_xoa = [d for d in nhat_ky.read_text().splitlines() if " -rm " in d]
+        assert len(dong_xoa) == 1 and "silver/tuong_tac" in dong_xoa[0] and "landing/retailrocket" in dong_xoa[0]
+        assert "su_kien_v2" not in dong_xoa[0]  # du giả không báo có, nên không đưa vào lệnh xóa
+        assert "/lake/bronze/su_kien " not in dong_xoa[0] + " " and "cu_nhom" not in dong_xoa[0]
+        assert nhat_ky.read_text().count("--delete --topic") == 2 and "--create" in nhat_ky.read_text()
+        assert not mau.exists()
+
+        (web / "index.html").write_text('{"activeapps": [{"name": "bd03-lo"}]}')
+        kq = chay()
+        assert kq.returncode == 1 and "đang" in kq.stdout.lower() and "ứng dụng Spark" in kq.stdout
+    finally:
+        may_chu.shutdown()
+
+
 def test_dags_airflow():
     pytest.importorskip("airflow.sdk")  # thư mục airflow/ của dự án không phải gói Airflow
     from airflow.dag_processing.dagbag import DagBag

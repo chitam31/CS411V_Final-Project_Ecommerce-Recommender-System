@@ -306,6 +306,15 @@ bash scripts/tai_du_lieu.sh                          # ~/du_lieu/retailrocket ->
 docker exec hadoop-master hdfs dfs -ls -h /lake/landing/retailrocket
 ```
 
+Đã chạy thử pipeline bằng dữ liệu mẫu (`scripts/tao_du_lieu_mau.py`) thì phải dọn trước khi đưa dữ liệu thật lên, nếu không bảng Delta và checkpoint sẽ trộn hai bộ dữ liệu. Chạy trên laptop, khi không còn job Spark nào chạy:
+
+```bash
+bash scripts/cum/don_du_lieu.sh          # xem trước: đường dẫn nào sẽ xóa, dung lượng, số tin nhắn Kafka
+bash scripts/cum/don_du_lieu.sh --xoa    # xóa thật, gõ XOA để xác nhận
+```
+
+Script chỉ xóa những gì dự án tạo ra (danh sách bảng đọc từ `jobs/common/cau_hinh.py`, checkpoint và thư mục mô hình đọc từ mã các job, CSV ở `/lake/landing/retailrocket`), làm rỗng hai topic Kafka (xóa rồi tạo lại 3 phân vùng) và xóa `/tmp/mau` trên master. Thư mục khác dưới `/lake` (dữ liệu cũ của nhóm) được giữ nguyên và in ra để kiểm tra.
+
 ---
 
 ## 8. Chạy lần đầu
