@@ -107,6 +107,12 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
   - NDCG@10 tăng rõ theo rank và alpha: tốt nhất 0,024 ở rank 10, 0,050 ở rank 30, đến lúc này 0,067 ở rank 50, alpha 40. regParam ảnh hưởng ít hơn. Tổ hợp tốt nhất nằm ở **biên của lưới** (rank và alpha lớn nhất), nên điểm tối ưu có thể nằm ngoài lưới: nêu trong báo cáo và đề xuất mở rộng lưới (rank 100, alpha 80) nếu còn thời gian.
   - Coverage rất thấp, cao nhất 3,2%, dưới ngưỡng 10% của đề: `dat_nguong` nhiều khả năng sẽ là false. Không chặn triển khai, vì `danh_gia.py` quyết định triển khai theo `cai_thien` (so với mô hình đang chạy; lần đầu luôn đúng), còn `dat_nguong` chỉ được ghi lại để báo cáo. Hướng phân tích theo mục 3.10: trần coverage về cấu trúc (10 gợi ý × số user test / 235.061 item), phân phối độ phổ biến, kết quả re-ranking novelty β = 0,1 và 0,3, cùng các khối trộn (thịnh hành, phổ biến theo danh mục, 20% vị trí cuối cho item mới) làm tăng độ đa dạng thực tế trên web.
   - Thêm `jobs/kiem_tra/xuat_ket_qua.py`: in mọi số liệu cho MO_HINH.md mục 12 (bảng phương pháp, phân phối độ phổ biến, 27 tổ hợp tuning, A/B, ZORDER, tái lập) dưới dạng Markdown, kèm trần coverage.
+- **17:00: pipeline dữ liệu thật chạy xong đủ 8 bước** (14:52:40 → 17:00:26, 2 giờ 8 phút), `ma_chay=r20261110T075240`.
+  - Tuning 27 tổ hợp: 78,4 phút (rank 10: 11,3 phút cho 9 tổ hợp; rank 30: 24,2 phút; rank 50: 42,9 phút). Tốt nhất **rank 50, regParam 1,0, alpha 40**: NDCG@10 = 0,0680, coverage 3,44% (khoảng 8.090 item khác nhau). Tổ hợp tốt nhất nằm ở biên lưới về rank và alpha.
+  - Đánh giá: baseline bán chạy toàn sàn NDCG@10 = 0,0051, baseline bán chạy theo danh mục 0,0475. ALS cao hơn baseline 1 **1.237%** (ngưỡng ≥ 30%: đạt) và cao hơn cả baseline danh mục 43%. Coverage 3,4% dưới ngưỡng 10% nên `dat_nguong = false`; `cai_thien = true` (lần đầu) nên mô hình vẫn được triển khai (`cho_trien_khai`).
+  - Bước 6: `sinh_goi_y_toan_bo` sinh 20 ứng viên ALS cho 8.592 user hoạt động; `tron_goi_y` trộn cho 265.043 user (8.592 user ALS, 256.451 user ít tương tác dùng phổ biến theo danh mục + thịnh hành), số ô theo nguồn: ALS 124.163, phổ biến danh mục 2.576.733, thịnh hành 2.599.964. Khối thịnh hành dùng nguồn dự phòng `du_phong_xem_24h` vì luồng streaming thịnh hành chưa bật. `ghi_gold` MERGE 5.300.860 dòng vào `gold.goi_y_nguoi_dung` (phiên bản 1).
+  - Bước 7: 200.000 lượt hiển thị mô phỏng, 3.357 click (CTR chung 1,68%); `tinh_ket_qua_ab` đọc CDF từ phiên bản 0, kết quả gắn phiên bản dữ liệu 1.
+  - Bước 8, ZORDER 3 giai đoạn trên `gold.goi_y_nguoi_dung` (30 truy vấn theo user, cỡ tệp tối đa 1 MB): phân mảnh 200 tệp, trung vị 10.793 ms, đọc 200 tệp; **chỉ OPTIMIZE**: 67 tệp, trung vị 8.280 ms, vẫn đọc cả 67 tệp (không bỏ qua được tệp nào vì mỗi tệp chứa user rải khắp dải); **OPTIMIZE ZORDER BY (ma_nguoi_dung)**: 55 tệp, trung vị 980 ms, p95 1.387 ms, đọc trung bình 1,07 tệp. Riêng ZORDER nhanh hơn chỉ gộp tệp **8,4 lần**, tổng cộng 11,0 lần: đây là bằng chứng data skipping rõ ràng, tách khỏi tác dụng gộp tệp.
 
 ---
 
@@ -183,6 +189,7 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 
 | Ngày | Người chạy | Lệnh / DAG | `ma_chay` | Phiên bản features | Thời gian | Kết quả chính | Ghi chú |
 |---|---|---|---|---|---|---|---|
+| 10/11/2026 | Tâm | `chay_lan_dau.sh` (dữ liệu thật RetailRocket, lưới đủ) | `r20261110T075240` | 0 | 2 giờ 8 phút (tuning 78,4 phút) | rank 50, reg 1,0, alpha 40; NDCG@10 0,0680; baseline 0,0051 / 0,0475; uplift +1.237%; coverage 3,4% (`dat_nguong` false); ZORDER nhanh hơn 8,4 lần so với chỉ gộp tệp | Lần chạy chính cho báo cáo |
 | 10/11/2026 | Tâm | `LUOI=toi_thieu chay_lan_dau.sh` (dữ liệu mẫu), chạy lại từ bước 4 | `r20261110T063419` | 0 | bước 4–5: khoảng 29 phút | NDCG@10 0,445; baseline 0,039 / 0,315; coverage 0,70 | Kiểm chứng pipeline, dữ liệu tổng hợp; trước khi sửa lỗi 18 |
 | | | | | | | | |
 | | | | | | | | |
