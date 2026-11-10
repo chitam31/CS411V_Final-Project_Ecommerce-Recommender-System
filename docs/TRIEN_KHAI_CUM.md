@@ -200,11 +200,13 @@ Hoặc làm tay từng bước:
 cd ~/bd03_khuyen_nghi/ha_tang/airflow
 cp .env.mau .env
 cp mat_khau.json.mau mat_khau.json
+id -u                                      # điền vào AIRFLOW_UID (container chạy bằng uid này)
 getent group docker | cut -d: -f3          # điền vào DOCKER_GID
 openssl rand -hex 32                       # điền vào AIRFLOW__API_AUTH__JWT_SECRET
 python3 -c "import base64,os;print(base64.urlsafe_b64encode(os.urandom(32)).decode())"   # FERNET_KEY
 nano .env              # BD03_HOST_DIR=/home/<user>/bd03_khuyen_nghi (đường dẫn tuyệt đối)
 nano mat_khau.json     # {"admin": "<mật khẩu mạnh>"}
+chmod 600 mat_khau.json
 cd ~/bd03_khuyen_nghi && bash scripts/cum/khoi_dong_may.sh      # chạy lại để bật Airflow
 ```
 

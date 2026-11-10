@@ -395,3 +395,42 @@ def test_do_zorder_tien_ich(spark, tmp_path):
     df = spark.read.parquet(str(tmp_path / "p")).filter("id = 5")
     df.collect()
     assert so_tep_da_doc(df) == 4
+
+
+def test_tao_cau_hinh_airflow_uid_va_quyen(tmp_path):
+    """Airflow chạy bằng uid của chủ thư mục dự án (AIRFLOW_UID); .env cũ chỉ được bổ sung dòng
+    AIRFLOW_UID, mật khẩu cũ giữ nguyên; mat_khau.json chỉ chủ tệp đọc/ghi."""
+    import json
+    import shutil
+    import stat
+
+    goc = tmp_path / "du_an"
+    (goc / "scripts" / "cum").mkdir(parents=True)
+    (goc / "ha_tang" / "airflow").mkdir(parents=True)
+    shutil.copy(os.path.join(GOC, "scripts", "cum", "tao_cau_hinh_airflow.sh"), goc / "scripts" / "cum")
+    shutil.copy(os.path.join(GOC, "ha_tang", "airflow", ".env.mau"), goc / "ha_tang" / "airflow")
+    bin_gia = tmp_path / "bin"
+    bin_gia.mkdir()
+    (bin_gia / "getent").write_text("#!/bin/sh\necho docker:x:998:\n")
+    (bin_gia / "getent").chmod(0o755)
+    mt = dict(os.environ, PATH="{}:{}".format(bin_gia, os.environ["PATH"]), MAT_KHAU_AIRFLOW="mk-thu")
+    tep = str(goc / "scripts" / "cum" / "tao_cau_hinh_airflow.sh")
+    a = goc / "ha_tang" / "airflow"
+
+    subprocess.run(["bash", tep], check=True, capture_output=True, text=True, env=mt)
+    env = (a / ".env").read_text()
+    assert "AIRFLOW_UID={}\n".format(os.getuid()) in env and "DOCKER_GID=998\n" in env
+    assert "BD03_HOST_DIR={}\n".format(goc) in env
+    assert json.loads((a / "mat_khau.json").read_text()) == {"admin": "mk-thu"}
+    assert stat.S_IMODE((a / "mat_khau.json").stat().st_mode) == 0o600
+
+    # .env tạo bằng bản cũ (chưa có AIRFLOW_UID), mat_khau.json đang mở quyền đọc cho mọi người
+    (a / ".env").write_text("".join(d + "\n" for d in env.splitlines() if not d.startswith("AIRFLOW_UID=")))
+    (a / "mat_khau.json").chmod(0o664)
+    kq = subprocess.run(["bash", tep], check=True, capture_output=True, text=True, env=dict(mt, MAT_KHAU_AIRFLOW="khac"))
+    assert "Đã thêm AIRFLOW_UID" in kq.stdout
+    assert (a / ".env").read_text().count("AIRFLOW_UID=") == 1
+    assert json.loads((a / "mat_khau.json").read_text()) == {"admin": "mk-thu"}  # không đổi mật khẩu
+    assert stat.S_IMODE((a / "mat_khau.json").stat().st_mode) == 0o600
+    kq = subprocess.run(["bash", tep], check=True, capture_output=True, text=True, env=mt)
+    assert "Đã thêm" not in kq.stdout and (a / ".env").read_text().count("AIRFLOW_UID=") == 1

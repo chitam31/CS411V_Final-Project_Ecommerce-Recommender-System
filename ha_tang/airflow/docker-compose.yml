@@ -11,6 +11,11 @@ name: bd03-airflow
 x-airflow: &airflow
   build: .
   image: bd03/airflow:3.3.1
+  # Chạy bằng uid của tài khoản sở hữu thư mục dự án (AIRFLOW_UID trong .env, như compose chính
+  # thức của Airflow), nhóm 0 như ảnh gốc yêu cầu. Với uid mặc định 50000, api-server không mở được
+  # mat_khau.json (SimpleAuthManager mở tệp ở chế độ "a+", cần quyền ghi) và task không ghi được
+  # jobs/common.zip, logs/ vào thư mục dự án được gắn vào.
+  user: "${AIRFLOW_UID:-50000}:0"
   env_file: .env
   environment: &moi_truong
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
