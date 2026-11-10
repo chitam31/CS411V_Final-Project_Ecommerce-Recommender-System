@@ -306,10 +306,12 @@ Số liệu xuất bằng `jobs/kiem_tra/xuat_ket_qua.py` từ `gold.lich_su_hua
 | Baseline 2: bán chạy theo danh mục | 0,0122 | 0,0706 | 0,0475 | 0,0352 | 5,28% | 1,60% | 11,88 | 6.660 |
 | ALS (rank = 50, reg = 1,0, alpha = 40) | 0,0161 | 0,0921 | **0,0680** | 0,0531 | 3,44% | 1,04% | 10,86 | 4.346 |
 | ALS + re-ranking β = 0,1 | 0,0166 | 0,0952 | 0,0702 | 0,0549 | 3,65% | 1,10% | 10,93 | 4.607 |
-| ALS + re-ranking β = 0,3 | 0,0173 | 0,1001 | **0,0746** | 0,0589 | 4,14% | 1,25% | 11,09 | 5.221 |
+| ALS + re-ranking β = 0,3 | 0,0173 | 0,1001 | 0,0746 | 0,0589 | 4,14% | 1,25% | 11,09 | 5.221 |
+| **Phục vụ: ALS + xếp lại β = 1,0, 200 ứng viên** (mục 6) | **0,0182** | **0,1089** | **0,0865** | **0,0716** | **6,47%** | 1,96% | 12,17 | 8.162 |
 | Mô hình v2: ALS + lọc tầm giá | chưa chạy (cần lần schema evolution) | | | | | | | |
 
 - Uplift NDCG@10 so với baseline 1: **+1.237%** (ngưỡng ≥ 30%: đạt); so với baseline 2 (mạnh hơn nhiều): +43%. Coverage 3,44% < 10% → `dat_nguong` = false. Lần huấn luyện đầu nên `cai_thien` = true, mô hình vẫn được triển khai; `dat_nguong` chỉ ghi lại để báo cáo.
+- Cấu hình phục vụ (ALS + xếp lại, mục 6) đo trên cùng tập test: NDCG@10 0,0865 (+1.601% so với baseline 1, +27% so với ALS thuần), coverage 6,47%, vẫn dưới 10%. Số đo khớp đúng lần quét ở mục 12.2, tức job đánh giá và job quét cho cùng kết quả.
 
 ### 12.1 Nhận xét về tuning
 
@@ -339,9 +341,22 @@ Số liệu xuất bằng `jobs/kiem_tra/xuat_ket_qua.py` từ `gold.lich_su_hua
 - Tập ứng viên rộng hơn (200 so với 50) chỉ có tác dụng khi β đủ lớn (từ 1,0): với β nhỏ, các item ngoài top-50 không vượt lên được.
 - **Không cấu hình nào đạt Coverage 10%** (cao nhất 7,21%). Lý do gốc: trong 126.230 item của train, phần lớn chỉ có 1–2 tương tác nên vector ẩn gần 0 và không lọt nổi top-200 của bất kỳ user nào. Muốn vượt 10% cần nguồn ứng viên khác ngoài ALS: ứng viên theo danh mục (baseline danh mục một mình đã đạt 5,28%), item mới (đã có ở bước trộn: 20% vị trí cuối), hoặc mở rộng lưới (coverage tăng theo rank và alpha: rank 100, alpha 80).
 - Lưu ý phương pháp: β và cỡ tập ứng viên được chọn trên chính tập test, nên số liệu của cấu hình tốt nhất là lạc quan. Quy trình đúng là tách thêm một tập validation theo thời gian (ví dụ 30 ngày cuối của giai đoạn train) để chọn β, rồi báo cáo trên test.
-- Đã áp dụng cấu hình 200 ứng viên, β = 1,0 cho danh sách ALS phục vụ (mục 6, `BETA_XEP_LAI`, `SO_UNG_VIEN_XEP_LAI` trong `cau_hinh.py`); triển khai lại cho `r20261110T075240` bằng `scripts/trien_khai_lai.sh` (không tuning lại).
+- Đã áp dụng cấu hình 200 ứng viên, β = 1,0 cho danh sách ALS phục vụ (mục 6, `BETA_XEP_LAI`, `SO_UNG_VIEN_XEP_LAI` trong `cau_hinh.py`); triển khai lại cho `r20261110T075240` bằng `scripts/trien_khai_lai.sh` (không tuning lại, 15 phút). Phân phối độ phổ biến của cấu hình phục vụ: N1 80,8%, N2 11,2%, N3 4,3%, N4 2,0%, N5–N10 1,9%.
+
+**Độ phủ của danh sách thật sự phục vụ.** Coverage ở trên chỉ tính top-10 ALS của 9.467 user test. Đo trên toàn bộ `gold.goi_y_nguoi_dung` sau khi triển khai lại (mọi user, cả 20 vị trí, mọi nguồn):
+
+| Nguồn | Số ô | Sản phẩm khác nhau |
+|---|---|---|
+| Thịnh hành (dự phòng: xem nhiều 24 giờ) | 2.599.964 | 19 |
+| Phổ biến theo danh mục (user ít tương tác) | 2.577.372 | 9.927 |
+| ALS đã xếp lại (8.592 user hoạt động) | 123.524 | 8.612 |
+| **Tổng** (265.043 user, 5.300.860 dòng) | | **15.582** |
+
+15.582 sản phẩm bằng **12,3%** số item có trong train (3,7% toàn sàn). Con số này vượt 10% nhưng là một định nghĩa khác: độ phủ của cả hệ thống, có cả các khối không cá nhân hóa, chứ không phải Coverage của mô hình mà ngưỡng của đề nhắm tới. Báo cáo nên nêu cả hai và nói rõ ngưỡng mô hình chưa đạt. Khối thịnh hành chiếm gần một nửa số ô mà chỉ dùng 19 sản phẩm, vì 256.451 user ít tương tác nhận 50% thịnh hành theo đặc tả và luồng thịnh hành 15 phút chưa bật (đang dùng nguồn dự phòng). Khi bật streaming, khối này sẽ đổi theo cửa sổ 15 phút.
 
 ### 12.3 A/B (traffic mô phỏng, `tang_thinh_hanh` = 0)
+
+Số liệu A/B dưới đây đo trên danh sách **trước** khi bật xếp lại (phiên bản 1 của `gold.goi_y_nguoi_dung`).
 
 - Lần mô phỏng mặc định (5.000 user lấy theo thứ tự băm) chỉ có khoảng 3% user có gợi ý ALS, mà A/B chỉ tính impression của chiến lược ALS: mỗi nhóm khoảng 3.000 impression trong 7 ngày, gộp lại p = 0,77, thiếu mẫu khoảng 25 lần.
 - Mô phỏng bổ sung cho toàn bộ 8.592 user có gợi ý ALS (`mo_phong_hien_thi.py --chi-als --hat-giong 7`): 343.680 impression, 7.008 click. Kết quả gộp 7 ngày (CDF đến phiên bản dữ liệu 2):

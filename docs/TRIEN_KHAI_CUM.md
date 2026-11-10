@@ -434,6 +434,22 @@ Máy nối Wi-Fi (`wlo1`, `wlp…`) mà không ping được IP mạng nội b�
 
 Trong lúc còn đi đường chuyển tiếp (khoảng 0,4 MB/s), giữ `HE_SO_SAO_CHEP=1` trong `cau_hinh/cum.env` để HDFS và Spark không phải chép bản sao qua mạng chậm. Khi tốc độ giữa các máy đạt vài MB/s, đặt 2 (giá trị hiện tại từ 10/11/2026), rồi `--dong-bo-ma` và chạy lại `khoi_dong_may.sh` trên mọi máy. Với 1 bản sao, một DataNode khựng là job đọc tệp của nó hỏng hẳn; với 2 bản sao, HDFS client tự đọc bản còn lại. Tệp cũ giữ số bản sao cũ; muốn nâng lên thì chạy `docker exec hadoop-master hdfs dfs -setrep 2 /lake` (NameNode chép thêm ở chế độ nền; thêm `-w` nếu muốn chờ chép xong). Cũng vì mạng Wi-Fi, HDFS client chờ DataNode 3 phút (`dfs.client.socket-timeout` trong `hdfs-site.xml` và `submit.sh`) thay vì 60 giây, và mỗi task Spark được thử 8 lần thay vì 4.
 
+### 10c. SSH từ nhà vào master treo ở `expecting SSH2_MSG_KEX_ECDH_REPLY`
+
+Hiện tượng (10/11/2026, laptop ở nhà): `ssh labsoe-11` lúc báo `Connection reset by 10.68.71.113 port 22`, lúc `timed out`; ping gói nhỏ vẫn trả lời, SSH sang máy khác (labsoe-18) vẫn được, trang Spark của master vẫn chạy. `ssh -v` dừng ở `debug1: expecting SSH2_MSG_KEX_ECDH_REPLY`.
+
+Nguyên nhân: gói trả lời trao khóa của OpenSSH bản mới (`sntrup761x25519`, khoảng 1,3 KB) là gói lớn nhất của bước bắt tay, và bị rớt trên đường ZeroTier từ master về laptop khi đi qua Internet (lỗi MTU). Gói nhỏ thì qua bình thường. Ở lab, laptop nối thẳng với master qua LAN nên không gặp.
+
+Cách làm việc từ nhà: đi vòng qua một máy mà SSH vẫn được, khóa vẫn chỉ ở laptop (ProxyJump chỉ chuyển tiếp kết nối TCP):
+
+```bash
+ssh -J labsoe-18 labsoe-11 "cat ~/trien_khai_lai/ket_qua.md" > ket_qua.md
+# hoặc tạo tên tắt một lần rồi dùng ssh m11 ... thay cho ssh labsoe-11 ...
+printf '\nHost m11\n  HostName 10.68.71.113\n  User hduser\n  ProxyJump labsoe-18\n' >> ~/.ssh/config
+```
+
+Cách xem tiến độ job mà không cần SSH vào master: hỏi trang Spark của master qua một máy trong cụm, ví dụ `ssh labsoe-18 "python3 -c '...urlopen(\"http://10.68.71.113:8080/json/\")...'"` (lệnh đầy đủ ở NHAT_KY.md ngày 10/11/2026).
+
 ---
 
 ## 11. Khi nào cần dùng server của trường
