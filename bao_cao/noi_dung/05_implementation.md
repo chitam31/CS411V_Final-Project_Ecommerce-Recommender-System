@@ -1,6 +1,6 @@
 # Implementation {#sec:impl}
 
-The code base contains about 9,600 lines: 35 PySpark job and library files (4,100 lines), 5 Airflow DAGs with a shared module, a web application of 17 files, the Kafka producers, 19 operational scripts, 12 Docker and Hadoop configuration files and 12 test files (Appendix A). This chapter follows the outline of the pipeline: infrastructure, Spark jobs, orchestration, the web application, the A/B pipeline, reproducibility and testing.
+The code base contains about 9,800 lines: 35 PySpark job and library files (4,100 lines), 5 Airflow DAGs with a shared module, a web application of 17 files, the Kafka producers, 19 operational scripts, 14 Docker and Hadoop configuration files and 12 test files (Appendix A). This chapter follows the outline of the pipeline: infrastructure, Spark jobs, orchestration, the web application, the A/B pipeline, reproducibility and testing.
 
 ## Infrastructure Setup (Docker) {#sec:impl-infra}
 
@@ -227,19 +227,19 @@ Reproducing an experiment requires the same data, the same code and the same par
 
 ## Testing and Quality Assurance {#sec:impl-test}
 
-The repository contains 84 automated tests (82 run in the standard environment, two are skipped when Airflow is not installed). They run with `pytest` on a real local Spark session, so they exercise the same DataFrame code as the cluster (@tab:tests). Infrastructure scripts are tested by putting fake `ssh`, `docker`, `curl`, `getent` or `ping` commands first on the `PATH` and checking what the scripts do with them.
+The repository contains 89 automated tests (87 run in the standard environment, two are skipped when Airflow is not installed). They run with `pytest` on a real local Spark session, so they exercise the same DataFrame code as the cluster (@tab:tests). Infrastructure scripts are tested by putting fake `ssh`, `docker`, `curl`, `getent` or `ping` commands first on the `PATH` and checking what the scripts do with them.
 
 Table: Automated tests by area {#tab:tests w=27,8,65}
 | Test file | Tests | What is checked |
 |---|---|---|
 | `test_bronze_to_silver.py` | 7 | Bot filter threshold, 5-second debounce, weights, full cleaning, replay deduplication, one file per date |
-| `test_ml.py` | 11 | Time split, decay, append-only indexers, ALS beats the baselines on structured data, two trainings give identical metrics, v2 price filter |
+| `test_ml.py` | 12 | Time split, decay, append-only indexers, ALS beats the baselines on structured data, two trainings give identical metrics, v2 price filter, served configuration added to the grid |
 | `test_chi_so.py` | 4 | Ranking metrics against Spark's `RankingMetrics`, coverage and novelty |
 | `test_tron.py` | 10 | A/B templates, stable group assignment, cold-start strategies, new-item placement, re-ranking |
 | `test_ab_va_tron.py`, `test_thong_ke.py` | 9 | A/B aggregation, z-test and sample size against reference values |
 | `test_streaming.py` | 8 | Event normalisation, windows and watermark, trending score, impression aggregation, one-shot progress summary |
 | `test_web.py` | 8 | Every screen and API in simulated mode, Kafka client stub |
 | `test_xuat_ket_qua.py`, `test_xung_dot_delta.py` | 8 | Result export, pooled A/B, retry on Delta conflicts only |
-| `test_ha_tang.py` | 19 | Table schemas, startup script roles and image build, SSH control and code distribution (including retries), network measurement, resumable first run, data copy and cleanup scripts, Airflow configuration, status script, DAG structure |
+| `test_ha_tang.py` | 23 | Table schemas, startup script roles, single-role start and image build, ZeroTier MTU, stream stop that also stops the driver, sensor bypass for manual runs, SSH control and code distribution (including retries), network measurement, resumable first run, data copy and cleanup scripts, Airflow configuration, status script, DAG structure |
 
 Every bug found during development or on the cluster received a regression test before it was fixed; @sec:issues lists them.
