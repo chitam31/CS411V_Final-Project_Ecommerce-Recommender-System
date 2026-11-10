@@ -79,6 +79,43 @@ Xem trước những gì script sẽ làm, không chạy thật:
 bash scripts/cum/khoi_dong_may.sh --in-thu
 ```
 
+### 1.5. Điều khiển cả cụm từ máy cá nhân qua SSH (tùy chọn, nên làm)
+
+Mọi máy đã chung mạng ZeroTier nên máy cá nhân (Windows 10.68.71.59) SSH thẳng tới IP `10.68.71.x` được. Cần xin phép phòng máy trước khi bật SSH server trên máy của trường.
+
+**Trên mỗi máy lab, làm một lần tại chỗ:**
+
+```bash
+sudo apt-get install -y openssh-server tmux
+sudo systemctl enable --now ssh
+sudo ufw allow in on zt+ to any port 22 proto tcp     # nếu dùng ufw: chỉ mở SSH trên giao diện ZeroTier
+whoami                                                # ghi lại tên tài khoản của máy này
+```
+
+**Trên máy cá nhân, mở Git Bash trong thư mục repo:**
+
+```bash
+ssh-keygen -t ed25519 -C "bd03"                                   # Enter để giữ đường dẫn mặc định
+bash scripts/cum/ssh_tat_ca.sh --tao-config >> ~/.ssh/config      # sinh khối Host cho mọi máy theo cum.env
+notepad ~/.ssh/config                                             # sửa dòng User cho đúng tài khoản từng máy
+bash scripts/cum/ssh_tat_ca.sh --chep-khoa                        # nhập mật khẩu mỗi máy một lần
+bash scripts/cum/ssh_tat_ca.sh hostname                           # không còn hỏi mật khẩu là xong
+```
+
+Khi đăng nhập bằng khóa đã chạy trên mọi máy, nên tắt đăng nhập bằng mật khẩu: sửa `PasswordAuthentication no` trong `/etc/ssh/sshd_config`, rồi `sudo systemctl restart ssh`. Chỉ làm khi phiên SSH bằng khóa đang mở, để không tự khóa mình ở ngoài.
+
+**Dùng hằng ngày:**
+
+```bash
+bash scripts/cum/ssh_tat_ca.sh "cd ~/bd03_khuyen_nghi && git pull -q && git log --oneline -1"
+bash scripts/cum/ssh_tat_ca.sh "cd ~/bd03_khuyen_nghi && bash scripts/cum/khoi_dong_may.sh"   # lần lượt, master trước
+bash scripts/cum/ssh_tat_ca.sh --song-song "nproc; free -g | head -2"
+bash scripts/cum/ssh_tat_ca.sh --tty "sudo apt-get install -y chrony"     # lệnh cần mật khẩu sudo
+ssh -t labsoe-11 tmux new -A -s bd03                                      # vào master trong tmux
+```
+
+Việc chạy lâu (bộ phát dữ liệu, `chay_lan_dau.sh`) phải chạy **trong tmux** trên máy đích: máy cá nhân ngủ hoặc rớt mạng thì phiên SSH đứt, nhưng tmux vẫn giữ tiến trình chạy tiếp. Gõ `Ctrl+B` rồi `D` để thoát mà không dừng; vào lại bằng đúng lệnh `tmux new -A -s bd03`.
+
 ---
 
 ## 2. Máy 1 — labsoe-11 (10.68.71.113): NameNode, Spark Master, Airflow

@@ -65,6 +65,7 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - Học viên push mã lên GitHub từ máy Windows (`eabaa14`), rồi sửa hai lỗi khi đóng gói (`221db2d`): dự án bị lồng trong thư mục con `bd03_khuyen_nghi/` (đã đưa lên gốc bằng `git mv`, giữ lịch sử), và thêm `.gitattributes` cố định LF để script `.sh` và `cum.env` không bị đổi sang CRLF khi lấy ra trên Windows. Kiểm tra: không còn tệp CRLF trong index; `git diff -M --shortstat` chỉ có đổi chỗ và 8 dòng của `.gitattributes`.
 - Cài Claude GitHub App cho riêng repo này. Bản clone từ GitHub trùng khớp 100% với bản đã kiểm thử; chạy lại pytest trên bản clone: 58 đạt, 1 bỏ qua.
 - `khoi_dong_may.sh` chỉ build ảnh `bd03/spark` khi máy chưa có (tùy chọn `--build` để buộc build lại). Trước đó mỗi lần chạy đều build lại và tải lại jar từ Maven, nên máy lab không ra Internet thì không bật được worker. Thêm hướng dẫn `docker save` / `docker load` để chép ảnh từ master sang worker (docs/TRIEN_KHAI_CUM.md, mục 2.1) và một kiểm thử. Toàn bộ: **59 đạt, 1 bỏ qua** (PySpark), **9/9 đạt** (Airflow).
+- Thêm `scripts/cum/ssh_tat_ca.sh`: điều khiển cả cụm từ máy cá nhân qua SSH (Git Bash trên Windows hoặc bash trên Linux) — sinh `~/.ssh/config` từ `cum.env`, chép khóa công khai, chạy lệnh lần lượt hoặc song song theo vai trò hay tên máy. Hướng dẫn ở docs/TRIEN_KHAI_CUM.md, mục 1.5; thêm một kiểm thử dùng lệnh `ssh` giả.
 
 ---
 

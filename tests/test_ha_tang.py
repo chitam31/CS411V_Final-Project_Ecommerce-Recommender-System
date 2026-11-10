@@ -79,6 +79,37 @@ def test_khoi_dong_may_chi_build_khi_chua_co_anh(tmp_path):
     assert dong_spark(kq).endswith("up -d --build")
 
 
+def _ssh_gia(tmp_path):
+    """Lệnh ssh giả: in tên máy và lệnh nhận được; máy labsit giả vờ lỗi (mã 3)."""
+    gia = tmp_path / "ssh"
+    gia.write_text(
+        "#!/bin/bash\n"
+        "while [ $# -gt 0 ]; do case \"$1\" in -o) shift 2;; -n|-t) shift;; *) break;; esac; done\n"
+        "echo \"may=$1 lenh=$2\"\n"
+        "[ \"$1\" = labsit ] && exit 3\n"
+        "exit 0\n"
+    )
+    gia.chmod(0o755)
+    return dict(os.environ, PATH="{}:{}".format(tmp_path, os.environ["PATH"]))
+
+
+def test_ssh_tat_ca_chon_may_va_thu_tu(tmp_path):
+    mt = _ssh_gia(tmp_path)
+    tep = os.path.join(GOC, "scripts", "cum", "ssh_tat_ca.sh")
+    chay = lambda *a: subprocess.run(["bash", tep, *a], capture_output=True, text=True, env=mt)
+    kq = chay("hostname")
+    may = [d.split()[0][4:] for d in kq.stdout.splitlines() if d.startswith("may=")]
+    # 6 máy lab, master đứng đầu; không có máy web và máy Windows điều khiển
+    assert may == ["labsoe-11", "labsit12", "labsit", "labsit-may25", "labsit-may26", "labsoe-18"]
+    assert kq.returncode == 1 and "!! labsit: mã thoát 3" in kq.stdout
+    assert len([d for d in chay("--vai-tro", "spark-worker", "x").stdout.splitlines() if d.startswith("may=")]) == 5
+    assert "may=ctam lenh=uptime" in chay("--may", "ctam,labsit12", "uptime").stdout
+    ss = chay("--song-song", "nproc").stdout
+    assert ss.count("=====") == 6 and "[labsoe-18] may=labsoe-18 lenh=nproc" in ss
+    cfg = chay("--tao-config").stdout
+    assert cfg.count("Host ") == 7 and "HostName 10.68.71.205" in cfg and "10.68.71.59" not in cfg
+
+
 def test_dags_airflow():
     pytest.importorskip("airflow.sdk")  # thư mục airflow/ của dự án không phải gói Airflow
     from airflow.dag_processing.dagbag import DagBag
