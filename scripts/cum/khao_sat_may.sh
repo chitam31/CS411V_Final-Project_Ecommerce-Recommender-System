@@ -19,7 +19,7 @@ if command -v docker > /dev/null 2>&1; then
   if docker ps > /dev/null 2>&1; then
     echo "quyen_docker: co"
     echo "container:"
-    docker ps -a --format '  {{.Names}} | {{.Image}} | {{.Status}}'
+    docker ps -a --format '  {{.Names}} | {{.Image}} | {{.Status}} | project={{.Label "com.docker.compose.project"}}'
     echo "volume_cua_cum_cu:"
     docker volume ls --format '  {{.Name}}' | grep -E 'hadoop|kafka|spark' || echo "  (khong co)"
   else
@@ -29,6 +29,8 @@ else
   echo "docker: CHUA CAI"
 fi
 
+phien_ban_git="$(git --version 2>/dev/null | awk '{print $3}')"
+echo "swap_GB: $(free -g | awk '/^Swap:/{print $2}') | git: ${phien_ban_git:-CHUA CAI}"
 echo "dong_ho_dong_bo: $(timedatectl show -p NTPSynchronized --value 2>/dev/null || echo khong_ro)"
 if command -v java > /dev/null 2>&1; then
   echo "java: $(java -version 2>&1 | grep -m1 -i version)"

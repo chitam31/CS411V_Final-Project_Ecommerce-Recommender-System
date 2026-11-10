@@ -15,6 +15,7 @@
 #   bash scripts/cum/ssh_tat_ca.sh --may labsit12,labsit "cd ~/bd03_khuyen_nghi && git pull"
 #   bash scripts/cum/ssh_tat_ca.sh --tty "sudo apt-get install -y chrony"   # lệnh cần gõ mật khẩu sudo
 #   bash scripts/cum/ssh_tat_ca.sh --song-song --chay-tep scripts/cum/khao_sat_may.sh   # chạy một script cục bộ trên từng máy
+#   bash scripts/cum/ssh_tat_ca.sh --dong-bo-ma        # đẩy mã (bản đã commit) sang ~/bd03_khuyen_nghi của từng máy
 #
 # Mặc định chọn các máy hạ tầng của cụm (namenode, datanode, spark-master, spark-worker, kafka),
 # tức 6 máy lab; --tat-ca chọn thêm máy web. Máy demo (Windows) không bao giờ được chọn vì đó
@@ -37,6 +38,7 @@ while [ $# -gt 0 ]; do
     --chay-tep) TEP="${2:?Thiếu đường dẫn tệp script}"; shift ;;
     --tao-config) CHE_DO="tao_config" ;;
     --chep-khoa) CHE_DO="chep_khoa" ;;
+    --dong-bo-ma) CHE_DO="dong_bo_ma" ;;
     --) shift; break ;;
     -*) echo "Tùy chọn không hợp lệ: $1" >&2; exit 2 ;;
     *) break ;;
@@ -99,6 +101,39 @@ if [ "$CHE_DO" = "chep_khoa" ]; then
     ssh -o ConnectTimeout=8 "$ten" \
       'k=$(cat); mkdir -p ~/.ssh && chmod 700 ~/.ssh && touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && (grep -qxF "$k" ~/.ssh/authorized_keys || echo "$k" >> ~/.ssh/authorized_keys)' \
       < "$KHOA" || { echo "!! $ten: chép khóa thất bại"; LOI=1; }
+  done
+  exit $LOI
+fi
+
+# ---------------------------------------------------------------- đồng bộ mã nguồn
+if [ "$CHE_DO" = "dong_bo_ma" ]; then
+  # Đẩy mã từ repo trên máy điều khiển sang ~/bd03_khuyen_nghi của từng máy bằng git push qua SSH.
+  # Máy lab không cần token GitHub (tài khoản lab dùng chung): chỉ máy điều khiển kéo từ GitHub.
+  # receive.denyCurrentBranch=updateInstead: push xong thì thư mục làm việc trên máy đích được
+  # cập nhật luôn; git từ chối nếu ở đó có tệp bị sửa tay, nên không ghi đè mất thay đổi của ai.
+  git -C "$THU_MUC" rev-parse --git-dir > /dev/null 2>&1 || { echo "$THU_MUC không phải repo git" >&2; exit 2; }
+  [ -z "$(git -C "$THU_MUC" status --porcelain --untracked-files=no)" ] \
+    || echo "Lưu ý: repo trên máy này có thay đổi chưa commit; chỉ phần đã commit được đẩy đi."
+  if [ "$(git -C "$THU_MUC" rev-parse --is-shallow-repository)" = "true" ]; then
+    echo "Repo trên máy này là bản clone nông (shallow), máy đích sẽ từ chối. Chạy trước: git fetch --unshallow" >&2
+    exit 2
+  fi
+  echo "Đẩy bản $(git -C "$THU_MUC" log --oneline -1)"
+  LOI=0
+  for dong in "${CAC_MAY[@]}"; do
+    ten="${dong%% *}"
+    echo "===== $ten"
+    if ! ssh -n -o ConnectTimeout=8 "$ten" 'command -v git > /dev/null || { echo "Máy chưa có git: sudo apt-get install -y git"; exit 3; }
+      [ -d ~/bd03_khuyen_nghi/.git ] || git init -q -b main ~/bd03_khuyen_nghi
+      git -C ~/bd03_khuyen_nghi config receive.denyCurrentBranch updateInstead'; then
+      echo "!! $ten: chưa chuẩn bị được repo trên máy này"; LOI=1; continue
+    fi
+    if git -C "$THU_MUC" push -q "$ten:bd03_khuyen_nghi" HEAD:main; then
+      ssh -n -o ConnectTimeout=8 "$ten" 'git -C ~/bd03_khuyen_nghi log --oneline -1'
+    else
+      echo "!! $ten: git push thất bại; thường do có tệp bị sửa tay ở đó (ssh $ten 'cd ~/bd03_khuyen_nghi && git status')"
+      LOI=1
+    fi
   done
   exit $LOI
 fi

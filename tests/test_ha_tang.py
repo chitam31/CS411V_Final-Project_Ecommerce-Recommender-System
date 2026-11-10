@@ -117,6 +117,56 @@ def test_ssh_tat_ca_chon_may_va_thu_tu(tmp_path):
     assert kq.stdout.count("lenh=bash -s --") == 6 and "10.68.71.182" not in kq.stdout
 
 
+def test_ssh_tat_ca_dong_bo_ma(tmp_path):
+    """--dong-bo-ma: git push qua ssh giả (chạy lệnh ngay trên máy này, mỗi máy một HOME riêng).
+
+    Dùng một repo tạm chứa bản sao script và danh bạ, không đụng tới repo thật."""
+    import shutil
+    repo = tmp_path / "repo"
+    (repo / "scripts" / "cum").mkdir(parents=True)
+    (repo / "cau_hinh").mkdir()
+    shutil.copy(os.path.join(GOC, "scripts", "cum", "ssh_tat_ca.sh"), repo / "scripts" / "cum")
+    shutil.copy(os.path.join(GOC, "cau_hinh", "cum.env"), repo / "cau_hinh")
+    danh_tinh = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t", GIT_COMMITTER_NAME="t",
+                     GIT_COMMITTER_EMAIL="t@t")
+    git = lambda *a: subprocess.run(["git", "-C", str(repo), *a], check=True, capture_output=True, env=danh_tinh)
+    git("init", "-q", "-b", "main")
+    git("add", "-A")
+    git("commit", "-q", "-m", "ban dau")
+
+    goc_may = tmp_path / "may"
+    gia = tmp_path / "bin" / "ssh"
+    gia.parent.mkdir()
+    gia.write_text(
+        "#!/bin/bash\n"
+        "while [ $# -gt 0 ]; do case \"$1\" in -o|-p) shift 2;; -G) exit 0;; -*) shift;; *) break;; esac; done\n"
+        "h=\"$1\"; shift; mkdir -p \"$GOC_MAY/$h\"; cd \"$GOC_MAY/$h\"\n"
+        "HOME=\"$GOC_MAY/$h\" exec bash -c \"$*\"\n"
+    )
+    gia.chmod(0o755)
+    mt = dict(danh_tinh, PATH="{}:{}".format(gia.parent, os.environ["PATH"]), GOC_MAY=str(goc_may),
+              GIT_SSH_VARIANT="ssh")
+    lenh = ["bash", str(repo / "scripts" / "cum" / "ssh_tat_ca.sh"), "--may", "labsit12,labsoe-18", "--dong-bo-ma"]
+    chay = lambda: subprocess.run(lenh, capture_output=True, text=True, env=mt)
+
+    kq = chay()
+    assert kq.returncode == 0, kq.stdout + kq.stderr
+    (repo / "GHI_CHU.md").write_text("ban moi\n")
+    git("add", "-A")
+    git("commit", "-q", "-m", "ban moi")
+    kq = chay()  # máy đích đã có repo: push cập nhật, thư mục làm việc phải có tệp mới
+    assert kq.returncode == 0, kq.stdout + kq.stderr
+    for may in ("labsit12", "labsoe-18"):
+        assert (goc_may / may / "bd03_khuyen_nghi" / "GHI_CHU.md").read_text() == "ban moi\n"
+
+    # Tệp bị sửa tay trên máy đích: push phải bị từ chối thay vì ghi đè
+    (goc_may / "labsit12" / "bd03_khuyen_nghi" / "GHI_CHU.md").write_text("sua tay\n")
+    git("commit", "-q", "--allow-empty", "-m", "ban thu ba")
+    kq = chay()
+    assert kq.returncode == 1 and "!! labsit12: git push thất bại" in kq.stdout
+    assert (goc_may / "labsit12" / "bd03_khuyen_nghi" / "GHI_CHU.md").read_text() == "sua tay\n"
+
+
 def test_dags_airflow():
     pytest.importorskip("airflow.sdk")  # thư mục airflow/ của dự án không phải gói Airflow
     from airflow.dag_processing.dagbag import DagBag

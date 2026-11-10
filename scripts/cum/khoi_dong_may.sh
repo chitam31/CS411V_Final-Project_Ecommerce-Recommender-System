@@ -36,7 +36,17 @@ if [ -z "$DONG" ]; then
   exit 1
 fi
 IFS='|' read -r TEN NODE_IP VAI_TRO SO_LOI BO_NHO <<< "$DONG"
-echo "== Máy $TEN ($NODE_IP), vai trò: $VAI_TRO"
+
+du_an_hdfs() {  # project compose của HDFS trên máy này (để dùng lại đúng volume dữ liệu cũ)
+  local cap
+  [ -n "${COMPOSE_PROJECT_NAME:-}" ] && { echo "$COMPOSE_PROJECT_NAME"; return; }
+  for cap in ${DU_AN_HADOOP:-}; do
+    [ "${cap%%=*}" = "$TEN" ] && { echo "${cap#*=}"; return; }
+  done
+  echo "hadoop-cluster"
+}
+DU_AN_HDFS="$(du_an_hdfs)"
+echo "== Máy $TEN ($NODE_IP), vai trò: $VAI_TRO, project HDFS: $DU_AN_HDFS"
 
 # Tệp .env cho từng docker compose (không đưa lên Git). Tệp được sinh lại mỗi lần chạy;
 # cấu hình riêng của máy (mật khẩu, WEB_CHE_DO...) đặt trong .env.rieng cùng thư mục,
@@ -47,7 +57,7 @@ ghi_env() {
   [ -f "$1.rieng" ] && cat "$1.rieng" >> "$1"
   return 0
 }
-ghi_env "$THU_MUC/ha_tang/hadoop/.env" "NODE_IP=$NODE_IP" "COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-hadoop-cluster}"
+ghi_env "$THU_MUC/ha_tang/hadoop/.env" "NODE_IP=$NODE_IP" "COMPOSE_PROJECT_NAME=$DU_AN_HDFS"
 ghi_env "$THU_MUC/ha_tang/spark/.env" "NODE_IP=$NODE_IP" "SPARK_MASTER_IP=$SPARK_MASTER_IP" "SO_LOI=$SO_LOI" "BO_NHO=$BO_NHO" \
   "HDFS_GOC=$HDFS_GOC" "KAFKA_BROKER=$KAFKA_BROKER"
 ghi_env "$THU_MUC/ha_tang/kafka/.env" "NODE_IP=$NODE_IP"
@@ -71,6 +81,36 @@ if [ "$DUNG" = "1" ]; then
   co_vai datanode && chay $HADOOP stop worker
   co_vai namenode && chay $HADOOP stop master
   exit 0
+fi
+
+# Container cũ trùng tên nhưng thuộc project compose khác thì compose sẽ báo lỗi trùng tên.
+# Kiểm tra trước để dừng sớm với hướng dẫn rõ ràng, chưa bật dịch vụ nào.
+XUNG_DOT=0
+kiem_tra_container() {  # $1 = tên container, $2 = project dự án sẽ dùng, $3 = du_lieu nếu có volume dữ liệu
+  [ "$IN_THU" = "1" ] && return 0
+  local du_an
+  du_an="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$1" 2>/dev/null)" || return 0
+  [ "$du_an" = "$2" ] && return 0
+  XUNG_DOT=1
+  echo "!! Container $1 thuộc project '${du_an:-không rõ (chạy bằng docker run)}', dự án cần project '$2'."
+  if [ "${3:-}" != "du_lieu" ]; then
+    echo "   Container này không giữ dữ liệu, xóa an toàn: docker rm -f $1"
+  elif [[ "$1" == hadoop-* ]] && [ -n "$du_an" ]; then
+    echo "   Có dữ liệu HDFS: thêm $TEN=$du_an vào DU_AN_HADOOP trong cau_hinh/cum.env để dùng lại volume cũ."
+  else
+    echo "   Có dữ liệu: đừng xóa vội, báo lại để chỉnh project cho khớp volume cũ."
+  fi
+}
+co_vai namenode && kiem_tra_container hadoop-master "$DU_AN_HDFS" du_lieu
+co_vai datanode && kiem_tra_container hadoop-worker "$DU_AN_HDFS" du_lieu
+co_vai spark-master && kiem_tra_container spark-master spark-cluster
+co_vai spark-worker && kiem_tra_container spark-worker spark-cluster
+co_vai kafka && kiem_tra_container kafka-server kafka-docker du_lieu
+co_vai kafka && kiem_tra_container kafka-ui kafka-docker
+co_vai web && kiem_tra_container bd03-web bd03-web
+if [ "$XUNG_DOT" = "1" ]; then
+  echo "Dừng lại, chưa bật dịch vụ nào. Xử lý các dòng !! ở trên rồi chạy lại."
+  exit 1
 fi
 
 co_vai namenode && chay $HADOOP up -d master

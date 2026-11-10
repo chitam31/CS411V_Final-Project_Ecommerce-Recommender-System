@@ -63,16 +63,30 @@ sudo ufw allow in on zt+ comment "ZeroTier ttunet - cum bd03"
 
 (Nếu không dùng ufw thì bỏ qua.)
 
-### 1.4. Lấy mã và sửa tài nguyên
+### 1.4. Đưa mã lên máy và tài nguyên của từng máy
+
+**Cách khuyên dùng — đẩy mã từ máy điều khiển qua SSH** (cần làm mục 1.5 trước). Repo để private, còn các tài khoản lab dùng chung, nên không đặt token GitHub trên máy lab. Chỉ máy điều khiển kéo mã từ GitHub, rồi đẩy sang `~/bd03_khuyen_nghi` của 6 máy:
 
 ```bash
-cd ~
-git clone https://github.com/chitam31/CS411V_Final-Project_Ecommerce-Recommender-System.git bd03_khuyen_nghi
-cd bd03_khuyen_nghi
-nproc; free -g          # ghi lại số lõi và RAM
+# Trong Git Bash trên máy điều khiển, thư mục repo
+git pull
+bash scripts/cum/ssh_tat_ca.sh --tty "sudo apt-get install -y git"   # nếu máy lab chưa có git
+bash scripts/cum/ssh_tat_ca.sh --dong-bo-ma
 ```
 
-Mở `cau_hinh/cum.env`, sửa cột `so_loi` và `bo_nho` của máy mình. Quy tắc: chừa **1 lõi và 2 GB** cho hệ điều hành + DataNode; máy labsit chừa thêm **2 GB cho Kafka**. Giá trị hiện có trong tệp (4 lõi, 6–8 GB) chỉ là ước lượng thận trọng, chưa đo trên máy thật. Sau khi sửa, cập nhật luôn `LOI_LO`, `LOI_ALS` ở cuối tệp sao cho `LOI_ALS + 5` (ba luồng streaming) không vượt tổng lõi của các worker.
+Mỗi lần có bản mới trên GitHub: `git pull` rồi `--dong-bo-ma` lại. Máy đích nào có tệp bị sửa tay thì git từ chối cập nhật máy đó thay vì ghi đè; mọi chỉnh sửa (kể cả `cau_hinh/cum.env`) làm trong repo rồi đẩy đi. Các tệp sinh ra khi chạy (`ha_tang/*/.env`, `jobs/common.zip`, `logs/`) nằm trong `.gitignore` nên không cản việc cập nhật.
+
+Cách thay thế: `git clone` trực tiếp trên từng máy, gõ token chỉ đọc khi git hỏi mật khẩu (không lưu token vào URL).
+
+**Tài nguyên** đã đo ngày 10/11/2026 bằng `scripts/cum/khao_sat_may.sh`: cả 6 máy lab đều **12 lõi, 7 GB RAM**, nên RAM là giới hạn chính. `cau_hinh/cum.env` giao cho Spark 3 GB RAM ở labsit12, labsit-may26, labsoe-18; 2 GB ở labsit (có Kafka) và labsit-may25 (đang chạy ứng dụng của nhóm khác). Mỗi executor dùng 2 GB nên phải nhỏ hơn hoặc bằng `bo_nho` nhỏ nhất, nếu không máy đó sẽ không nhận được executor nào. Khi đổi máy hoặc thêm máy, chạy lại khảo sát và sửa theo cùng quy tắc: chừa khoảng 2 GB cho Ubuntu có giao diện, 1 GB cho DataNode, cộng RAM của các dịch vụ khác đang chạy trên máy.
+
+**Máy dùng chung với nhóm khác:** labsit-may25 đang chạy `coffeehouse-face-*` (cùng PostgreSQL, MySQL, RabbitMQ), labsit-may26 đang chạy `airflow-worker-kafka`. Không dừng, không xóa các container này. Các container đã dừng từ lâu cũng không phải của dự án, cứ để nguyên.
+
+**Máy master:** ngoài NameNode, Spark Master và Airflow, mọi driver Spark cũng chạy trên máy này (PySpark ở standalone không hỗ trợ cluster deploy mode). Nên dừng DataNode cũ đang chạy trên master để nhường RAM; volume vẫn giữ nguyên:
+
+```bash
+ssh labsoe-11 docker stop hadoop-worker
+```
 
 Xem trước những gì script sẽ làm, không chạy thật:
 
@@ -340,7 +354,9 @@ docker exec bd03-airflow-airflow-scheduler-1 airflow dags trigger kn_tai_lap -c 
 | Triệu chứng | Nguyên nhân thường gặp | Cách xử lý |
 |---|---|---|
 | Worker không hiện trong Spark UI | Máy chưa được Authorize trên ZeroTier; `NODE_IP` sai; tường lửa | `zerotier-cli listnetworks`; xem `ha_tang/spark/.env`; mục 1.3 |
-| Job treo ở "Initial job has not accepted any resources" | Tổng `cores.max` của các ứng dụng đang chạy đã chiếm hết lõi | `bash scripts/luong.sh trang_thai`; giảm `LOI_ALS`; tạm dừng luồng không cần |
+| Job treo ở "Initial job has not accepted any resources" | Các ứng dụng đang chạy đã chiếm hết lõi hoặc RAM của worker, hoặc RAM executor lớn hơn `bo_nho` của worker | `bash scripts/luong.sh trang_thai`; tạm dừng luồng không cần (`luong.sh dung hien_thi`); xem cột Memory trên Spark UI `:8080` |
+| `khoi_dong_may.sh` báo `!! Container ... thuộc project ...` | Container cũ cùng tên được tạo từ thư mục khác | Làm theo hướng dẫn in ra: xóa container không giữ dữ liệu; với HDFS thì khai báo project cũ trong `DU_AN_HADOOP` |
+| Máy lab chậm hẳn, `free -h` gần hết RAM | 7 GB RAM dùng chung với giao diện và dịch vụ khác | Đóng trình duyệt trên máy lab; giảm `bo_nho` của máy đó trong `cum.env`; chạy batch khi không chạy luồng `hien_thi` |
 | `Could not obtain block` / ghi HDFS chậm rồi lỗi | Client không nối được cổng 9866 của DataNode, hoặc DataNode khai sai hostname | `hdfs dfsadmin -report` phải thấy IP ZeroTier của từng DataNode; mở tường lửa |
 | Executor lỗi "Failed to connect to 10.68.71.113:404x" | Cổng driver của container spark-master chưa mở hoặc bị trùng | Compose mới mở 4041–4060; mỗi hồ sơ một cổng; không chạy hai job cùng hồ sơ |
 | Kafka: `Connection to node -1 could not be established` | Sai `KAFKA_ADVERTISED_LISTENERS` hoặc cổng 9092 bị chặn | `ha_tang/kafka/.env` phải có `NODE_IP=10.68.71.204` |
@@ -358,7 +374,7 @@ docker exec bd03-airflow-airflow-scheduler-1 airflow dags trigger kn_tai_lap -c 
 Chỉ cần khi tuning **27 tổ hợp trên toàn bộ dữ liệu** không chạy xong trong thời gian cho phép, hoặc ALS rank 50 vẫn OOM sau khi đã tăng `numBlocks` và lọc user. Không cần chuyển cả cụm: thêm server như **một Spark Worker nữa**.
 
 1. Server join ZeroTier `633e31d8a29b038c`, ghi lại IP.
-2. Thêm vào `cau_hinh/cum.env`, ví dụ: `MAY_9="server-truong|10.68.71.X|spark-worker|16|48g"`, rồi tăng `LOI_ALS`/`RAM_ALS`.
+2. Thêm vào `cau_hinh/cum.env`, ví dụ: `MAY_10="server-truong|10.68.71.X|spark-worker|16|48g"`, rồi tăng `LOI_ALS`/`RAM_ALS`.
 3. Trên server: clone repo, `bash scripts/cum/khoi_dong_may.sh server-truong`.
 
 Không giao vai trò DataNode cho server nếu nó không chạy thường trực, để HDFS không mất bản sao khi server tắt.

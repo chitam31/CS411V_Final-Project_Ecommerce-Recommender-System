@@ -17,18 +17,29 @@ HO_SO="${1:?Thieu ho so: nap|thinh_hanh|hien_thi|lo|als|bao_tri|tai_lap|nhanh}"
 JOB="${2:?Thieu duong dan job, vi du transform/bronze_to_silver.py}"
 shift 2
 
-# hồ sơ -> cổng driver, cổng UI, số lõi tối đa, RAM executor, RAM driver, số phân vùng shuffle
+# hồ sơ -> cổng driver, cổng UI, số lõi tối đa, lõi mỗi executor, RAM executor, RAM driver, shuffle.
+# Cỡ theo máy thật 7 GB RAM: driver chạy NGAY TRONG container spark-master trên máy master
+# (PySpark không hỗ trợ cluster deploy mode ở standalone), nên RAM driver phải nhỏ để máy
+# master đủ chỗ cho NameNode, Airflow và các luồng streaming cùng lúc.
 case "$HO_SO" in
-  nap)        CONG=4041; UI=4140; LOI=2;  RAM_E=1g; RAM_D=1g; SHUFFLE=4  ;;
-  thinh_hanh) CONG=4043; UI=4141; LOI=2;  RAM_E=2g; RAM_D=1g; SHUFFLE=8  ;;
-  hien_thi)   CONG=4045; UI=4142; LOI=1;  RAM_E=1g; RAM_D=1g; SHUFFLE=4  ;;
-  lo)         CONG=4047; UI=4143; LOI=${LOI_LO:-8};   RAM_E=${RAM_LO:-3g};  RAM_D=2g; SHUFFLE=64 ;;
-  als)        CONG=4049; UI=4144; LOI=${LOI_ALS:-16}; RAM_E=${RAM_ALS:-4g}; RAM_D=4g; SHUFFLE=64 ;;
-  bao_tri)    CONG=4051; UI=4145; LOI=4;  RAM_E=2g; RAM_D=2g; SHUFFLE=32 ;;
-  tai_lap)    CONG=4053; UI=4146; LOI=${LOI_ALS:-16}; RAM_E=${RAM_ALS:-4g}; RAM_D=4g; SHUFFLE=64 ;;
-  nhanh)      CONG=4055; UI=4147; LOI=2;  RAM_E=1g; RAM_D=1g; SHUFFLE=8  ;;
+  nap)        CONG=4041; UI=4140; LOI=1;  NHAN=1; RAM_E=768m; RAM_D=512m; SHUFFLE=4  ;;
+  thinh_hanh) CONG=4043; UI=4141; LOI=2;  NHAN=2; RAM_E=1g;   RAM_D=768m; SHUFFLE=8  ;;
+  hien_thi)   CONG=4045; UI=4142; LOI=1;  NHAN=1; RAM_E=768m; RAM_D=640m; SHUFFLE=4  ;;
+  lo)         CONG=4047; UI=4143; LOI=${LOI_LO:-8};   NHAN=2; RAM_E=${RAM_LO:-2g};  RAM_D=1g;    SHUFFLE=64 ;;
+  als)        CONG=4049; UI=4144; LOI=${LOI_ALS:-10}; NHAN=2; RAM_E=${RAM_ALS:-2g}; RAM_D=1536m; SHUFFLE=64 ;;
+  bao_tri)    CONG=4051; UI=4145; LOI=4;  NHAN=2; RAM_E=1536m; RAM_D=1g;  SHUFFLE=32 ;;
+  tai_lap)    CONG=4053; UI=4146; LOI=${LOI_ALS:-10}; NHAN=2; RAM_E=${RAM_ALS:-2g}; RAM_D=1536m; SHUFFLE=64 ;;
+  nhanh)      CONG=4055; UI=4147; LOI=2;  NHAN=1; RAM_E=768m; RAM_D=640m; SHUFFLE=8  ;;
   *) echo "Ho so khong hop le: $HO_SO" >&2; exit 2 ;;
 esac
+
+# Luồng thịnh hành giữ trạng thái của hàng chục nghìn (cửa sổ, sản phẩm): để trong RocksDB thay
+# vì heap JVM, executor 1 GB vẫn đủ. Đổi provider làm checkpoint cũ không dùng lại được,
+# nên chỉ áp dụng cho hồ sơ này ngay từ đầu.
+THEM_CONF=()
+if [ "$HO_SO" = "thinh_hanh" ]; then
+  THEM_CONF=(--conf spark.sql.streaming.stateStore.providerClass=org.apache.spark.sql.execution.streaming.state.RocksDBStateStoreProvider)
+fi
 
 # Đóng gói jobs/common để executor import được. Ghi ra tệp tạm rồi đổi tên một lần,
 # để hai job nộp cùng lúc (DAG song song) không đọc phải tệp zip đang ghi dở.
@@ -65,6 +76,7 @@ exec docker exec "${CHE_DO_EXEC[@]}" \
   --driver-memory "$RAM_D" \
   --conf "spark.cores.max=$LOI" \
   --conf "spark.executor.memory=$RAM_E" \
+  --conf "spark.executor.cores=$NHAN" \
   --conf "spark.sql.shuffle.partitions=$SHUFFLE" \
   --conf "spark.driver.host=$MASTER_IP" \
   --conf spark.driver.bindAddress=0.0.0.0 \
@@ -80,5 +92,6 @@ exec docker exec "${CHE_DO_EXEC[@]}" \
   --conf spark.shuffle.io.maxRetries=10 \
   --conf spark.shuffle.io.retryWait=10s \
   --conf spark.cleaner.periodicGC.interval=5min \
+  "${THEM_CONF[@]}" \
   --py-files /opt/spark/jobs/common.zip \
   "/opt/spark/jobs/$JOB" "$@"

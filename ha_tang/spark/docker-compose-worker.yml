@@ -21,4 +21,6 @@ services:
     environment:
       SPARK_LOCAL_IP: ${NODE_IP:?Thieu NODE_IP}
       SPARK_PUBLIC_DNS: ${NODE_IP:?Thieu NODE_IP}
+      # Tiến trình Worker chỉ quản lý executor; RAM cho tính toán là --memory ở trên.
+      SPARK_DAEMON_MEMORY: 512m
     restart: unless-stopped

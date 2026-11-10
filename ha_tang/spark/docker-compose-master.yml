@@ -19,6 +19,8 @@ services:
       SPARK_MASTER_HOST: ${NODE_IP:-10.68.71.113}
       SPARK_MASTER_PORT: 7077
       SPARK_MASTER_WEBUI_PORT: 8080
+      # Tiến trình Master chỉ điều phối, 512 MB là đủ (mặc định 1 GB).
+      SPARK_DAEMON_MEMORY: 512m
       HDFS_GOC: ${HDFS_GOC:-hdfs://10.68.71.113:8020}
       KAFKA_BROKER: ${KAFKA_BROKER:-10.68.71.204:9092}
     ports:

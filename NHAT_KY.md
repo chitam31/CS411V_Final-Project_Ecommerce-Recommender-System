@@ -70,6 +70,13 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - Lỗi khi điều khiển từ Windows: gõ `bash ...` trong PowerShell gọi WSL (chưa cài) thay vì Git Bash, và `>>` của PowerShell 5.1 ghi `~/.ssh/config` theo UTF-16. Sửa hướng dẫn: dùng cửa sổ Git Bash, ghi đè cấu hình bằng `>`.
 - Laptop Windows `Whitehathacker` (ZeroTier `354f36a46a`) chưa thuộc mạng (`ACCESS_DENIED`; máy Ctam là một bản cài Linux khác, có mã riêng). Đã duyệt trên ZeroTier Central, nhận IP `10.68.71.182`, thêm vào danh bạ là `MAY_9` (vai trò `may-demo`). Chép khóa SSH sang 6 máy thành công; `ssh_tat_ca.sh hostname` in đúng tên từng máy (labsit → `labsit-ASUS`, labsit-may25 → `LabSit25`, labsit-may26 → `LabSit26`), tức IP trong danh bạ khớp máy thật.
 - Thêm `--chay-tep` cho `ssh_tat_ca.sh` (gửi script cục bộ sang máy đích qua stdin, máy đích chưa cần có repo) và `scripts/cum/khao_sat_may.sh` (lõi, RAM, đĩa, Docker, quyền Docker, container và volume của cụm cũ, đồng bộ giờ, Java, repo).
+- **Khảo sát 6 máy** (`khao_sat_may.sh`): đều 12 lõi, **7 GB RAM**, đĩa trống 325–387 GB, Docker 29.x, đồng hồ đã đồng bộ, chưa máy nào có repo. Ubuntu 22.04 (labsit-may26: 24.04). Phát hiện:
+  - RAM thật nhỏ hơn nhiều so với cấu hình ước lượng (worker 8 GB, executor 3–4 GB): nếu chạy sẽ treo vì không worker nào nhận executor. Đã cỡ lại: worker 3 GB (labsit12, labsit-may26, labsoe-18) và 2 GB (labsit, labsit-may25); executor 2 GB; driver 512 MB–1,5 GB; NameNode/DataNode heap 1 GB; Spark daemon 512 MB; luồng thịnh hành dùng RocksDB state store.
+  - Volume HDFS của labsit12, labsit-may25, labsit-may26 tên `hadoop-custom_worker_data` (từng chạy từ thư mục `hadoop-custom`): thêm `DU_AN_HADOOP` để dùng lại đúng volume. labsoe-18 chưa từng là DataNode.
+  - labsoe-11 đang chạy cả DataNode cũ: khuyên dừng để nhường RAM cho driver và Airflow.
+  - labsit-may25 chạy ứng dụng `coffeehouse-face` (PostgreSQL, MySQL, RabbitMQ), labsit-may26 chạy `airflow-worker-kafka` của nhóm khác: không động vào; labsit-may25 chỉ giao 2 GB cho Spark.
+  - Tài khoản `labsit` trên máy labsit chưa có quyền Docker.
+- `khoi_dong_may.sh` kiểm tra container cũ trùng tên thuộc project compose khác và dừng sớm kèm hướng dẫn. `ssh_tat_ca.sh --dong-bo-ma`: đẩy mã từ laptop sang 6 máy bằng `git push` qua SSH (`receive.denyCurrentBranch=updateInstead`), máy lab không cần token GitHub; có kiểm thử trên repo tạm, gồm cả trường hợp máy đích có tệp sửa tay (phải từ chối, không ghi đè).
 
 ---
 

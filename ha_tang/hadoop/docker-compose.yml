@@ -13,6 +13,8 @@ services:
       HDFS_NAMENODE_USER: root
       HDFS_SECONDARYNAMENODE_USER: root
       NODE_IP: ${NODE_IP:-10.68.71.113}
+      # Máy chỉ có 7 GB RAM: chặn heap thay vì để JVM tự lấy 1/4 RAM.
+      HADOOP_HEAPSIZE_MAX: 1g
     command: >
       bash -c "
         mkdir -p /tmp/hadoop-root/dfs/name &&
@@ -39,6 +41,7 @@ services:
       HDFS_DATANODE_USER: root
       # hdfs-site.xml đọc biến này qua ${env.NODE_IP}: mỗi DataNode tự khai báo IP ZeroTier của nó.
       NODE_IP: ${NODE_IP:?Thieu NODE_IP}
+      HADOOP_HEAPSIZE_MAX: 1g
     command: >
       bash -c "
         mkdir -p /tmp/hadoop-root/dfs/data &&

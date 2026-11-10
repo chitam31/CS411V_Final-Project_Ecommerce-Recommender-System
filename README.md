@@ -57,7 +57,7 @@ Mọi bảng nằm trên HDFS `hdfs://10.68.71.113:8020/lake/...`. Bronze là Pa
 | Ctam (cá nhân, Linux) | 10.68.71.205 | Web giả lập sàn TMĐT (cổng 8000) |
 | Máy Windows cá nhân | 10.68.71.59 | Máy trình chiếu: trình duyệt mở web và các trang giám sát |
 
-Danh bạ này là nguồn sự thật duy nhất, nằm ở [cau_hinh/cum.env](cau_hinh/cum.env). Số lõi và RAM của từng worker trong tệp đó **là ước lượng thận trọng**; cần sửa theo `nproc` và `free -g` của máy thật trước khi chạy.
+Danh bạ này là nguồn sự thật duy nhất, nằm ở [cau_hinh/cum.env](cau_hinh/cum.env). Tài nguyên đã đo trên máy thật (10/11/2026): mỗi máy lab 12 lõi, 7 GB RAM; RAM giao cho Spark ở từng worker được tính theo số đo đó (docs/TRIEN_KHAI_CUM.md, mục 1.4). Laptop điều khiển `whitehathacker` (10.68.71.182) cũng có trong danh bạ.
 
 ---
 
@@ -86,7 +86,7 @@ bd03_khuyen_nghi/
 ├── airflow/dags/           5 DAG theo mục 3.9
 ├── ha_tang/                Docker compose cho Hadoop, Spark, Kafka, Airflow, Web
 ├── scripts/                Khởi động từng máy, điều khiển cụm qua SSH, kiểm tra cụm, chạy lần đầu, demo
-├── tests/                  61 kiểm thử pytest, chạy trên Spark local thật
+├── tests/                  62 kiểm thử pytest, chạy trên Spark local thật
 ├── docs/                   KIEN_TRUC, TRIEN_KHAI_CUM, HUONG_DAN_DEMO, DOI_CHIEU_YEU_CAU
 └── models/                 Ghi chú về mô hình (mô hình thật nằm trên HDFS /lake/models)
 ```
@@ -102,7 +102,7 @@ Cần Python 3.10–3.11 và Java 17.
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-pytest                      # 60 test chạy trên Spark local; test DAG tự bỏ qua nếu thiếu Airflow
+pytest                      # 61 test chạy trên Spark local; test DAG tự bỏ qua nếu thiếu Airflow
 ```
 
 Test DAG Airflow (tùy chọn, nên dùng venv riêng vì Airflow kéo nhiều thư viện):
@@ -136,10 +136,9 @@ Script sinh một bộ dữ liệu nhỏ đúng định dạng RetailRocket ([sc
 Tóm tắt (chi tiết từng máy ở [docs/TRIEN_KHAI_CUM.md](docs/TRIEN_KHAI_CUM.md)):
 
 ```bash
-# Trên TỪNG máy (đã join ZeroTier, đã cài Docker):
-git clone https://github.com/chitam31/CS411V_Final-Project_Ecommerce-Recommender-System.git bd03_khuyen_nghi
-cd bd03_khuyen_nghi
-bash scripts/cum/khoi_dong_may.sh            # tự nhận máy qua IP ZeroTier, bật đúng dịch vụ
+# Từ laptop điều khiển (Git Bash), sau khi cài SSH theo docs/TRIEN_KHAI_CUM.md mục 1.5:
+bash scripts/cum/ssh_tat_ca.sh --dong-bo-ma                                        # đẩy mã sang 6 máy
+bash scripts/cum/ssh_tat_ca.sh "cd ~/bd03_khuyen_nghi && bash scripts/cum/khoi_dong_may.sh"   # bật theo vai trò
 
 # Từ bất kỳ máy nào: kiểm tra toàn cụm
 bash scripts/cum/kiem_tra_cum.sh

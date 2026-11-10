@@ -39,16 +39,18 @@
 
 ### Hồ sơ tài nguyên (`ha_tang/spark/submit.sh`)
 
-| Hồ sơ | Dùng cho | `cores.max` | RAM executor | Shuffle |
-|---|---|---|---|---|
-| `nap` | streaming/nap_su_kien (chạy liên tục) | 2 | 1g | 4 |
-| `thinh_hanh` | streaming/tinh_thinh_hanh (chạy liên tục) | 2 | 2g | 8 |
-| `hien_thi` | streaming/ghi_hien_thi (chạy liên tục) | 1 | 1g | 4 |
-| `lo` | job lô thường | `LOI_LO` (8) | `RAM_LO` (3g) | 64 |
-| `als` | tuning, đánh giá, sinh gợi ý | `LOI_ALS` (16) | `RAM_ALS` (4g) | 64 |
-| `bao_tri` | OPTIMIZE / ZORDER / VACUUM | 4 | 2g | 32 |
-| `tai_lap` | DAG 5 | như `als` | như `als` | 64 |
-| `nhanh` | job kiểm tra nhỏ | 2 | 1g | 8 |
+| Hồ sơ | Dùng cho | `cores.max` | Lõi/executor | RAM executor | RAM driver | Shuffle |
+|---|---|---|---|---|---|---|
+| `nap` | streaming/nap_su_kien (chạy liên tục) | 1 | 1 | 768m | 512m | 4 |
+| `thinh_hanh` | streaming/tinh_thinh_hanh (chạy liên tục, state store RocksDB) | 2 | 2 | 1g | 768m | 8 |
+| `hien_thi` | streaming/ghi_hien_thi (chạy khi có traffic web) | 1 | 1 | 768m | 640m | 4 |
+| `lo` | job lô thường | `LOI_LO` (8) | 2 | `RAM_LO` (2g) | 1g | 64 |
+| `als` | tuning, đánh giá, sinh gợi ý | `LOI_ALS` (10) | 2 | `RAM_ALS` (2g) | 1536m | 64 |
+| `bao_tri` | OPTIMIZE / ZORDER / VACUUM | 4 | 2 | 1536m | 1g | 32 |
+| `tai_lap` | DAG 5 | như `als` | 2 | như `als` | 1536m | 64 |
+| `nhanh` | job kiểm tra nhỏ | 2 | 1 | 768m | 640m | 8 |
+
+Cỡ theo máy thật (12 lõi, 7 GB RAM mỗi máy; tổng RAM executor của 5 worker là 13 GB). Driver chạy trong container `spark-master` trên máy master nên RAM driver được giữ nhỏ. Luồng thịnh hành để trạng thái cửa sổ trong RocksDB thay vì heap JVM. NameNode, DataNode giới hạn heap 1 GB; tiến trình Spark Master/Worker 512 MB.
 
 Ở chế độ standalone, ứng dụng đến trước sẽ chiếm hết lõi nếu không đặt `spark.cores.max`; ba luồng streaming luôn giữ tổng cộng 5 lõi, phần còn lại dành cho job lô.
 
