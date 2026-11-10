@@ -1,0 +1,7 @@
+{# Thẻ một sản phẩm. Biến: g (gợi ý), u (user), vi_tri #}
+<a class="the" href="/san-pham/{{ g.ma_san_pham }}?{% if u %}u={{ u }}{% endif %}{% if g.ma_hien_thi %}&mh={{ g.ma_hien_thi }}{% endif %}">
+  <div class="anh">{{ g.ma_san_pham[-3:] }}</div>
+  <div class="ten">SP {{ g.ma_san_pham }}</div>
+  <div class="phu">Danh mục {{ g.ma_danh_muc or "?" }}{% if g.gia_san_pham %} · {{ "{:,.0f}".format(g.gia_san_pham) }}{% endif %}</div>
+  <span class="nhan nhan-{{ g.nguon }}">{{ vi_tri }}. {{ g.nguon }}</span>
+</a>

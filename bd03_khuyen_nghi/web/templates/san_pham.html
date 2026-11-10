@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block noi_dung %}
+<section class="hop chi-tiet">
+  <div class="anh lon">{{ sp.ma_san_pham[-3:] }}</div>
+  <div>
+    <h1>Sản phẩm {{ sp.ma_san_pham }}</h1>
+    <p>Danh mục: {{ sp.ma_danh_muc or "chưa rõ" }}
+      {% if sp.gia_san_pham %} · Giá tham khảo: {{ "{:,.0f}".format(sp.gia_san_pham) }}{% endif %}
+      {% if sp.xep_hang_sao %} · Sao (thay thế): {{ "%.1f"|format(sp.xep_hang_sao) }}{% endif %}</p>
+    {% if u %}
+    <p>Đang thao tác với tư cách <b>{{ u }}</b>{% if mh %} · đến từ impression <code>{{ mh[:8] }}</code>{% endif %}</p>
+    <div class="hang">
+      <button onclick="guiSuKien('xem')">Xem</button>
+      <button onclick="guiSuKien('them_gio')">Thêm giỏ</button>
+      <button onclick="guiSuKien('mua')">Mua</button>
+      <a class="nut" href="/?u={{ u }}">Về trang chủ</a>
+    </div>
+    {% else %}
+    <p class="mo">Chưa đăng nhập: chọn người dùng ở trang chủ để gửi sự kiện.</p>
+    {% endif %}
+    <div id="ket-qua" class="mo"></div>
+    <h3>Trạng thái trong bảng thịnh hành</h3>
+    <div id="thinh-hanh">
+      {% if thinh_hanh %}
+        Cửa sổ kết thúc {{ thinh_hanh.cua_so_ket_thuc }} · xem {{ thinh_hanh.so_luot_xem }} · thêm giỏ {{ thinh_hanh.so_luot_them_gio }}
+      {% else %}Chưa có trong 15 phút gần nhất.{% endif %}
+    </div>
+  </div>
+</section>
+<section class="hop">
+  <h2>Sản phẩm liên quan</h2>
+  <div class="luoi">
+    {% for g in lien_quan %}{% set vi_tri = loop.index %}{% include "_the_san_pham.html" %}{% endfor %}
+  </div>
+</section>
+<script>
+const U = {{ (u or "")|tojson }}, MH = {{ (mh or "")|tojson }}, SP = {{ sp.ma_san_pham|tojson }};
+let mocBam = null, soThemGioTruoc = null;
+
+async function guiSuKien(loai) {
+  const r = await fetch("/api/su-kien", {method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ma_nguoi_dung: U, ma_san_pham: SP, loai: loai, ma_hien_thi: MH || null})});
+  const d = await r.json();
+  document.getElementById("ket-qua").textContent =
+    "Đã đẩy sự kiện '" + loai + "' vào Kafka lúc " + new Date(d.luc_ms).toLocaleTimeString() +
+    " · tương tác trong phiên: " + d.so_tuong_tac_phien;
+  if (loai === "them_gio") { mocBam = Date.now(); }
+}
+
+// Thăm dò bảng thịnh hành mỗi 5 giây để đo độ trễ "bấm nút -> bảng cập nhật" (yêu cầu <= 90 giây).
+async function thamDo() {
+  const d = await (await fetch("/api/thinh-hanh/" + encodeURIComponent(SP))).json();
+  const o = document.getElementById("thinh-hanh");
+  if (d && d.cua_so_ket_thuc) {
+    const tg = d.so_luot_them_gio;
+    let them = "";
+    if (mocBam && soThemGioTruoc !== null && tg > soThemGioTruoc) {
+      them = " · ĐÃ CẬP NHẬT sau " + ((Date.now() - mocBam) / 1000).toFixed(0) + " giây";
+      mocBam = null;
+    }
+    if (!mocBam) soThemGioTruoc = tg;
+    o.textContent = "Cửa sổ kết thúc " + d.cua_so_ket_thuc + " · xem " + d.so_luot_xem + " · thêm giỏ " + tg + them;
+  }
+}
+setInterval(thamDo, 5000); thamDo();
+</script>
+{% endblock %}

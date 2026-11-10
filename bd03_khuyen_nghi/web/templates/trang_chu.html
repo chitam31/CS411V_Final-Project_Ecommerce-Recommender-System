@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block noi_dung %}
+<section class="hop">
+  <form method="get" action="/" class="hang">
+    <label>Đăng nhập giả lập:</label>
+    <select name="u" onchange="this.form.submit()">
+      <option value="">-- chọn người dùng --</option>
+      {% for m in mau_nguoi %}
+      <option value="{{ m.ma_nguoi_dung }}" {% if m.ma_nguoi_dung == u %}selected{% endif %}>{{ m.ma_nguoi_dung }} ({{ m.chien_luoc }})</option>
+      {% endfor %}
+    </select>
+  </form>
+  <form method="get" action="/" class="hang">
+    <input name="u" placeholder="hoặc gõ mã người dùng" value="">
+    <button type="submit">Vào</button>
+    <a class="nut" href="/nguoi-dung-moi">+ Tạo người dùng mới (cold start)</a>
+  </form>
+</section>
+
+{% if kq %}
+<section class="hop">
+  <div class="thong-tin">
+    Người dùng <b>{{ kq.ma_nguoi_dung }}</b> · nhóm <b class="nhom-{{ kq.nhom_ab }}">{{ kq.nhom_ab }}</b>
+    ({{ "ALS thuần" if kq.nhom_ab == "A" else "ALS trộn 30% thịnh hành" }})
+    · chiến lược <b>{{ kq.chien_luoc }}</b>
+    {% if kq.phien_ban_mo_hinh %} · mô hình {{ kq.phien_ban_mo_hinh }}{% endif %}
+    · <i>đã ghi {{ kq.goi_y|length }} impression</i>
+  </div>
+  <h2>Dành cho bạn</h2>
+  <div class="luoi">
+    {% for g in kq.goi_y %}{% set vi_tri = loop.index %}{% include "_the_san_pham.html" %}{% endfor %}
+  </div>
+  <h2>Đang thịnh hành (15 phút gần nhất)</h2>
+  <div class="luoi">
+    {% for g in kq.thinh_hanh %}{% set vi_tri = loop.index %}{% include "_the_san_pham.html" %}{% endfor %}
+  </div>
+  {% if not kq.thinh_hanh %}<p class="mo">Luồng thịnh hành chưa có dữ liệu trong 15 phút qua.</p>{% endif %}
+</section>
+{% else %}
+<section class="hop">
+  <p>Chọn một người dùng để xem khối "Dành cho bạn". Mỗi lần trang hiển thị, từng sản phẩm được ghi một dòng
+  vào <code>gold.nhat_ky_hien_thi</code> (qua Kafka topic <code>hien-thi</code>).</p>
+  <p>Ba chiến lược cold start: chọn user <i>als</i>, user <i>it_tuong_tac</i>, hoặc bấm "Tạo người dùng mới".</p>
+</section>
+{% endif %}
+{% endblock %}
