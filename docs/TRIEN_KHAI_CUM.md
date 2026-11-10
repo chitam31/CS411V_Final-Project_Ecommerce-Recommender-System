@@ -390,7 +390,7 @@ bash scripts/cum/do_mang.sh              # Wi-Fi + IP LAN + ping chéo 6 máy, r
 bash scripts/cum/do_mang.sh --chi-ping   # chỉ phần ping, vài giây
 ```
 
-Ping trung bình dưới 20 ms giữa hai máy gần như chắc chắn là nối thẳng; vài chục đến hàng trăm ms là đi qua relay. Tốc độ tải ở phần 2 là con số quyết định HDFS và shuffle chạy nhanh hay chậm: cần vài MB/s trở lên (mốc ngày 10/11/2026 khi còn RELAY: khoảng 0,4 MB/s). Xác nhận chắc chắn bằng bảng đường nối của ZeroTier (mỗi máy hỏi mật khẩu sudo):
+Script ping mỗi cặp máy hai lần: qua IP ZeroTier và qua IP LAN hiện tại của máy kia. Qua Wi-Fi, nối thẳng thường dưới 60 ms, đi relay thường 150 ms trở lên. Cột nhận xét cho biết nguyên nhân: `RELAY du LAN thong` nghĩa là mạng cho phép hai máy thấy nhau nhưng ZeroTier chưa tìm ra đường thẳng, xử lý bằng `bash scripts/cum/ssh_tat_ca.sh --tty "sudo systemctl restart zerotier-one"` (IP ZeroTier giữ nguyên, Spark và HDFS tự nối lại sau vài giây); `RELAY, LAN khong thong` nghĩa là Wi-Fi chặn các máy nói chuyện với nhau, khởi động lại không giúp gì. Tốc độ tải ở phần 2 là con số quyết định HDFS và shuffle chạy nhanh hay chậm: cần vài MB/s trở lên (mốc ngày 10/11/2026 khi còn RELAY: khoảng 0,4 MB/s). Xác nhận chắc chắn bằng bảng đường nối của ZeroTier (mỗi máy hỏi mật khẩu sudo):
 
 ```bash
 bash scripts/cum/ssh_tat_ca.sh --tty "sudo zerotier-cli peers"

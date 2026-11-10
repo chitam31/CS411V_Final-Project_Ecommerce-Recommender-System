@@ -168,20 +168,26 @@ def test_ssh_tat_ca_dong_bo_ma(tmp_path):
 
 
 def test_do_mang_chi_ping(tmp_path):
-    """do_mang.sh --chi-ping: gửi script sang 6 máy lab kèm đủ 6 IP ZeroTier, đánh giá độ trễ đúng ngưỡng."""
+    """do_mang.sh --chi-ping: hỏi IP LAN từng máy, ping chéo qua ZeroTier và LAN, phân loại đúng nguyên nhân."""
     tep = os.path.join(GOC, "scripts", "cum", "ssh_tat_ca.sh")
     ds = subprocess.run(["bash", tep, "--liet-ke"], capture_output=True, text=True, check=True).stdout.split("\n")
     assert ds[0] == "labsoe-11 10.68.71.113" and len([d for d in ds if d]) == 6
     bin_gia = tmp_path / "bin"
     bin_gia.mkdir()
     lenh_gia = {
-        # ssh giả: chạy lệnh ngay trên máy này, stdin (nội dung script) chuyển nguyên cho bash
+        # ssh giả: chạy lệnh ngay trên máy này, báo tên máy cho các lệnh giả qua biến MAY
         "ssh": "while [ $# -gt 0 ]; do case \"$1\" in -o) shift 2;; -*) shift;; *) break;; esac; done\n"
-               "shift; exec bash -c \"$*\"\n",
-        "ip": "[ \"$1\" = route ] && echo 'default via 192.168.80.1' || echo '5: zt inet 10.68.71.198/24 scope global zt'\n",
-        "ping": "d=\"${@: -1}\"; echo '5 packets transmitted, 5 received, 0% packet loss'\n"
-                "[ \"$d\" = 10.68.71.204 ] && echo 'rtt min/avg/max/mdev = 200/312.5/700/90 ms' "
-                "|| echo 'rtt min/avg/max/mdev = 3/4.5/7/1 ms'\n",
+               "h=\"$1\"; shift; MAY=\"$h\" exec bash -c \"$*\"\n",
+        # mỗi máy: đuôi IP ZeroTier và đuôi IP LAN (192.168.80.x) như kết quả đo ngày 10/11
+        "ip": "case \"$MAY\" in labsoe-11) z=113 l=103;; labsit12) z=198 l=156;; labsit) z=204 l=127;;\n"
+              "  labsit-may25) z=42 l=135;; labsit-may26) z=90 l=155;; *) z=149 l=234;; esac\n"
+              "case \"$*\" in 'route get 1.1.1.1') echo \"1.1.1.1 via 192.168.80.254 dev wlo1 src 192.168.80.$l uid 1\";;\n"
+              "  route) echo 'default via 192.168.80.254 dev wlo1';; *) echo \"5: zt inet 10.68.71.$z/24 scope global zt\";; esac\n",
+        # .204 đi relay nhưng LAN của nó thông; .42 đi relay và LAN của nó không trả lời
+        "ping": "d=\"${@: -1}\"; echo '4 packets transmitted'\n"
+                "case \"$d\" in 10.68.71.204) echo 'rtt min/avg/max/mdev = 200/312.5/700/90 ms';;\n"
+                "  10.68.71.42) echo 'rtt min/avg/max/mdev = 150/201.8/260/30 ms';; 192.168.80.135) exit 1;;\n"
+                "  *) echo 'rtt min/avg/max/mdev = 3/4.5/7/1 ms';; esac\n",
     }
     for ten, noi_dung in lenh_gia.items():
         (bin_gia / ten).write_text("#!/bin/bash\n" + noi_dung)
@@ -192,9 +198,12 @@ def test_do_mang_chi_ping(tmp_path):
     assert kq.returncode == 0, kq.stdout + kq.stderr
     assert kq.stdout.count("=====") == 6 and "Phần 2" not in kq.stdout
     dong = [d for d in kq.stdout.splitlines() if d.startswith("[labsit12] ping")]
-    assert len(dong) == 5  # bỏ qua chính IP ZeroTier của máy (10.68.71.198 theo lệnh ip giả)
-    assert any("10.68.71.204" in d and "CHAM" in d for d in dong)
-    assert any("10.68.71.113" in d and "nhanh" in d for d in dong)
+    assert len(dong) == 5  # bỏ qua chính IP ZeroTier của máy
+    tim = lambda ip: [d for d in dong if "ping " + ip + " " in d][0]
+    assert "192.168.80.127" in tim("10.68.71.204") and "khoi dong lai zerotier-one" in tim("10.68.71.204")
+    assert "Wi-Fi chan" in tim("10.68.71.42")
+    assert tim("10.68.71.113").endswith("| noi thang")
+    assert "20 cặp nối thẳng, 10 cặp đi relay (5 cặp LAN vẫn thông), 0 cặp không ping được" in kq.stdout
 
 
 def test_dags_airflow():

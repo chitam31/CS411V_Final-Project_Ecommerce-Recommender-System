@@ -7,39 +7,53 @@
 #   bash scripts/cum/do_mang.sh --nguon labsit12        # đo tốc độ tải từ labsit12 thay vì từ master
 #   KICH_THUOC_MB=64 bash scripts/cum/do_mang.sh        # tệp thử lớn hơn (mặc định 16 MB)
 #
-# Phần 1, trên từng máy: mạng Wi-Fi đang nối, cường độ sóng, IP LAN, rồi ping IP ZeroTier của mọi
-#   máy khác. Độ trễ trung bình dưới 20 ms gần như chắc chắn là đường nối thẳng (DIRECT); từ vài
-#   chục ms trở lên thường là đi qua máy chuyển tiếp của ZeroTier (RELAY). Muốn xác nhận chắc
-#   chắn: bash scripts/cum/ssh_tat_ca.sh --tty "sudo zerotier-cli peers".
+# Phần 1, trên từng máy: mạng Wi-Fi đang nối, cường độ sóng, IP LAN, rồi ping mọi máy khác qua
+#   IP ZeroTier và qua IP LAN. Qua Wi-Fi, đường nối thẳng (DIRECT) thường dưới 60 ms; đi qua máy
+#   chuyển tiếp của ZeroTier (RELAY) thường 150 ms trở lên. Nếu ZeroTier chậm mà LAN nhanh, mạng
+#   cho phép nối thẳng nhưng ZeroTier chưa tìm ra đường: khởi động lại zerotier-one trên các máy
+#   đó. Xác nhận chắc chắn: bash scripts/cum/ssh_tat_ca.sh --tty "sudo zerotier-cli peers".
 # Phần 2: máy nguồn (mặc định master) phát một tệp ngẫu nhiên qua HTTP trên IP ZeroTier của nó;
 #   từng máy còn lại lần lượt tải về và báo MB/s. Đây là con số quyết định tốc độ HDFS và shuffle.
 set -uo pipefail
 
 # ------------------------------------------------ phần chạy TRÊN máy đích (gửi qua stdin)
-tren_may() {  # $@ = danh sách IP ZeroTier của các máy cần ping
-  local zt wifi ssid song toc dich kq mat tb nhan_xet
-  zt="$(ip -4 -o addr show 2>/dev/null | grep -o '10\.68\.71\.[0-9]*' | head -1)"
+ip_zt() { ip -4 -o addr show 2>/dev/null | grep -o '10\.68\.71\.[0-9]*' | head -1; }
+ip_lan() {  # IP của card mạng đang ra Internet (Wi-Fi hoặc cáp), không phải ZeroTier/Tailscale/Docker
+  ip route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i < NF; i++) if ($i == "src") {print $(i + 1); exit}}'
+}
+do_ping() {  # $1 = IP; in độ trễ trung bình (ms), rỗng nếu không trả lời
+  ping -c 4 -i 0.3 -W 2 -q "$1" 2>/dev/null | awk -F/ '/^(rtt|round-trip)/{print $5}'
+}
+nhanh() { awk -v t="$1" 'BEGIN{exit !(t != "" && t < 60)}'; }
+
+tren_may() {  # $@ = "ipZeroTier,ipLAN" của các máy cần ping (ipLAN có thể rỗng)
+  local zt wifi ssid song toc cap dich lan t_zt t_lan nhan_xet
+  zt="$(ip_zt)"
   echo "IP ZeroTier: ${zt:-KHONG THAY (may chua vao mang ttunet?)}"
   if command -v nmcli > /dev/null; then
     # --rescan no: đọc kết quả quét sẵn có, không bắt card Wi-Fi quét lại (gây trễ chốc lát)
     wifi="$(nmcli -t -f IN-USE,SSID,SIGNAL,RATE dev wifi list --rescan no 2>/dev/null | grep '^\*' | head -1)"
     IFS=: read -r _ ssid song toc <<< "$wifi"
     echo "Wi-Fi: ${ssid:-(khong noi Wi-Fi)} | song ${song:-?}% | toc do lien ket ${toc:-?}"
-    nmcli -t -f DEVICE,TYPE,STATE dev 2>/dev/null | awk -F: '$2=="ethernet"{print "Cong mang day " $1 ": " $3}'
+    nmcli -t -f DEVICE,TYPE,STATE dev 2>/dev/null \
+      | awk -F: '$2 == "ethernet" && $1 !~ /^veth/ {print "Cong mang day " $1 ": " $3}'
   fi
-  ip -4 -o addr show scope global 2>/dev/null \
-    | awk '$2 !~ /^(docker|br-|veth|zt)/ {print "IP LAN " $2 ": " $4}'
-  echo "Gateway: $(ip route 2>/dev/null | awk '/^default/{print $3; exit}')"
-  for dich in "$@"; do
+  echo "IP LAN: $(ip_lan) | Gateway: $(ip route 2>/dev/null | awk '/^default/{print $3; exit}')"
+  # Ping cả IP ZeroTier lẫn IP LAN của máy kia để tách hai nguyên nhân:
+  #   ZeroTier chậm + LAN nhanh  -> mạng cho phép nối thẳng nhưng ZeroTier chưa tìm ra đường
+  #   ZeroTier chậm + LAN không trả lời -> Wi-Fi chặn các máy nói chuyện với nhau
+  for cap in "$@"; do
+    dich="${cap%%,*}"; lan="${cap#*,}"
     [ "$dich" = "$zt" ] && continue
-    kq="$(ping -c 5 -i 0.3 -W 2 -q "$dich" 2>/dev/null)"
-    mat="$(grep -o '[0-9.]*% packet loss' <<< "$kq" | cut -d% -f1)"
-    tb="$(awk -F/ '/^(rtt|round-trip)/{print $5}' <<< "$kq")"
-    if [ -z "$tb" ]; then nhan_xet="KHONG PING DUOC"
-    elif awk -v t="$tb" 'BEGIN{exit !(t < 20)}'; then nhan_xet="nhanh (noi thang)"
-    else nhan_xet="CHAM (nghi di qua relay)"
+    t_zt="$(do_ping "$dich")"
+    t_lan=""; [ -n "$lan" ] && t_lan="$(do_ping "$lan")"
+    if [ -z "$t_zt" ]; then nhan_xet="KHONG PING DUOC qua ZeroTier"
+    elif nhanh "$t_zt"; then nhan_xet="noi thang"
+    elif [ -z "$lan" ]; then nhan_xet="RELAY"
+    elif nhanh "$t_lan"; then nhan_xet="RELAY du LAN thong -> khoi dong lai zerotier-one"
+    else nhan_xet="RELAY, LAN khong thong (Wi-Fi chan may-may)"
     fi
-    printf 'ping %-14s tb %8s ms  mat %3s%%  %s\n' "$dich" "${tb:--}" "${mat:-100}" "$nhan_xet"
+    printf 'ping %-13s ZT %8s ms | LAN %-15s %8s ms | %s\n' "$dich" "${t_zt:--}" "${lan:--}" "${t_lan:--}" "$nhan_xet"
   done
 }
 
@@ -65,6 +79,7 @@ PY
 }
 
 case "${1:-}" in
+  --dia-chi) echo "DIA_CHI $(ip_zt) $(ip_lan)"; exit 0 ;;
   --tren-may) shift; tren_may "$@"; exit 0 ;;
   --tai-ve) tai_ve "${2:?Thiếu URL}"; exit $? ;;
 esac
@@ -91,8 +106,18 @@ mapfile -t CAC_MAY < <("${SSH_TAT_CA[@]}" --liet-ke)
 [ ${#CAC_MAY[@]} -gt 0 ] || { echo "Danh bạ cau_hinh/cum.env không có máy nào" >&2; exit 2; }
 CAC_IP=(); for dong in "${CAC_MAY[@]}"; do CAC_IP+=("${dong#* }"); done
 
-echo "################ Phần 1: Wi-Fi, IP LAN và ping chéo giữa ${#CAC_MAY[@]} máy"
-"${SSH_TAT_CA[@]}" --song-song --chay-tep "$TEP_NAY" -- --tren-may "${CAC_IP[@]}"
+echo "################ Phần 1: Wi-Fi, IP LAN và ping chéo giữa ${#CAC_MAY[@]} máy (qua ZeroTier và qua LAN)"
+# Hỏi trước IP LAN hiện tại của từng máy (DHCP cấp, đổi theo mạng Wi-Fi), ghép với IP ZeroTier
+declare -A LAN=()
+while read -r _ _ zt lan; do [ -n "$zt" ] && LAN[$zt]="$lan"; done \
+  < <("${SSH_TAT_CA[@]}" --song-song --chay-tep "$TEP_NAY" -- --dia-chi | grep ' DIA_CHI ')
+CAP=(); for ip in "${CAC_IP[@]}"; do CAP+=("$ip,${LAN[$ip]:-}"); done
+KQ_PING="$(mktemp)"
+"${SSH_TAT_CA[@]}" --song-song --chay-tep "$TEP_NAY" -- --tren-may "${CAP[@]}" | tee "$KQ_PING"
+echo
+echo "Tóm tắt: $(grep -c '| noi thang$' "$KQ_PING") cặp nối thẳng, $(grep -c '| RELAY' "$KQ_PING") cặp đi relay" \
+     "($(grep -c 'khoi dong lai zerotier-one' "$KQ_PING") cặp LAN vẫn thông), $(grep -c 'KHONG PING DUOC' "$KQ_PING") cặp không ping được."
+rm -f "$KQ_PING"
 [ "$CHI_PING" = "1" ] && exit 0
 
 [ -n "$NGUON" ] || NGUON="${CAC_MAY[0]%% *}"
