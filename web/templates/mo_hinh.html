@@ -67,7 +67,7 @@
   <table>
     <tr><th>Giai đoạn</th><th>Số tệp của bảng</th><th>Tệp đọc mỗi truy vấn</th><th>Trung vị (ms)</th><th>p95 (ms)</th></tr>
     {% for d in zorder %}
-    <tr><td>{{ d.giai_doan }}</td><td>{{ d.so_tep }}</td><td>{{ d.tep_doc_trung_binh }}</td>
+    <tr><td>{{ d.giai_doan }}</td><td>{{ d.so_tep }}</td><td>{{ "%.2f"|format(d.tep_doc_trung_binh or 0) }}</td>
       <td>{{ "%.0f"|format(d.trung_vi_ms or 0) }}</td><td>{{ "%.0f"|format(d.p95_ms or 0) }}</td></tr>
     {% endfor %}
   </table>

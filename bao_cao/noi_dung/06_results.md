@@ -154,6 +154,10 @@ Table: Pooled A/B result over seven days (simulated traffic, no bonus for trendi
 - **Limitation.** Impressions of the same user are correlated, so an impression-level z-test may understate the p-value; aggregating by user or a user-level bootstrap would be stricter. The project keeps the z-test because the specification requires it.
 - These figures were measured on the lists before re-ranking was deployed (version 1 of the recommendation table).
 
+The A/B dashboard of the web application reads `gold.ket_qua_ab` and shows the same pooled result, conclusion and required sample size, together with the share of simulated traffic for each group and the daily CTR curves (@fig:ab-web). Group B lies below group A on all seven days (by 0.02 to 0.22 percentage points), which is consistent with the pooled test even though no single day is significant on its own.
+
+![A/B dashboard of the web application: pooled result with p-values and conclusions (top) and CTR per day (bottom)](hinh/s03_ab_web.png){#fig:ab-web w=15.5}
+
 ## OPTIMIZE and Z-ORDER {#sec:res-zorder}
 
 The per-user lookup `WHERE ma_nguoi_dung = ?` is the hot query of the web application. @tab:zorder and @fig:zorder give the three-phase measurement on the 5.3-million-row recommendation table (30 lookups per phase).
@@ -214,8 +218,8 @@ Table: Status of the acceptance criteria {#tab:ket-qua-nghiem-thu w=5,28,24,43}
 | 3 | Three cold-start strategies | Met: brand-new user shown live; the other two strategies unit-tested and shown at the defence | @tab:cold-start, @fig:cold-start-web |
 | 4 | Trending updated ≤ 90 s after a click | Met | 51 s from three clicks to the updated table (@tab:do-tre) |
 | 5 | Closed loop web → Kafka → bronze → trending | Met | Web events in bronze 10.3 s after Kafka, in the trending table after 51 s (@tab:do-tre, @fig:loop) |
-| 6 | A/B result with p-value and conclusion | Met | CTR p = 0.015 (B lower), conversion p = 0.75 (@tab:ab) |
+| 6 | A/B result with p-value and conclusion | Met | CTR p = 0.015 (B lower), conversion p = 0.75 (@tab:ab, @fig:ab-web) |
 | 7 | Reproduction with `VERSION AS OF` | Met | Deviation 0.000000 on version 0 (@tab:tai-lap) |
 | 8 | OPTIMIZE/Z-ORDER figures for the per-user lookup | Met | Files read 67 → 1.07, median 8.4× faster than compaction only (@tab:zorder) |
 
-> [!TODO] After model version 2 is deployed (manual run of DAG 1, 11 November), add screenshots of the remaining web screens: home pages of a group A and a group B user with ALS lists, a product page, the A/B dashboard and the model-quality screen.
+> [!TODO] After model version 2 is deployed (manual run of DAG 1, 11 November), add screenshots of the remaining web screens: home pages of a group A and a group B user with ALS lists, a product page and the model-quality screen.
