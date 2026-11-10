@@ -12,7 +12,15 @@ MA_CHAY="r$(date -u +%Y%m%dT%H%M%S)"
 buoc() { echo; echo "=================== $* ==================="; }
 
 buoc "1. Tạo thư mục HDFS và bảng Delta"
+docker exec hadoop-master hdfs dfsadmin -safemode wait
 docker exec hadoop-master hdfs dfs -mkdir -p /lake/landing/retailrocket /lake/models /lake/checkpoints
+# Kiểm tra đầu vào trước, để không chạy nửa chừng mới báo thiếu tệp.
+for t in events.csv item_properties_part1.csv item_properties_part2.csv category_tree.csv; do
+  docker exec hadoop-master hdfs dfs -test -e "/lake/landing/retailrocket/$t" || {
+    echo "Thiếu /lake/landing/retailrocket/$t trên HDFS: chạy bash scripts/tai_du_lieu.sh <thư mục CSV> trước." >&2
+    exit 1
+  }
+done
 $S nhanh kiem_tra/khoi_tao_bang.py
 
 buoc "2. Danh mục sản phẩm -> silver.san_pham"
