@@ -62,6 +62,8 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - Sửa `khoi_dong_may.sh`: cấu hình riêng của máy (mật khẩu Airflow cho web...) đặt trong `.env.rieng`, không bị mất khi script sinh lại `.env`.
 - Viết tài liệu: README, MO_HINH, NHAT_KY, docs/KIEN_TRUC, docs/TRIEN_KHAI_CUM, docs/HUONG_DAN_DEMO, docs/DOI_CHIEU_YEU_CAU, models/README; requirements, .gitignore, pytest.ini.
 - Chạy lại toàn bộ kiểm thử: **58 đạt, 1 bỏ qua** (môi trường PySpark; test cần Airflow) và **8/8 đạt** trong môi trường Airflow 3.3.1.
+- Học viên push mã lên GitHub từ máy Windows (`eabaa14`), rồi sửa hai lỗi khi đóng gói (`221db2d`): dự án bị lồng trong thư mục con `bd03_khuyen_nghi/` (đã đưa lên gốc bằng `git mv`, giữ lịch sử), và thêm `.gitattributes` cố định LF để script `.sh` và `cum.env` không bị đổi sang CRLF khi lấy ra trên Windows. Kiểm tra: không còn tệp CRLF trong index; `git diff -M --shortstat` chỉ có đổi chỗ và 8 dòng của `.gitattributes`.
+- Cài Claude GitHub App cho riêng repo này. Bản clone từ GitHub trùng khớp 100% với bản đã kiểm thử; chạy lại pytest trên bản clone: 58 đạt, 1 bỏ qua.
 
 ---
 
@@ -111,14 +113,14 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 1. **Các lệnh Delta Lake chạy thật** (MERGE, `versionAsOf`, CDF, `ALTER TABLE ADD COLUMNS`, OPTIMIZE ZORDER, VACUUM, `DESCRIBE HISTORY`): môi trường phát triển chặn Maven Central nên không tải được `delta-spark_2.12-3.2.0.jar` và `delta-storage-3.2.0.jar`. Cú pháp theo tài liệu Delta 3.2. Cách kiểm chứng: `bash scripts/kiem_tra_cuc_bo.sh` trên bất kỳ máy nào có Internet (khoảng 10–15 phút).
 2. **Cụm 8 máy:** phiên làm việc không được liên kết với máy trong phòng lab và các trang quản trị cụm (`10.68.71.x`) không mở được từ trình duyệt của học viên lúc làm việc, nên chưa thao tác trực tiếp trên máy nào. Toàn bộ thao tác trên cụm được viết thành script và hướng dẫn từng máy (docs/TRIEN_KHAI_CUM.md).
 3. **Số liệu thật:** chưa có. Tài liệu không chứa con số thí nghiệm nào.
-4. **Đẩy mã lên GitHub:** repo `chitam31/CS411V_Final-Project_Ecommerce-Recommender-System` đã được tạo, nhưng quyền GitHub của phiên làm việc chưa được cấp cho repo này nên chưa push được; học viên push từ tệp zip (README, mục 3.4 và hướng dẫn kèm theo).
+4. **Đẩy mã lên GitHub:** đã xong ngày 10/11/2026 (mục 3). Học viên cài Claude GitHub App với quyền chỉ trên repo này, nên các bản sửa sau được đẩy trực tiếp.
 
 ---
 
 ## 7. Việc còn lại cho nhóm
 
 - [ ] Sửa `so_loi`, `bo_nho` trong `cau_hinh/cum.env` theo `nproc`, `free -g` của từng máy.
-- [ ] Push mã lên repo của nhóm; mọi máy `git clone` cùng một bản.
+- [x] Push mã lên repo của nhóm (10/11/2026); mọi máy `git clone` cùng một bản.
 - [ ] Chạy `scripts/kiem_tra_cuc_bo.sh` trên một máy có Internet (xác nhận phần Delta).
 - [ ] Triển khai 8 máy theo docs/TRIEN_KHAI_CUM.md; `kiem_tra_cum.sh` không còn `DONG`.
 - [ ] Tải dữ liệu, chạy bộ phát, `chay_lan_dau.sh` với lưới 27 tổ hợp.
