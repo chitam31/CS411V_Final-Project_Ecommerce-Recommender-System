@@ -98,6 +98,15 @@ Cách thay thế: `git clone` trực tiếp trên từng máy, gõ token chỉ �
 ssh labsoe-11 docker stop hadoop-worker
 ```
 
+Máy master còn chạy một **Cassandra** không thuộc dự án (tài khoản `cassandra`, khoảng 2,5 GB RAM). Còn Cassandra thì master chỉ đủ cho Airflow và một job batch, không đủ thêm driver của 3 luồng streaming. Nhóm được phép dừng tạm thời trong thời gian chạy đồ án; chỉ `stop`, không `disable`, và báo người phụ trách phòng Lab:
+
+```bash
+ssh -t labsoe-11 "sudo systemctl stop cassandra; systemctl is-active cassandra"     # in ra inactive
+ssh -t labsoe-11 "sudo systemctl start cassandra"                                    # bật lại khi xong đồ án
+```
+
+Cassandra tự bật lại nếu máy khởi động lại: sau mỗi lần master khởi động lại phải dừng lại lần nữa.
+
 Xem trước những gì script sẽ làm, không chạy thật:
 
 ```bash
@@ -374,6 +383,14 @@ for d in kn_giam_sat_streaming kn_tinh_ab kn_bao_tri kn_pipeline_hang_ngay; do
   docker exec bd03-airflow-airflow-scheduler-1 airflow dags unpause $d
 done
 ```
+
+Giới hạn số driver Spark chạy đồng thời trên master bằng pool mặc định của Airflow. Ban đêm, khi DAG 1 huấn luyện và 3 luồng vẫn chạy, đặt 1 chỗ; lúc demo cần DAG giám sát chạy song song với DAG khác thì nâng lên 2 (sau khi `free -h` cho thấy còn đủ RAM):
+
+```bash
+docker exec bd03-airflow-airflow-scheduler-1 airflow pools set default_pool 1 "mot driver Spark moi luc tren master"
+```
+
+`kn_giam_sat_streaming` chạy một job Spark mỗi 15 phút: với 1 chỗ, nó phải chờ các task huấn luyện dài và lần chạy bị quá hạn 14 phút. Vì vậy ban đêm để DAG này tạm dừng, bật lại trước buổi demo.
 
 Chạy thử DAG 5 với phiên bản features của lần chạy đầu:
 
