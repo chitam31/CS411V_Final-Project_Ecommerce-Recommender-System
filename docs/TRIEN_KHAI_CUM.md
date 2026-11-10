@@ -12,6 +12,7 @@ Tài liệu đi theo đúng thứ tự bật cụm. Mỗi lệnh ghi rõ chạy 
 | 6 | labsoe-18 | 10.68.71.149 | hadoop-worker, spark-worker |
 | 7 | Ctam (Linux) | 10.68.71.205 | bd03-web |
 | 8 | Windows cá nhân | 10.68.71.59 | trình duyệt, script demo |
+| 9 | Laptop Windows `Whitehathacker` | 10.68.71.182 | điều khiển cụm qua SSH (mục 1.5), trình chiếu |
 
 ---
 
@@ -113,6 +114,7 @@ bash scripts/cum/ssh_tat_ca.sh "cd ~/bd03_khuyen_nghi && git pull -q && git log 
 bash scripts/cum/ssh_tat_ca.sh "cd ~/bd03_khuyen_nghi && bash scripts/cum/khoi_dong_may.sh"   # lần lượt, master trước
 bash scripts/cum/ssh_tat_ca.sh --song-song "nproc; free -g | head -2"
 bash scripts/cum/ssh_tat_ca.sh --tty "sudo apt-get install -y chrony"     # lệnh cần mật khẩu sudo
+bash scripts/cum/ssh_tat_ca.sh --song-song --chay-tep scripts/cum/khao_sat_may.sh   # khảo sát lõi, RAM, đĩa, Docker, repo của cả 6 máy
 ssh -t labsoe-11 tmux new -A -s bd03                                      # vào master trong tmux
 ```
 

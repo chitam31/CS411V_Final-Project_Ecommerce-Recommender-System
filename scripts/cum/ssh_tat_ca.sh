@@ -14,6 +14,7 @@
 #   bash scripts/cum/ssh_tat_ca.sh --vai-tro spark-worker "docker ps"
 #   bash scripts/cum/ssh_tat_ca.sh --may labsit12,labsit "cd ~/bd03_khuyen_nghi && git pull"
 #   bash scripts/cum/ssh_tat_ca.sh --tty "sudo apt-get install -y chrony"   # lệnh cần gõ mật khẩu sudo
+#   bash scripts/cum/ssh_tat_ca.sh --song-song --chay-tep scripts/cum/khao_sat_may.sh   # chạy một script cục bộ trên từng máy
 #
 # Mặc định chọn các máy hạ tầng của cụm (namenode, datanode, spark-master, spark-worker, kafka),
 # tức 6 máy lab; --tat-ca chọn thêm máy web. Máy demo (Windows) không bao giờ được chọn vì đó
@@ -22,7 +23,7 @@ set -uo pipefail
 THU_MUC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$THU_MUC/cau_hinh/cum.env"
 
-SONG_SONG=0; TTY=0; TAT_CA=0; VAI_TRO=""; DS_MAY=""; CHE_DO="lenh"
+SONG_SONG=0; TTY=0; TAT_CA=0; VAI_TRO=""; DS_MAY=""; TEP=""; CHE_DO="lenh"
 SSH_USER_MAC_DINH="${SSH_USER:-hduser}"
 KHOA="${KHOA:-$HOME/.ssh/id_ed25519.pub}"
 
@@ -33,6 +34,7 @@ while [ $# -gt 0 ]; do
     --tat-ca) TAT_CA=1 ;;
     --vai-tro) VAI_TRO="${2:?Thiếu tên vai trò}"; shift ;;
     --may) DS_MAY="${2:?Thiếu danh sách máy}"; shift ;;
+    --chay-tep) TEP="${2:?Thiếu đường dẫn tệp script}"; shift ;;
     --tao-config) CHE_DO="tao_config" ;;
     --chep-khoa) CHE_DO="chep_khoa" ;;
     --) shift; break ;;
@@ -102,7 +104,25 @@ if [ "$CHE_DO" = "chep_khoa" ]; then
 fi
 
 # ---------------------------------------------------------------- chạy lệnh
+if [ -n "$TEP" ]; then
+  # Gửi nội dung script cục bộ qua stdin cho bash trên máy đích: máy đích không cần có repo.
+  [ -f "$TEP" ] || { echo "Không thấy tệp $TEP" >&2; exit 2; }
+  [ "$TTY" = "1" ] && { echo "--tty không dùng cùng --chay-tep được" >&2; exit 2; }
+  LENH="bash -s -- $LENH"
+fi
 [ -n "$LENH" ] || { echo "Thiếu lệnh. Ví dụ: bash scripts/cum/ssh_tat_ca.sh hostname" >&2; exit 2; }
+
+goi_ssh() {  # $1 = tên máy, phần còn lại = tùy chọn ssh bổ sung
+  local ten="$1"; shift
+  if [ -n "$TEP" ]; then
+    ssh "$@" -o ConnectTimeout=8 "$ten" "$LENH" < "$TEP"
+  elif [ "$TTY" = "1" ]; then
+    ssh -t "$@" -o ConnectTimeout=8 "$ten" "$LENH"
+  else
+    ssh -n "$@" -o ConnectTimeout=8 "$ten" "$LENH"
+  fi
+}
+
 LOI=0
 if [ "$SONG_SONG" = "1" ]; then
   [ "$TTY" = "1" ] && { echo "--tty không dùng cùng --song-song được" >&2; exit 2; }
@@ -110,7 +130,7 @@ if [ "$SONG_SONG" = "1" ]; then
   for dong in "${CAC_MAY[@]}"; do
     ten="${dong%% *}"
     # BatchMode: chế độ song song không hỏi mật khẩu (cần đã chép khóa), tránh treo cả lô.
-    ( ssh -n -o BatchMode=yes -o ConnectTimeout=8 "$ten" "$LENH" > "$TAM/$ten.log" 2>&1; echo $? > "$TAM/$ten.ma" ) &
+    ( goi_ssh "$ten" -o BatchMode=yes > "$TAM/$ten.log" 2>&1; echo $? > "$TAM/$ten.ma" ) &
   done
   wait
   for dong in "${CAC_MAY[@]}"; do
@@ -124,11 +144,7 @@ else
   for dong in "${CAC_MAY[@]}"; do
     ten="${dong%% *}"
     echo "===== $ten (${dong#* })"
-    if [ "$TTY" = "1" ]; then
-      ssh -t -o ConnectTimeout=8 "$ten" "$LENH"
-    else
-      ssh -n -o ConnectTimeout=8 "$ten" "$LENH"
-    fi
+    goi_ssh "$ten"
     ma=$?
     [ "$ma" = "0" ] || { echo "!! $ten: mã thoát $ma"; LOI=1; }
   done

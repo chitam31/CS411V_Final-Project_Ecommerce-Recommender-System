@@ -111,6 +111,10 @@ def test_ssh_tat_ca_chon_may_va_thu_tu(tmp_path):
     khoi = {b.split()[0]: b for b in cfg.split("Host ")[1:]}  # "HostName" không có dấu cách sau "Host"
     assert "User labsit12" in khoi["labsit12"] and "User hduser" in khoi["labsoe-11"] and "User labsit" in khoi["labsit-may26"]
     assert "chưa khai báo tài khoản" in cfg and "StrictHostKeyChecking accept-new" in cfg
+    kich_ban = tmp_path / "s.sh"  # tên khác "tep": lambda chay đang dùng biến tep
+    kich_ban.write_text("hostname\n")
+    kq = chay("--song-song", "--chay-tep", str(kich_ban))
+    assert kq.stdout.count("lenh=bash -s --") == 6 and "10.68.71.182" not in kq.stdout
 
 
 def test_dags_airflow():
