@@ -404,6 +404,12 @@ docker exec bd03-airflow-airflow-scheduler-1 airflow dags trigger kn_tai_lap -c 
 
 ## 10. Xử lý sự cố
 
+Xem nhanh tình trạng master (RAM, ứng dụng Spark đang chạy, DAG đang bật, các lần chạy và task gần nhất của Airflow, phiên tmux), chỉ đọc:
+
+```bash
+ssh labsoe-11 "bash ~/bd03_khuyen_nghi/scripts/cum/tinh_trang.sh"
+```
+
 | Triệu chứng | Nguyên nhân thường gặp | Cách xử lý |
 |---|---|---|
 | Worker không hiện trong Spark UI | Máy chưa được Authorize trên ZeroTier; `NODE_IP` sai; tường lửa | `zerotier-cli listnetworks`; xem `ha_tang/spark/.env`; mục 1.3 |

@@ -476,3 +476,32 @@ def test_ssh_tat_ca_dong_bo_ma_thu_lai_khi_mang_rot(tmp_path):
     kq = subprocess.run(lenh, capture_output=True, text=True, env=dict(mt, SO_LAN_ROT="5"))
     assert kq.returncode == 1 and "mất kết nối SSH sau 3 lần thử" in kq.stdout
     assert "tệp bị sửa tay" not in kq.stdout and dem.read_text().strip() == "3"
+
+
+def test_tinh_trang_doc_json_spark(tmp_path):
+    """tinh_trang.sh: in số worker, lõi và từng ứng dụng đang chạy từ JSON của Spark Master UI;
+    không có container Airflow thì báo, không lỗi."""
+    import json
+
+    bin_gia = tmp_path / "bin"
+    bin_gia.mkdir()
+    json_spark = {"aliveworkers": 5, "cores": 34, "coresused": 14, "memory": 13312, "memoryused": 7424,
+                  "activeapps": [{"name": "bd03-tinh-thinh-hanh", "cores": 2, "state": "RUNNING", "id": "app-1"},
+                                 {"name": "bd03-tai-lap", "cores": 10, "state": "RUNNING", "id": "app-2"}]}
+    (tmp_path / "spark.json").write_text(json.dumps(json_spark))
+    gia = {
+        "curl": "#!/bin/sh\ncat {}\n".format(tmp_path / "spark.json"),
+        "docker": "#!/bin/sh\n[ \"$1\" = inspect ] && exit 1\necho 'spark-master\t2GiB / 7GiB'\n",
+        "free": "#!/bin/sh\necho 'Mem: 7,4Gi'\n",
+        "tmux": "#!/bin/sh\necho 'tien_hoa: 1 windows'\n",
+    }
+    for ten, noi_dung in gia.items():
+        (bin_gia / ten).write_text(noi_dung)
+        (bin_gia / ten).chmod(0o755)
+    mt = dict(os.environ, PATH="{}:{}".format(bin_gia, os.environ["PATH"]))
+    kq = subprocess.run(["bash", os.path.join(GOC, "scripts", "cum", "tinh_trang.sh")],
+                        capture_output=True, text=True, env=mt)
+    assert kq.returncode == 0, kq.stderr
+    assert "worker sống: 5" in kq.stdout and "14/34" in kq.stdout
+    assert "bd03-tinh-thinh-hanh" in kq.stdout and "bd03-tai-lap" in kq.stdout
+    assert "không thấy container" in kq.stdout and "tien_hoa" in kq.stdout
