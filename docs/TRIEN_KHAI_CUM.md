@@ -199,6 +199,8 @@ nano mat_khau.json     # {"admin": "<mật khẩu mạnh>"}
 cd ~/bd03_khuyen_nghi && bash scripts/cum/khoi_dong_may.sh      # chạy lại để bật Airflow
 ```
 
+Compose đặt Airflow ở cấu hình gọn, khoảng 1 GB (api-server 1 tiến trình, tối đa 6 task đồng thời, không bật triggerer vì không DAG nào dùng toán tử deferrable), vì master 7,4 GB còn phải chứa NameNode, Spark Master và driver của mọi job Spark. Đo trên master tối 10/11 trước khi bật Airflow: còn 3,2 GB khả dụng. Kiểm tra sau khi bật: `free -h; docker stats --no-stream`.
+
 Mở http://10.68.71.113:8088 (cổng 8080 đã dành cho Spark Master UI), đăng nhập `admin`. Năm DAG `kn_*` sẽ xuất hiện ở trạng thái tạm dừng. Chưa bật DAG cho tới bước 9.
 
 Kiểm tra Airflow gọi được Spark:

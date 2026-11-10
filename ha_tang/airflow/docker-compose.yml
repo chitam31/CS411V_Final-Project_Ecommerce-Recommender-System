@@ -22,6 +22,13 @@ x-airflow: &airflow
     AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "admin:admin"
     AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /opt/airflow/mat_khau.json
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
+    # Máy master chỉ có 7,4 GB và còn phải chứa NameNode, Spark Master cùng driver của MỌI job
+    # Spark (PySpark ở standalone không có cluster mode). Giữ Airflow gọn, khoảng 1 GB thay vì
+    # gần 2 GB mặc định: api-server 1 tiến trình (mặc định 4), tối đa 6 task chạy đồng thời
+    # (mỗi task chỉ chờ một lệnh spark-submit), dag-processor 1 tiến trình phân tích DAG.
+    AIRFLOW__API__WORKERS: "1"
+    AIRFLOW__CORE__PARALLELISM: "6"
+    AIRFLOW__DAG_PROCESSOR__PARSING_PROCESSES: "1"
     BD03_HOME: /opt/bd03
     PYTHONPATH: /opt/bd03/airflow/dags
   volumes:
@@ -80,9 +87,13 @@ services:
       airflow-init:
         condition: service_completed_successfully
 
+  # Triggerer chỉ phục vụ toán tử deferrable; 5 DAG kn_* không dùng toán tử nào như vậy (sensor
+  # chạy mode="reschedule"), nên mặc định không bật để tiết kiệm RAM master. Cần thì:
+  #   docker compose -f ha_tang/airflow/docker-compose.yml --profile day_du up -d
   airflow-triggerer:
     <<: *airflow
     command: triggerer
+    profiles: ["day_du"]
     depends_on:
       airflow-init:
         condition: service_completed_successfully
