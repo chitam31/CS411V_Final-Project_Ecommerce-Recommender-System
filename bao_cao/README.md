@@ -17,7 +17,8 @@ Bản nộp: `BD03_Recommender_System_Report.docx` (Word) và `BD03_Recommender_
 cd bao_cao/hinh
 for f in f0*.py f1*.py; do python3 "$f"; done
 dot -Tpng -Gdpi=220 f04_dong_du_lieu.dot -o f04_dong_du_lieu.png
-dot -Tpng -Gdpi=220 f05_dag1.dot -o f05_dag1.png        # f06 xem đầu tệp f06_dag_khac.dot
+dot -Tpng -Gdpi=220 f05_dag1.dot -o f05_dag1.png
+# f06_dag_khac.png: vẽ riêng từng cluster của f06_dag_khac.dot rồi xếp chồng dọc bằng PIL
 python3 bieu_do.py && python3 cong_thuc.py
 cd ..
 node tao_bao_cao.js && zip -d BD03_Recommender_System_Report.docx '*/'
