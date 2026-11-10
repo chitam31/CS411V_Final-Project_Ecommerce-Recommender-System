@@ -559,3 +559,36 @@ def test_khoi_dong_may_chi_mot_vai_tro():
     assert lenh and all("kafka/docker-compose.yml" in d for d in lenh)
     kq = subprocess.run(["bash", tep, "labsit12", "--chi=namenode", "--in-thu"], capture_output=True, text=True)
     assert kq.returncode == 1 and "không có vai trò 'namenode'" in kq.stdout
+
+
+def test_luong_dung_va_khoi_dong_xu_ly_driver_ma(tmp_path):
+    """luong.sh: hủy ứng dụng qua Master chưa đủ — driver client mode vẫn sống và tranh checkpoint
+    với luồng mới (NHAT_KY lỗi 27). khoi_dong phải dừng driver "ma" trước khi nộp job;
+    trang_thai phải cảnh báo; dung phải gửi TERM cho tiến trình driver."""
+    nhat_ky, trang_thai_ma = tmp_path / "docker.log", tmp_path / "con_driver"
+    (tmp_path / "docker").write_text(
+        "#!/bin/bash\necho \"$*\" >> {log}\ncase \"$*\" in\n"
+        "  *pgrep*) [ -f {ma} ] && echo 4242; exit 0 ;;\n"
+        "  *pkill*) rm -f {ma}; exit 0 ;;\n"
+        "esac\nexit 0\n".format(log=nhat_ky, ma=trang_thai_ma))
+    (tmp_path / "curl").write_text("#!/bin/bash\necho '{\"activeapps\": []}'\n")
+    for t in ("docker", "curl"):
+        (tmp_path / t).chmod(0o755)
+    mt = dict(os.environ, PATH="{}:{}".format(tmp_path, os.environ["PATH"]), CHO_DUNG_GIAY="2")
+    tep = os.path.join(GOC, "scripts", "luong.sh")
+
+    trang_thai_ma.write_text("x")
+    kq = subprocess.run(["bash", tep, "trang_thai"], capture_output=True, text=True, env=mt)
+    assert kq.returncode == 0 and "còn tiến trình driver 4242" in kq.stdout
+
+    kq = subprocess.run(["bash", tep, "khoi_dong", "thinh_hanh"], capture_output=True, text=True, env=mt)
+    assert kq.returncode == 0, kq.stdout + kq.stderr
+    dong = nhat_ky.read_text().splitlines()
+    vi_tri_kill = next(i for i, d in enumerate(dong) if "pkill -TERM -f streaming/tinh_thinh_hanh.py" in d)
+    vi_tri_nop = next(i for i, d in enumerate(dong) if "spark-submit" in d and "tinh_thinh_hanh.py" in d)
+    assert vi_tri_kill < vi_tri_nop and "driver đã dừng" in kq.stdout
+
+    nhat_ky.unlink()
+    trang_thai_ma.write_text("x")
+    kq = subprocess.run(["bash", tep, "dung", "hien_thi"], capture_output=True, text=True, env=mt)
+    assert kq.returncode == 0 and "pkill -TERM -f streaming/ghi_hien_thi.py" in nhat_ky.read_text()

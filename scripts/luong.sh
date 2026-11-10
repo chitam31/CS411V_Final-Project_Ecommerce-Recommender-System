@@ -29,10 +29,34 @@ d = json.load(sys.stdin)
 print(' '.join(a['id'] for a in d.get('activeapps', []) if a['name'] == '$1'))"
 }
 
+# Driver chạy client mode bên trong container spark-master. Hủy ứng dụng qua Master UI làm mất
+# executor nhưng KHÔNG dừng tiến trình driver: truy vấn streaming của driver "ma" vẫn sống, im lặng
+# khi không có dữ liệu, rồi tranh checkpoint với luồng mới ở lô đầu tiên và làm cả hai cùng chết
+# (NHAT_KY lỗi 27). Vì vậy dừng luồng = hủy ứng dụng + dừng hẳn tiến trình driver.
+driver_con() {  # PID các tiến trình driver (spark-submit java + python) của luồng $1, rỗng nếu không có
+  docker exec spark-master pgrep -f "${JOB[$1]}" 2>/dev/null | tr '\n' ' ' || true
+}
+
+dung_driver() {
+  local ten="$1" i
+  [ -z "$(driver_con "$ten")" ] && return 0
+  docker exec spark-master pkill -TERM -f "${JOB[$ten]}" || true
+  for i in $(seq 1 "${CHO_DUNG_GIAY:-30}"); do
+    [ -z "$(driver_con "$ten")" ] && { echo "[$ten] tiến trình driver đã dừng"; return 0; }
+    sleep 1
+  done
+  docker exec spark-master pkill -KILL -f "${JOB[$ten]}" || true
+  echo "[$ten] buộc dừng tiến trình driver (KILL)"
+}
+
 khoi_dong() {
   local ten="$1"
   if [ -n "$(dang_chay "${TEN_APP[$ten]}")" ]; then
     echo "[$ten] đang chạy, bỏ qua"; return 0
+  fi
+  if [ -n "$(driver_con "$ten")" ]; then
+    echo "[$ten] còn tiến trình driver cũ dù Master không còn ứng dụng: dừng trước khi bật lại"
+    dung_driver "$ten"
   fi
   CHAY_NEN=1 bash "$THU_MUC/ha_tang/spark/submit.sh" "$ten" "${JOB[$ten]}"
   echo "[$ten] đã nộp ${JOB[$ten]} (log: docker exec spark-master tail -f /tmp/bd03_logs/$ten.log)"
@@ -45,6 +69,7 @@ dung() {
     curl -s -X POST "http://$MASTER_IP:8080/app/kill/" -d "id=$id&terminate=true" > /dev/null
     echo "[$ten] đã gửi lệnh dừng $id"
   done
+  dung_driver "$ten"
 }
 
 LENH="${1:-trang_thai}"; MUC="${2:-tat_ca}"
@@ -57,7 +82,10 @@ case "$LENH" in
   trang_thai)
     for t in nap thinh_hanh hien_thi; do
       id="$(dang_chay "${TEN_APP[$t]}")"
-      printf "%-12s %-24s %s\n" "$t" "${TEN_APP[$t]}" "${id:-KHONG CHAY}"
+      pid="$(driver_con "$t")"
+      ghi_chu=""
+      [ -z "$id" ] && [ -n "$pid" ] && ghi_chu="  !! còn tiến trình driver $pid: chạy 'luong.sh dung $t' trước khi bật lại"
+      printf "%-12s %-24s %s%s\n" "$t" "${TEN_APP[$t]}" "${id:-KHONG CHAY}" "$ghi_chu"
     done ;;
   *) echo "Lệnh: khoi_dong|dung|trang_thai|log [nap|thinh_hanh|hien_thi|tat_ca]"; exit 2 ;;
 esac
