@@ -123,3 +123,11 @@ def test_khong_doc_tep_dang_ghi(tmp_path):
     assert os.listdir(tmp_path) == [".dang_ghi.json"]  # chưa đổi tên -> Spark bỏ qua tệp ẩn
     g.flush()
     assert os.listdir(tmp_path) == ["su_kien_00001.json"]
+
+
+def test_tom_tat_tien_do_nap():
+    from streaming.nap_su_kien import tom_tat_tien_do
+
+    assert tom_tat_tien_do([]) == {"so_lo": 0, "so_su_kien_moi": 0}
+    lo = [{"numInputRows": 1200}, {"numInputRows": 800}, {"numInputRows": None}]
+    assert tom_tat_tien_do(lo) == {"so_lo": 3, "so_su_kien_moi": 2000}

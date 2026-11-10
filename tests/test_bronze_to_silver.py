@@ -54,3 +54,29 @@ def test_lam_sach_day_du(spark):
     kq = lam_sach(df)
     assert kq.columns == ["ma_nguoi_dung", "ma_san_pham", "thoi_diem", "loai_su_kien", "trong_so", "ngay", "_nguon"]
     assert sorted((r["ma_san_pham"], r["trong_so"]) for r in kq.collect()) == [("a", 1.0), ("b", 5.0)]
+
+
+def test_ghi_phan_vung_moi_ngay_mot_tep(spark, tmp_path):
+    """gom_theo_phan_vung: dữ liệu rải trên nhiều task vẫn ghi đúng một tệp cho mỗi ngày."""
+    import os
+
+    from pyspark.sql import functions as F
+
+    from common.spark_utils import gom_theo_phan_vung
+
+    df = spark.range(3000).select(
+        F.col("id"), F.expr("date_add(DATE'2015-06-01', CAST(id % 5 AS INT))").alias("ngay")
+    ).repartition(8)  # mỗi task chứa đủ 5 ngày, như sau một phép shuffle bất kỳ
+
+    def so_tep_moi_ngay(thu_muc):
+        return sorted(
+            len([t for t in os.listdir(os.path.join(thu_muc, d)) if t.endswith(".parquet")])
+            for d in os.listdir(thu_muc) if d.startswith("ngay=")
+        )
+
+    khong_gom, co_gom = str(tmp_path / "khong_gom"), str(tmp_path / "co_gom")
+    df.write.partitionBy("ngay").parquet(khong_gom)
+    gom_theo_phan_vung(df, ["ngay"]).write.partitionBy("ngay").parquet(co_gom)
+    assert so_tep_moi_ngay(khong_gom) == [8] * 5
+    assert so_tep_moi_ngay(co_gom) == [1] * 5
+    assert spark.read.parquet(co_gom).count() == 3000

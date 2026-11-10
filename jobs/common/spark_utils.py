@@ -6,6 +6,7 @@ không cần gói Python delta-spark trên executor.
 import json
 
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 
 from . import cau_hinh as ch
 
@@ -76,8 +77,21 @@ def phien_ban_moi_nhat(spark, ten_bang):
     return int(dong["version"])
 
 
+def gom_theo_phan_vung(df, phan_vung):
+    """Đưa mọi dòng cùng giá trị phân vùng về một task, để mỗi phân vùng chỉ ghi ra MỘT tệp.
+
+    Không gom thì mỗi task (spark.sql.shuffle.partitions = 64 ở hồ sơ lo) ghi một tệp cho mỗi
+    ngày nó tình cờ chứa: 135 ngày x 64 task = hàng nghìn tệp vài KB (bài toán tệp nhỏ). Đo ngày
+    10/11/2026 trên dữ liệu mẫu 20 nghìn dòng: mọi job đọc silver chậm hẳn vì mỗi tệp tốn vài lượt
+    hỏi NameNode và DataNode qua Wi-Fi.
+    """
+    return df.repartition(*[F.col(c) for c in phan_vung])
+
+
 def ghi_delta(df, ten_bang, che_do="overwrite", phan_vung=None, ghi_chu=None, tuy_chon=None):
     """Ghi DataFrame vào bảng Delta. ghi_chu được lưu ở userMetadata của commit."""
+    if phan_vung:
+        df = gom_theo_phan_vung(df, phan_vung)
     writer = df.write.format("delta").mode(che_do)
     if phan_vung:
         writer = writer.partitionBy(*phan_vung)

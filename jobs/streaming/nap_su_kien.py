@@ -13,7 +13,7 @@ from pyspark.sql import functions as F
 from common import cau_hinh as ch
 from common.luoc_do import LUOC_DO_SU_KIEN
 from common.nguon_luong import dat_nhip, doc_luong
-from common.spark_utils import bang_ton_tai, doc_delta, tao_spark
+from common.spark_utils import bang_ton_tai, doc_delta, in_ket_qua, tao_spark
 
 
 
@@ -97,7 +97,21 @@ def main():
         .option("checkpointLocation", ch.duong_dan_checkpoint("nap_su_kien_v2"))
         .partitionBy("ngay")
     )
-    dat_nhip(writer, args.mot_lan, args.nhip).start(ch.duong_dan("bronze.su_kien")).awaitTermination()
+    if args.mot_lan:
+        # Giữ tiến độ của mọi lô (mặc định chỉ 100 lô gần nhất) để đếm đủ số sự kiện đã nạp.
+        spark.conf.set("spark.sql.streaming.numRecentProgressUpdates", "100000")
+    truy_van = dat_nhip(writer, args.mot_lan, args.nhip).start(ch.duong_dan("bronze.su_kien"))
+    truy_van.awaitTermination()
+    if args.mot_lan:
+        in_ket_qua(tom_tat_tien_do(truy_van.recentProgress))
+
+
+def tom_tat_tien_do(cac_lo):
+    """Số lô và số sự kiện mới đã ghi vào bronze trong một lần chạy --mot-lan."""
+    return {
+        "so_lo": len(cac_lo),
+        "so_su_kien_moi": sum(int(lo.get("numInputRows") or 0) for lo in cac_lo),
+    }
 
 
 if __name__ == "__main__":
