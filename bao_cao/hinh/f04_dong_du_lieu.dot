@@ -1,0 +1,61 @@
+digraph G {
+  graph [rankdir=TB, fontname="Liberation Sans", nodesep=0.18, ranksep=0.32, splines=true, pad=0.15, newrank=true];
+  node  [fontname="Liberation Sans", fontsize=10, margin="0.08,0.04", height=0.3];
+  edge  [color="#555555", arrowsize=0.6, penwidth=0.9, fontname="Liberation Sans"];
+  node [shape=cylinder, style=filled, color="#666666"];
+  csv  [label="landing CSV\n(HDFS /lake/landing)", fillcolor="#FFF4DE"];
+  kev  [label="Kafka\nretailrocket-events", fillcolor="#D9E8F8"];
+  khi  [label="Kafka\nhien-thi", fillcolor="#D9E8F8"];
+  br   [label="bronze.su_kien", fillcolor="#F2D3BC"];
+  svt  [label="silver.tuong_tac", fillcolor="#E6E6E6"];
+  svp  [label="silver.san_pham", fillcolor="#E6E6E6"];
+  ft   [label="features.\nma_tran_tuong_tac", fillcolor="#E3E3F6"];
+  idx  [label="models/\nuser_indexer, item_indexer", fillcolor="#FFFFFF", shape=folder];
+  als  [label="models/als/<run>\n& <run>_phuc_vu", fillcolor="#FFFFFF", shape=folder];
+  tk   [label="gold.\nthong_ke_san_pham", fillcolor="#F8E7A1"];
+  lq   [label="gold.\nsan_pham_lien_quan", fillcolor="#F8E7A1"];
+  tun  [label="gold.ket_qua_tuning", fillcolor="#F8E7A1"];
+  ls   [label="gold.\nlich_su_huan_luyen", fillcolor="#F8E7A1"];
+  gat  [label="gold.goi_y_als_tam", fillcolor="#FBF3D0"];
+  gt   [label="gold.goi_y_tam", fillcolor="#FBF3D0"];
+  gg   [label="gold.\ngoi_y_nguoi_dung", fillcolor="#F3D35B", penwidth=1.6];
+  th   [label="gold.thinh_hanh_15p", fillcolor="#F3D35B", penwidth=1.6];
+  nk   [label="gold.\nnhat_ky_hien_thi (CDF)", fillcolor="#F3D35B", penwidth=1.6];
+  ab   [label="gold.ket_qua_ab", fillcolor="#F3D35B", penwidth=1.6];
+  tl   [label="gold.ket_qua_tai_lap", fillcolor="#F8E7A1"];
+  node [shape=box, style="rounded,filled", fillcolor="#EADCF1", color="#7A5A8A"];
+  j_dm [label="nhap_danh_muc"];
+  j_nap[label="nap_su_kien ⟳", fillcolor="#DCF0DC", color="#4E8A4E"];
+  j_bs [label="bronze_to_silver"];
+  j_tk [label="thong_ke_san_pham"];
+  j_lq [label="san_pham_lien_quan"];
+  j_cb [label="chuan_bi_ma_tran"];
+  j_hl [label="huan_luyen_als"];
+  j_dg [label="danh_gia"];
+  j_sg [label="sinh_goi_y_toan_bo"];
+  j_tr [label="tron_goi_y"];
+  j_gg [label="ghi_gold (MERGE)"];
+  j_th [label="tinh_thinh_hanh ⟳", fillcolor="#DCF0DC", color="#4E8A4E"];
+  j_ht [label="ghi_hien_thi ⟳", fillcolor="#DCF0DC", color="#4E8A4E"];
+  j_mp [label="mo_phong_hien_thi\n(simulated traffic)"];
+  j_ab [label="tinh_ket_qua_ab"];
+  j_tl [label="tai_lap_huan_luyen\n(VERSION AS OF)"];
+  j_ev [label="tien_hoa_luoc_do\n(schema evolution)", fillcolor="#FBDADA", color="#B04A4A"];
+
+  csv -> j_dm -> svp;
+  kev -> j_nap -> br; svp -> j_nap [style=dashed, label=" category", fontsize=8];
+  br -> j_bs -> svt;
+  svt -> j_tk -> tk; svt -> j_lq -> lq;
+  svt -> j_cb; svp -> j_cb; j_cb -> ft; j_cb -> idx;
+  ft -> j_hl -> tun; j_hl -> als;
+  ft -> j_dg; als -> j_dg; j_dg -> ls;
+  als -> j_sg; idx -> j_sg; j_sg -> gat;
+  gat -> j_tr; tk -> j_tr; th -> j_tr; svp -> j_tr; ls -> j_tr [style=dashed]; j_tr -> gt -> j_gg -> gg;
+  kev -> j_th -> th; tk -> j_th [style=dashed, label=" mean 24 h", fontsize=8];
+  khi -> j_ht -> nk; gg -> j_mp -> nk;
+  nk -> j_ab [label=" CDF", fontsize=8]; j_ab -> ab;
+  ft -> j_tl [label=" version v", fontsize=8]; ls -> j_tl; j_tl -> tl;
+  j_ev -> svt [style=dashed]; j_ev -> svp [style=dashed];
+  {rank=same; csv; kev; khi;}
+  {rank=same; gg; th; nk;}
+}

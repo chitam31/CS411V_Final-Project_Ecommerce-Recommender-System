@@ -1,0 +1,26 @@
+digraph G {
+  graph [rankdir=TB, fontname="Liberation Sans", nodesep=0.25, ranksep=0.3, pad=0.15, splines=true];
+  node  [shape=box, style="rounded,filled", fontname="Liberation Sans", fontsize=10, fillcolor="#EADCF1", color="#7A5A8A", margin="0.1,0.05"];
+  edge  [color="#555555", arrowsize=0.6, fontname="Liberation Sans", fontsize=8.5];
+  sen [label="cho_du_lieu_ngay_moi\nPythonSensor, mode=reschedule\npoke 5 min, timeout 6 h, soft_fail\n(bronze _spark_metadata newer than silver _delta_log?)", fillcolor="#FFF4DE", color="#A07A30"];
+  mc  [label="tao_ma_chay\nrun id rYYYYMMDDTHHMMSS → XCom", fillcolor="#FFFFFF"];
+  bs  [label="bronze_to_silver  [lo]\nincremental by day, replaceWhere"];
+  tk  [label="thong_ke_san_pham  [lo]"];
+  lq  [label="san_pham_lien_quan  [lo]"];
+  cb  [label="chuan_bi_ma_tran  [lo]\nfeatures version v"];
+  hl  [label="huan_luyen_als  [als]\ngrid: toi_thieu (9) | day_du (27)\ntimeout 4 h"];
+  dg  [label="danh_gia  [als]\nmetrics, baselines, v1/v2, decision\nprints JSON → XCom"];
+  br  [label="ndcg_co_cai_thien\nBranchPythonOperator\nreads danh_gia JSON", shape=diamond, style="filled", fillcolor="#FBDADA", color="#B04A4A", fontsize=9];
+  sg  [label="sinh_goi_y_toan_bo  [als]\nserving model on train+test\ntop-200 → novelty re-rank → top-20"];
+  tr  [label="tron_goi_y  [lo]\nA/B templates, cold start, item-new, v2 price filter"];
+  gg  [label="ghi_gold  [lo]\nMERGE gold.goi_y_nguoi_dung"];
+  gc  [label="giu_mo_hinh_cu\nkeep serving model", fillcolor="#EFEFEF", color="#777777"];
+  cw  [label="canh_bao\nwarning in task log", fillcolor="#EFEFEF", color="#777777"];
+  sen -> mc -> bs;
+  bs -> tk -> lq; bs -> cb -> hl -> dg -> br;
+  br -> sg [label=" improved (≥ −1 %)"]; sg -> tr -> gg;
+  tk -> tr [style=dashed];
+  br -> gc [label=" not improved"]; gc -> cw;
+  {rank=same; tk; cb;}
+  {rank=same; sg; gc;}
+}
