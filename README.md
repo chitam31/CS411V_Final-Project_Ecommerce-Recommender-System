@@ -186,8 +186,9 @@ Bảng đối chiếu đầy đủ từng yêu cầu: [docs/DOI_CHIEU_YEU_CAU.md
 | z-test hai tỷ lệ, tổng hợp A/B, mô phỏng click theo vị trí | Đã kiểm thử tự động |
 | Web: 5 màn hình và API | Đã kiểm thử bằng TestClient ở chế độ giả lập |
 | 5 DAG Airflow 3.3.1: nạp được, đúng lịch, đúng nhánh | Đã kiểm thử bằng DagBag |
-| Các lệnh Delta (MERGE, VERSION AS OF, CDF, ALTER TABLE, OPTIMIZE ZORDER, VACUUM) chạy thật | **Chưa chạy được trong môi trường phát triển** (không tải được jar Delta). Chạy `scripts/kiem_tra_cuc_bo.sh` hoặc trên cụm để kiểm chứng |
-| Toàn bộ pipeline trên cụm 8 máy, số liệu thật của RetailRocket | **Chưa chạy.** Nhóm chạy theo docs/TRIEN_KHAI_CUM.md và điền kết quả vào NHAT_KY.md |
+| Delta Lake chạy thật trên cụm | Đã chạy `kiem_tra/khoi_tao_bang.py` trên cụm 10/11/2026: tạo 8 bảng Delta trên HDFS (42 giây). MERGE, VERSION AS OF, CDF, ALTER TABLE, OPTIMIZE ZORDER, VACUUM chưa chạy: sẽ kiểm chứng khi chạy pipeline với dữ liệu thật |
+| Hạ tầng cụm | Đã bật 10/11/2026: 5 DataNode (1,93 TB trống), 5 Spark worker (34 lõi, 13 GB RAM), Kafka 2 topic. Mạng Wi-Fi phòng labsit chặn các máy nói chuyện trực tiếp nên ZeroTier đi đường chuyển tiếp, xem NHAT_KY.md |
+| Toàn bộ pipeline với số liệu thật của RetailRocket | **Chưa chạy.** Nhóm chạy theo docs/TRIEN_KHAI_CUM.md và điền kết quả vào NHAT_KY.md |
 
 Tài liệu này không chứa số liệu thí nghiệm nào. Mọi con số (NDCG, coverage, p-value, thời gian ZORDER...) phải lấy từ lần chạy thật trên cụm.
 
