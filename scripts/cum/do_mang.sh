@@ -9,9 +9,9 @@
 #
 # Phần 1, trên từng máy: mạng Wi-Fi đang nối, cường độ sóng, IP LAN, rồi ping mọi máy khác qua
 #   IP ZeroTier và qua IP LAN. Qua Wi-Fi, đường nối thẳng (DIRECT) thường dưới 60 ms; đi qua máy
-#   chuyển tiếp của ZeroTier (RELAY) thường 150 ms trở lên. Nếu ZeroTier chậm mà LAN nhanh, mạng
-#   cho phép nối thẳng nhưng ZeroTier chưa tìm ra đường: khởi động lại zerotier-one trên các máy
-#   đó. Xác nhận chắc chắn: bash scripts/cum/ssh_tat_ca.sh --tty "sudo zerotier-cli peers".
+#   chuyển tiếp của ZeroTier (RELAY) thường 150 ms trở lên. Nếu ZeroTier chậm hơn LAN nhiều, mạng
+#   cho phép nối thẳng nhưng ZeroTier chưa tìm ra đường: chạy scripts/cum/cau_hinh_zerotier.sh
+#   trên các máy đó. Xác nhận chắc chắn: bash scripts/cum/ssh_tat_ca.sh --tty "sudo zerotier-cli peers".
 # Phần 2: máy nguồn (mặc định master) phát một tệp ngẫu nhiên qua HTTP trên IP ZeroTier của nó;
 #   từng máy còn lại lần lượt tải về và báo MB/s. Đây là con số quyết định tốc độ HDFS và shuffle.
 set -uo pipefail
@@ -39,9 +39,10 @@ tren_may() {  # $@ = "ipZeroTier,ipLAN" của các máy cần ping (ipLAN có th
       | awk -F: '$2 == "ethernet" && $1 !~ /^veth/ {print "Cong mang day " $1 ": " $3}'
   fi
   echo "IP LAN: $(ip_lan) | Gateway: $(ip route 2>/dev/null | awk '/^default/{print $3; exit}')"
-  # Ping cả IP ZeroTier lẫn IP LAN của máy kia để tách hai nguyên nhân:
-  #   ZeroTier chậm + LAN nhanh  -> mạng cho phép nối thẳng nhưng ZeroTier chưa tìm ra đường
-  #   ZeroTier chậm + LAN không trả lời -> Wi-Fi chặn các máy nói chuyện với nhau
+  # Ping cả IP ZeroTier lẫn IP LAN của máy kia để tách các nguyên nhân:
+  #   ZeroTier chậm hơn LAN nhiều  -> mạng cho phép nối thẳng nhưng ZeroTier đang đi relay
+  #   ZeroTier và LAN cùng chậm    -> vẫn nối thẳng, chỉ là Wi-Fi đang nghẽn hoặc sóng yếu
+  #   LAN không trả lời            -> Wi-Fi chặn các máy nói chuyện với nhau
   for cap in "$@"; do
     dich="${cap%%,*}"; lan="${cap#*,}"
     [ "$dich" = "$zt" ] && continue
@@ -49,9 +50,10 @@ tren_may() {  # $@ = "ipZeroTier,ipLAN" của các máy cần ping (ipLAN có th
     t_lan=""; [ -n "$lan" ] && t_lan="$(do_ping "$lan")"
     if [ -z "$t_zt" ]; then nhan_xet="KHONG PING DUOC qua ZeroTier"
     elif nhanh "$t_zt"; then nhan_xet="noi thang"
-    elif [ -z "$lan" ]; then nhan_xet="RELAY"
-    elif nhanh "$t_lan"; then nhan_xet="RELAY du LAN thong -> khoi dong lai zerotier-one"
-    else nhan_xet="RELAY, LAN khong thong (Wi-Fi chan may-may)"
+    elif [ -z "$lan" ]; then nhan_xet="CHAM"
+    elif [ -z "$t_lan" ]; then nhan_xet="RELAY, LAN khong tra loi (Wi-Fi chan may-may)"
+    elif awk -v z="$t_zt" -v l="$t_lan" 'BEGIN{exit !(z - l < 50)}'; then nhan_xet="noi thang, Wi-Fi dang cham"
+    else nhan_xet="RELAY du LAN thong (ZeroTier chua tim ra duong)"
     fi
     printf 'ping %-13s ZT %8s ms | LAN %-15s %8s ms | %s\n' "$dich" "${t_zt:--}" "${lan:--}" "${t_lan:--}" "$nhan_xet"
   done
@@ -115,8 +117,9 @@ CAP=(); for ip in "${CAC_IP[@]}"; do CAP+=("$ip,${LAN[$ip]:-}"); done
 KQ_PING="$(mktemp)"
 "${SSH_TAT_CA[@]}" --song-song --chay-tep "$TEP_NAY" -- --tren-may "${CAP[@]}" | tee "$KQ_PING"
 echo
-echo "Tóm tắt: $(grep -c '| noi thang$' "$KQ_PING") cặp nối thẳng, $(grep -c '| RELAY' "$KQ_PING") cặp đi relay" \
-     "($(grep -c 'khoi dong lai zerotier-one' "$KQ_PING") cặp LAN vẫn thông), $(grep -c 'KHONG PING DUOC' "$KQ_PING") cặp không ping được."
+echo "Tóm tắt: $(grep -c '| noi thang' "$KQ_PING") cặp nối thẳng, $(grep -c '| RELAY' "$KQ_PING") cặp đi relay" \
+     "($(grep -c 'RELAY du LAN thong' "$KQ_PING") cặp LAN vẫn thông), $(grep -c 'KHONG PING DUOC' "$KQ_PING") cặp không ping được."
+grep -q 'RELAY du LAN thong' "$KQ_PING" && echo "Cặp RELAY mà LAN vẫn thông: chạy scripts/cum/cau_hinh_zerotier.sh trên các máy đó (docs/TRIEN_KHAI_CUM.md mục 10b)."
 rm -f "$KQ_PING"
 [ "$CHI_PING" = "1" ] && exit 0
 

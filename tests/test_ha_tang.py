@@ -183,10 +183,13 @@ def test_do_mang_chi_ping(tmp_path):
               "  labsit-may25) z=42 l=135;; labsit-may26) z=90 l=155;; *) z=149 l=234;; esac\n"
               "case \"$*\" in 'route get 1.1.1.1') echo \"1.1.1.1 via 192.168.80.254 dev wlo1 src 192.168.80.$l uid 1\";;\n"
               "  route) echo 'default via 192.168.80.254 dev wlo1';; *) echo \"5: zt inet 10.68.71.$z/24 scope global zt\";; esac\n",
-        # .204 đi relay nhưng LAN của nó thông; .42 đi relay và LAN của nó không trả lời
+        # .204 đi relay nhưng LAN của nó thông; .42 đi relay và LAN của nó không trả lời;
+        # .90 chậm cả qua ZeroTier lẫn LAN (Wi-Fi nghẽn, vẫn nối thẳng)
         "ping": "d=\"${@: -1}\"; echo '4 packets transmitted'\n"
                 "case \"$d\" in 10.68.71.204) echo 'rtt min/avg/max/mdev = 200/312.5/700/90 ms';;\n"
                 "  10.68.71.42) echo 'rtt min/avg/max/mdev = 150/201.8/260/30 ms';; 192.168.80.135) exit 1;;\n"
+                "  10.68.71.90) echo 'rtt min/avg/max/mdev = 60/80.2/99/9 ms';;\n"
+                "  192.168.80.155) echo 'rtt min/avg/max/mdev = 50/75.4/90/9 ms';;\n"
                 "  *) echo 'rtt min/avg/max/mdev = 3/4.5/7/1 ms';; esac\n",
     }
     for ten, noi_dung in lenh_gia.items():
@@ -200,10 +203,41 @@ def test_do_mang_chi_ping(tmp_path):
     dong = [d for d in kq.stdout.splitlines() if d.startswith("[labsit12] ping")]
     assert len(dong) == 5  # bỏ qua chính IP ZeroTier của máy
     tim = lambda ip: [d for d in dong if "ping " + ip + " " in d][0]
-    assert "192.168.80.127" in tim("10.68.71.204") and "khoi dong lai zerotier-one" in tim("10.68.71.204")
+    assert "192.168.80.127" in tim("10.68.71.204") and "RELAY du LAN thong" in tim("10.68.71.204")
     assert "Wi-Fi chan" in tim("10.68.71.42")
+    assert tim("10.68.71.90").endswith("| noi thang, Wi-Fi dang cham")
     assert tim("10.68.71.113").endswith("| noi thang")
     assert "20 cặp nối thẳng, 10 cặp đi relay (5 cặp LAN vẫn thông), 0 cặp không ping được" in kq.stdout
+    assert "cau_hinh_zerotier.sh" in kq.stdout
+
+
+def test_chay_lan_dau_tu_buoc(tmp_path):
+    """TU_BUOC: chạy tiếp từ bước bị lỗi; từ bước 6 bắt buộc có MA_CHAY của lần tuning trước."""
+    nhat_ky = tmp_path / "docker.log"
+    gia = tmp_path / "docker"
+    gia.write_text("#!/bin/bash\necho \"$*\" >> {}\nexit 0\n".format(nhat_ky))
+    gia.chmod(0o755)
+    mt = dict(os.environ, PATH="{}:{}".format(tmp_path, os.environ["PATH"]), LUOI="toi_thieu")
+    tep = os.path.join(GOC, "scripts", "chay_lan_dau.sh")
+
+    def cac_job(**bien):
+        if nhat_ky.exists():
+            nhat_ky.unlink()
+        kq = subprocess.run(["bash", tep], capture_output=True, text=True, env=dict(mt, **bien))
+        dong = nhat_ky.read_text().splitlines() if nhat_ky.exists() else []
+        return kq, [d.split("/opt/spark/jobs/")[-1] for d in dong if "spark-submit" in d]
+
+    kq, job = cac_job(TU_BUOC="4")
+    assert kq.returncode == 0, kq.stdout + kq.stderr
+    assert job[0] == "transform/bronze_to_silver.py" and len(job) == 12  # bước 4-8
+    assert not any("khoi_tao_bang" in j or "nhap_danh_muc" in j or "nap_su_kien" in j for j in job)
+    assert any(j.startswith("ml/huan_luyen_als.py") and "--luoi toi_thieu" in j for j in job)
+
+    kq, job = cac_job(TU_BUOC="6")
+    assert kq.returncode == 2 and "MA_CHAY" in kq.stderr and job == []
+
+    kq, job = cac_job(TU_BUOC="6", MA_CHAY="r20261110T120000")
+    assert kq.returncode == 0 and job[0] == "ml/sinh_goi_y_toan_bo.py --ma-chay r20261110T120000"
 
 
 def test_dags_airflow():

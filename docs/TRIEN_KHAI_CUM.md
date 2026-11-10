@@ -334,6 +334,9 @@ Khi bộ phát chạy xong, chạy toàn bộ pipeline lô (đúng thứ tự c�
 ```bash
 bash scripts/chay_lan_dau.sh                    # đủ 27 tổ hợp tuning cho báo cáo
 # hoặc LUOI=toi_thieu bash scripts/chay_lan_dau.sh   # 9 tổ hợp, nhanh hơn
+# Dừng giữa chừng vì lỗi: sửa xong chạy tiếp từ bước đó, ví dụ bước 4 (log ghi nối vào tệp cũ)
+# TU_BUOC=4 LUOI=toi_thieu bash scripts/chay_lan_dau.sh 2>&1 | tee -a ~/lan_dau.log
+# Từ bước 6 trở đi cần thêm MA_CHAY=<mã lần tuning ở bước 5, in trong log>
 ```
 
 Bước 3 trong `chay_lan_dau.sh` chạy `nap_su_kien.py --mot-lan`; nếu luồng nạp đang chạy liên tục thì bước này chỉ xử lý phần còn lại (cùng checkpoint, không trùng dữ liệu).
@@ -390,7 +393,17 @@ bash scripts/cum/do_mang.sh              # Wi-Fi + IP LAN + ping chéo 6 máy, r
 bash scripts/cum/do_mang.sh --chi-ping   # chỉ phần ping, vài giây
 ```
 
-Script ping mỗi cặp máy hai lần: qua IP ZeroTier và qua IP LAN hiện tại của máy kia. Qua Wi-Fi, nối thẳng thường dưới 60 ms, đi relay thường 150 ms trở lên. Cột nhận xét cho biết nguyên nhân: `RELAY du LAN thong` nghĩa là mạng cho phép hai máy thấy nhau nhưng ZeroTier chưa tìm ra đường thẳng, xử lý bằng `bash scripts/cum/ssh_tat_ca.sh --tty "sudo systemctl restart zerotier-one"` (IP ZeroTier giữ nguyên, Spark và HDFS tự nối lại sau vài giây); `RELAY, LAN khong thong` nghĩa là Wi-Fi chặn các máy nói chuyện với nhau, khởi động lại không giúp gì. Tốc độ tải ở phần 2 là con số quyết định HDFS và shuffle chạy nhanh hay chậm: cần vài MB/s trở lên (mốc ngày 10/11/2026 khi còn RELAY: khoảng 0,4 MB/s). Xác nhận chắc chắn bằng bảng đường nối của ZeroTier (mỗi máy hỏi mật khẩu sudo):
+Script ping mỗi cặp máy hai lần: qua IP ZeroTier và qua IP LAN hiện tại của máy kia. Qua Wi-Fi, nối thẳng thường dưới 60 ms, đi relay thường 150 ms trở lên. Cột nhận xét cho biết nguyên nhân:
+
+- `noi thang, Wi-Fi dang cham`: ZeroTier và LAN cùng chậm, vẫn nối thẳng, chỉ là Wi-Fi đang nghẽn.
+- `RELAY du LAN thong`: mạng cho phép hai máy thấy nhau nhưng ZeroTier chưa tìm ra đường thẳng. Thường do ZeroTier thử nhầm địa chỉ của các mạng Docker (trùng dải 172.17–172.31.x giữa các máy) hoặc Tailscale. Chặn các card ảo đó rồi khởi động lại ZeroTier, trên cả 6 máy (mỗi máy hỏi mật khẩu sudo; phiên SSH có thể đứt vài giây ngay sau khi khởi động lại):
+
+  ```bash
+  bash scripts/cum/ssh_tat_ca.sh --tty "cd ~/bd03_khuyen_nghi && sudo bash scripts/cum/cau_hinh_zerotier.sh"
+  ```
+
+  Script thêm `interfacePrefixBlacklist` vào `/var/lib/zerotier-one/local.conf` (giữ thiết lập cũ, bản gốc lưu ở `local.conf.truoc-bd03`). Khởi động lại ZeroTier làm mọi kết nối HDFS/Spark của máy đó khựng vài chục giây: **chỉ làm khi không có job nào đang chạy**.
+- `RELAY, LAN khong tra loi`: Wi-Fi chặn các máy nói chuyện với nhau, khởi động lại không giúp gì. Tốc độ tải ở phần 2 là con số quyết định HDFS và shuffle chạy nhanh hay chậm: cần vài MB/s trở lên (mốc ngày 10/11/2026 khi còn RELAY: khoảng 0,4 MB/s). Xác nhận chắc chắn bằng bảng đường nối của ZeroTier (mỗi máy hỏi mật khẩu sudo):
 
 ```bash
 bash scripts/cum/ssh_tat_ca.sh --tty "sudo zerotier-cli peers"
@@ -409,7 +422,7 @@ Máy nối Wi-Fi (`wlo1`, `wlp…`) mà không ping được IP mạng nội b�
 3. Dùng một router hoặc điểm phát Wi-Fi riêng cho các máy trong cụm.
 4. Nếu tường lửa đang bật, mở cổng ZeroTier: `sudo ufw allow 9993/udp`.
 
-Trong lúc còn đi đường chuyển tiếp, giữ `HE_SO_SAO_CHEP=1` trong `cau_hinh/cum.env` để HDFS và Spark không phải chép bản sao qua mạng chậm. Khi các máy đã nối thẳng (`zerotier-cli peers` báo `DIRECT`), đổi thành 2, rồi `--dong-bo-ma` và chạy lại `khoi_dong_may.sh` trên mọi máy. Tệp cũ giữ số bản sao cũ; muốn nâng lên thì chạy `docker exec hadoop-master hdfs dfs -setrep -w 2 /lake`.
+Trong lúc còn đi đường chuyển tiếp (khoảng 0,4 MB/s), giữ `HE_SO_SAO_CHEP=1` trong `cau_hinh/cum.env` để HDFS và Spark không phải chép bản sao qua mạng chậm. Khi tốc độ giữa các máy đạt vài MB/s, đặt 2 (giá trị hiện tại từ 10/11/2026), rồi `--dong-bo-ma` và chạy lại `khoi_dong_may.sh` trên mọi máy. Với 1 bản sao, một DataNode khựng là job đọc tệp của nó hỏng hẳn; với 2 bản sao, HDFS client tự đọc bản còn lại. Tệp cũ giữ số bản sao cũ; muốn nâng lên thì chạy `docker exec hadoop-master hdfs dfs -setrep 2 /lake` (NameNode chép thêm ở chế độ nền; thêm `-w` nếu muốn chờ chép xong). Cũng vì mạng Wi-Fi, HDFS client chờ DataNode 3 phút (`dfs.client.socket-timeout` trong `hdfs-site.xml` và `submit.sh`) thay vì 60 giây, và mỗi task Spark được thử 8 lần thay vì 4.
 
 ---
 

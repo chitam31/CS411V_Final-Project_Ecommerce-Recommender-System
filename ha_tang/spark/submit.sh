@@ -88,6 +88,8 @@ exec docker exec "${CHE_DO_EXEC[@]}" \
   --conf spark.sql.session.timeZone=UTC \
   --conf spark.hadoop.dfs.client.use.datanode.hostname=true \
   --conf "spark.hadoop.dfs.replication=${HE_SO_SAO_CHEP:-2}" \
+  --conf spark.hadoop.dfs.client.socket-timeout=180000 \
+  --conf spark.task.maxFailures=8 \
   --conf spark.network.timeout=300s \
   --conf spark.executor.heartbeatInterval=30s \
   --conf spark.shuffle.io.maxRetries=10 \

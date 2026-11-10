@@ -67,4 +67,10 @@
         <name>dfs.permissions.enabled</name>
         <value>false</value>
     </property>
+    <!-- Cụm nối qua Wi-Fi + ZeroTier: một máy có thể khựng vài chục giây (đổi đường đi, sóng yếu).
+         Chờ đọc/ghi DataNode 3 phút thay vì 60 giây (đọc) / 8 phút (ghi) mặc định trước khi bỏ máy đó. -->
+    <property>
+        <name>dfs.client.socket-timeout</name>
+        <value>180000</value>
+    </property>
 </configuration>
