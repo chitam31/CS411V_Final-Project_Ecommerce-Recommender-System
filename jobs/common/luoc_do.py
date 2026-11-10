@@ -43,11 +43,25 @@ def ten_cot(ten_bang):
     return [phan.split()[0] for phan in " ".join(BANG_DELTA[ten_bang]["cot"].split()).split(", ")]
 
 
+def kieu_cot(ten_bang):
+    """Tên cột -> kiểu (chữ hoa) theo DDL, ví dụ {"so_tep": "LONG", "p95_ms": "DOUBLE"}."""
+    phan = " ".join(BANG_DELTA[ten_bang]["cot"].split()).split(", ")
+    return {p.split()[0]: p.split()[1].upper() for p in phan}
+
+
+def _ep_kieu(gia_tri, kieu):
+    # Spark từ chối int trong cột DOUBLE (statistics.mean([1, 1]) trả về int 1, không phải 1.0).
+    if kieu in ("DOUBLE", "FLOAT") and isinstance(gia_tri, int) and not isinstance(gia_tri, bool):
+        return float(gia_tri)
+    return gia_tri
+
+
 def tao_df(spark, ten_bang, cac_dong):
     """Tạo DataFrame từ list dict theo đúng lược đồ DDL; khóa thiếu nhận None."""
+    kieu = kieu_cot(ten_bang)
     cot = ten_cot(ten_bang)
     return spark.createDataFrame(
-        [tuple(d.get(c) for c in cot) for d in cac_dong], BANG_DELTA[ten_bang]["cot"]
+        [tuple(_ep_kieu(d.get(c), kieu[c]) for c in cot) for d in cac_dong], BANG_DELTA[ten_bang]["cot"]
     )
 
 

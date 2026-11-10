@@ -82,7 +82,7 @@ def tong_hop(giai_doan, so_tep_bang, thoi_gian, so_tep_doc):
         "trung_binh_ms": statistics.mean(thoi_gian),
         "trung_vi_ms": statistics.median(thoi_gian),
         "p95_ms": phan_vi(thoi_gian, 0.95),
-        "tep_doc_trung_binh": statistics.mean(doc_duoc) if doc_duoc else None,
+        "tep_doc_trung_binh": float(statistics.mean(doc_duoc)) if doc_duoc else None,
     }
 
 
@@ -116,8 +116,11 @@ def main():
     do_truy_van(spark, duong_dan, cac_user[:3])
     sau = tong_hop("sau_zorder", so_tep(spark, "gold.goi_y_nguoi_dung"), *do_truy_van(spark, duong_dan, cac_user))
 
+    ket_qua = {"truoc": truoc, "sau": sau, "nhanh_hon_lan": truoc["trung_vi_ms"] / max(sau["trung_vi_ms"], 1e-9)}
+    # In số đo ra log TRƯỚC khi ghi bảng: lỡ ghi lỗi vẫn còn số liệu của gần 5 phút đo.
+    print("So do ZORDER: " + str(ket_qua), flush=True)
     ghi_delta(tao_df(spark, "gold.do_hieu_nang_zorder", [truoc, sau]), "gold.do_hieu_nang_zorder", "append")
-    in_ket_qua({"truoc": truoc, "sau": sau, "nhanh_hon_lan": truoc["trung_vi_ms"] / max(sau["trung_vi_ms"], 1e-9)})
+    in_ket_qua(ket_qua)
 
 
 if __name__ == "__main__":

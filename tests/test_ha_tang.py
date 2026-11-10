@@ -28,6 +28,20 @@ def test_tao_df_theo_ddl(spark):
     assert df.columns == ten_cot("gold.ket_qua_tuning") and df.first()["coverage"] is None
 
 
+def test_tao_df_ep_int_vao_cot_double(spark):
+    """Lỗi bước 8 ngày 10/11: statistics.mean([1, 1]) trả về int 1, Spark từ chối int ở cột DOUBLE."""
+    import statistics
+    from datetime import datetime
+
+    from common.luoc_do import tao_df
+
+    dong = {"thoi_diem": datetime(2026, 11, 10), "giai_doan": "sau_zorder", "so_tep": 2, "so_truy_van": 30,
+            "trung_binh_ms": 120, "trung_vi_ms": 100.5, "p95_ms": 300, "tep_doc_trung_binh": statistics.mean([1, 1])}
+    ket_qua = tao_df(spark, "gold.do_hieu_nang_zorder", [dong]).first()
+    assert ket_qua["tep_doc_trung_binh"] == 1.0 and isinstance(ket_qua["tep_doc_trung_binh"], float)
+    assert ket_qua["so_tep"] == 2 and ket_qua["trung_binh_ms"] == 120.0
+
+
 def test_bo_phat(tmp_path):
     from phat_lai_su_kien import MS_MOI_NGAY, SinhNguoiMoi, doc_su_kien, thoi_diem_phat
 
