@@ -9,8 +9,8 @@ Tài liệu đi theo đúng thứ tự bật cụm. Mỗi lệnh ghi rõ chạy 
 | 3 | labsit | 10.68.71.204 | hadoop-worker, spark-worker, kafka-server, kafka-ui, bộ phát |
 | 4 | labsit-may25 | 10.68.71.42 | hadoop-worker, spark-worker |
 | 5 | labsit-may26 | 10.68.71.90 | hadoop-worker, spark-worker |
-| 6 | labsoe-18 | 10.68.71.149 | hadoop-worker, spark-worker |
-| 7 | Ctam (Linux) | 10.68.71.205 | bd03-web |
+| 6 | labsoe-18 | 10.68.71.149 | hadoop-worker, spark-worker, **bd03-web** |
+| 7 | Ctam (WSL2 trong laptop) | 10.68.71.205 | dự phòng (từng chạy web đến 11/11) |
 | 8 | Windows cá nhân | 10.68.71.59 | trình duyệt, script demo |
 | 9 | Laptop Windows `Whitehathacker` | 10.68.71.182 | điều khiển cụm qua SSH (mục 1.5), trình chiếu |
 
@@ -266,31 +266,34 @@ Bộ phát được bật ở bước 8.
 
 ---
 
-## 5. Máy 7 — Ctam (10.68.71.205): web
+## 5. Web: labsoe-18 (10.68.71.149)
 
-Ctam là Ubuntu 24.04 chạy trong WSL2 trên laptop `whitehathacker`, có ZeroTier riêng bên trong WSL
-(card `zt...` mang 10.68.71.205; Windows giữ 10.68.71.182). Mã lấy bằng cách clone repo trên ổ D,
-không cần tài khoản GitHub: `git clone "/mnt/d/BIG DATA/bd03_khuyen_nghi" ~/bd03_khuyen_nghi`;
-cập nhật thì `git pull` bên Windows trước rồi `git pull` trong WSL.
+Web chạy cùng máy với DataNode và Spark worker của labsoe-18, nằm trong LAN của cụm nên đọc HDFS
+nhanh và không vướng giới hạn MTU của đường mạng ngoài trường. RAM đo lúc chọn (11/11, 3 luồng
+đang chạy): labsoe-18 còn 5,7 GB khả dụng, labsit12 5,2 GB; lúc job lớn dùng hết executor 3 GB
+vẫn còn khoảng 2,7 GB, web cần khoảng 1,5 GB (driver Spark cục bộ 1 GB).
 
 ```bash
+# Trên laptop (Git Bash): đưa mã lên máy rồi vào máy
+bash scripts/cum/ssh_tat_ca.sh --may labsoe-18 --dong-bo-ma
+ssh labsoe-18
 cd ~/bd03_khuyen_nghi
 # Cấu hình riêng của máy: khoi_dong_may.sh nối tệp này vào ha_tang/web/.env mỗi lần chạy.
-# Để nút "Chạy lại mô hình" gọi được DAG 5; read -s để mật khẩu không vào lịch sử lệnh.
+# Để nút "Chạy lại mô hình" gọi được DAG 5. Dán RIÊNG dòng này rồi gõ mật khẩu (read -s: không
+# hiện, không vào lịch sử lệnh); dán chung với lệnh khác thì read sẽ lấy dòng kế tiếp làm mật khẩu.
 read -rs -p "Mật khẩu admin Airflow: " MK && printf 'AIRFLOW_PASS=%s\n' "$MK" > ha_tang/web/.env.rieng && chmod 600 ha_tang/web/.env.rieng; unset MK; echo
-bash scripts/cum/khoi_dong_may.sh                 # ở trường; ở nhà: ZT_MTU=1280 bash scripts/cum/khoi_dong_may.sh
-curl -s http://localhost:8000/api/suc-khoe        # {"che_do": "delta", "kafka": "GuiKafka"}
+bash scripts/cum/khoi_dong_may.sh --chi=web      # chỉ bật web, không tạo lại DataNode/Spark worker của máy
+curl -s http://localhost:8000/api/suc-khoe        # {"che_do":"delta","kafka":"GuiKafka"}
 ```
 
-**Chạy từ ngoài trường.** Đường mạng ở nhà làm rớt gói ZeroTier lớn (đo 11/11: `ping -M do -s 1300`
-tới master qua được, `-s 1400` mất 100 %), nên TCP treo khi đọc khối HDFS. `ZT_MTU=1280` hạ MTU
-card ZeroTier (mặc định 2800) trước khi bật web; thiết lập mất khi khởi động lại WSL. Kiểm tra:
-`ping -c 2 -M do -s 1200 10.68.71.113` phải qua. Trên laptop, mở web ở `http://localhost:8000`
-(WSL2 chuyển tiếp cổng sang Windows).
+Mở web: ở trường `http://10.68.71.149:8000`; từ ngoài trường mở đường hầm trên laptop
+`ssh -N -L 8001:localhost:8000 labsoe-18` (để nguyên cửa sổ) rồi vào `http://localhost:8001`.
 
-Web dùng `network_mode: host` vì Spark cục bộ trong web phải nói chuyện trực tiếp với các DataNode qua ZeroTier.
-
-Trước khi có dữ liệu thật, có thể chạy web ở chế độ giả lập để làm giao diện: thêm dòng `WEB_CHE_DO=gia` vào `ha_tang/web/.env.rieng` rồi chạy lại script.
+**Vì sao không dùng Ctam.** Ctam là Ubuntu 24.04 trong WSL2 của laptop (ZeroTier riêng 10.68.71.205).
+Ngày 11/11, WSL (3,8 GB RAM, Windows chỉ còn khoảng 4 GB trống khi Chrome và Meet đang mở) sập hai lần lúc
+build và bật web; lần sập đầu còn làm hỏng tệp của ảnh gốc trong bộ nhớ đệm build (`pip._vendor.six`),
+phải `docker builder prune -af` rồi tải lại. Từ nhà, WSL còn phải hạ MTU ZeroTier (`ZT_MTU=1280`, NHAT_KY
+lỗi 25). Ctam giữ trong `cum.env` với vai trò `du-phong`.
 
 ---
 
@@ -301,7 +304,7 @@ Trước khi có dữ liệu thật, có thể chạy web ở chế độ giả 
 
 | Trang | Địa chỉ |
 |---|---|
-| Web giả lập sàn TMĐT | http://10.68.71.205:8000 |
+| Web giả lập sàn TMĐT | http://10.68.71.149:8000 (ngoài trường: http://localhost:8001 qua đường hầm) |
 | Spark Master | http://10.68.71.113:8080 |
 | HDFS NameNode | http://10.68.71.113:9870 |
 | Airflow | http://10.68.71.113:8088 |
@@ -312,8 +315,8 @@ Trước khi có dữ liệu thật, có thể chạy web ở chế độ giả 
 ```powershell
 git clone https://github.com/chitam31/CS411V_Final-Project_Ecommerce-Recommender-System.git bd03_khuyen_nghi
 cd bd03_khuyen_nghi
-python scripts\demo_vong_khep_kin.py --web http://10.68.71.205:8000 --san-pham <ma_san_pham_it_nguoi_xem>
-python producer\nguoi_dung_ao.py --web http://10.68.71.205:8000 --so-luot 300
+python scripts\demo_vong_khep_kin.py --web http://10.68.71.149:8000 --san-pham <ma_san_pham_it_nguoi_xem>
+python producer\nguoi_dung_ao.py --web http://10.68.71.149:8000 --so-luot 300
 ```
 
 ---
@@ -522,4 +525,4 @@ bash scripts/luong.sh dung tat_ca
 bash scripts/cum/khoi_dong_may.sh --dung
 ```
 
-Thứ tự bật lại: master → các worker → labsit → Ctam, rồi `scripts/luong.sh khoi_dong tat_ca`.
+Thứ tự bật lại: master → các worker → labsit → web trên labsoe-18 (`khoi_dong_may.sh --chi=web`), rồi `scripts/luong.sh khoi_dong tat_ca`.

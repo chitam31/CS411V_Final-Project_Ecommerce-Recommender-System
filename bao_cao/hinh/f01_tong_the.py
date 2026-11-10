@@ -60,7 +60,7 @@ s.mui("b5", "gd", "n", "s", ta=0.5, tb=0.8, hai_chieu=True)
 # Tầng 6: điều phối và phục vụ
 s.nhom(0.15, 7.42, 7.1, 1.2, "6  Orchestration and serving")
 s.hop("af", 0.35, 7.72, 3.15, 0.75, "Apache Airflow 3.3.1 (LocalExecutor, pool = 1)\nDAG 1 daily pipeline · DAG 2 stream monitor\nDAG 3 hourly A/B · DAG 4 maintenance · DAG 5 reproduce", MAU["af"])
-s.hop("web", 3.85, 7.72, 3.2, 0.75, "FastAPI web app (host Ctam, local Spark)\nhome · product · A/B dashboard\nmodel quality · reproduction", MAU["web"])
+s.hop("web", 3.85, 7.72, 3.2, 0.75, "FastAPI web app (host labsoe-18, local Spark)\nhome · product · A/B dashboard\nmodel quality · reproduction", MAU["web"])
 s.mui("af", (1.9, 7.27), "n", None, net="--", mau="#B04A4A")
 s.chu(2.45, 7.35, "spark-submit (BashOperator)", co=6.3, mau="#B04A4A")
 s.duong([(7.05, 5.0), (7.18, 5.0), (7.18, 8.1), (7.05, 8.1)], mau="#444444")

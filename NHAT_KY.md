@@ -136,6 +136,8 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - 03:50: sửa lỗi 23 — lưới tuning luôn có thêm tổ hợp của mô hình đang phục vụ; DAG 1 có tham số `bo_qua_cho_du_lieu` cho lần chạy tay.
 - 04:05: kích hoạt tay DAG 1 (`bo_qua_cho_du_lieu: true`); lượt chờ vì `max_active_runs = 1` và lượt 02:00 còn giữ chỗ tới khi sensor hết hạn (08:00).
 - 04:15–04:20: chuẩn bị web trên Ctam (WSL2 trong laptop, ZeroTier 10.68.71.205). Từ nhà, ping 1300 byte tới master qua được, 1400 byte mất hết (lỗi 25); sau khi hạ MTU card ZeroTier xuống 1280, gói 1200 byte tới master, labsit, labsit12, labsoe-18 đều qua, cổng Kafka 9092 mở, tải tệp qua DataNode (WebHDFS) mã 200.
+- 04:29, 04:50: WSL trên laptop sập hai lần (lúc giải nén ảnh gốc Spark và ngay sau khi bật container web); lần đầu còn làm rỗng tệp của ảnh gốc trong bộ nhớ đệm build, `pip3` báo `No module named 'pip._vendor.six'` — `docker builder prune -af` rồi tải lại thì build được. Windows chỉ còn khoảng 4,1/15,3 GB RAM trống khi WSL tắt (Chrome, Meet), WSL giữ 3,8 GB (lỗi 26).
+- 05:00–05:08: chuyển web sang labsoe-18 (RAM khả dụng 5,7 GB, labsit12 5,2 GB) bằng `khoi_dong_may.sh --chi=web` — chỉ build lớp web (8 giây pip), không đụng DataNode/Spark worker của máy. `api/suc-khoe`: `{"che_do":"delta","kafka":"GuiKafka"}`. Từ nhà xem web qua `ssh -N -L 8001:localhost:8000 labsoe-18`.
 
 ---
 
@@ -168,6 +170,7 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 | 23 | Lần chạy hằng ngày không bao giờ thay được mô hình: lưới tối thiểu cố định alpha = 10, còn mô hình đang phục vụ chọn từ lưới đầy đủ có alpha = 40. Trên cùng dữ liệu, tổ hợp tốt nhất alpha = 10 (0,0574) luôn thấp hơn 0,0680 quá dung sai 1%, nên DAG luôn giữ mô hình cũ, kể cả khi lược đồ đổi sang v2 | Lượt DAG 1 đêm 10/11 (giữ mô hình cũ dù v2 tốt hơn v1 ở cùng siêu tham số) | `them_to_hop_dang_phuc_vu`: `huan_luyen_als` thêm tổ hợp của mô hình đang phục vụ vào cuối lưới nếu chưa có (ghi vào ghi chú commit của `gold.ket_qua_tuning`); `--khong-them-dang-phuc-vu` để tắt. Sensor DAG 1 nhận `bo_qua_cho_du_lieu` cho lần chạy tay; kiểm thử |
 | 24 | `kn_tinh_ab` (mỗi giờ, `dagrun_timeout` 50 phút) failed hai lượt liên tiếp khi task phải chờ chỗ trong pool 1 chỗ sau DAG 1 và DAG bảo trì | Lượt đêm 10/11 | Không mất dữ liệu (đọc nối CDF từ phiên bản đã xử lý). Giữ pool 1 chỗ ban đêm vì RAM master; ban ngày và khi demo đặt pool 2 chỗ (TRIEN_KHAI_CUM 2.2) |
 | 25 | Web chạy từ nhà sẽ treo khi đọc HDFS: đường mạng ngoài trường rớt gói ZeroTier lớn (ping 1300 byte qua, 1400 byte mất hết), cùng nguyên nhân SSH từ nhà treo ở bước trao khóa | Chuẩn bị web trên Ctam từ nhà, 11/11 sáng sớm | `ZT_MTU=1280 bash scripts/cum/khoi_dong_may.sh` hạ MTU card ZeroTier của máy trước khi bật dịch vụ (TRIEN_KHAI_CUM mục 5); kiểm thử |
+| 26 | Máy web Ctam (WSL2 trong laptop, 3,8 GB) không ổn định: WSL sập hai lần khi build/bật web vì Windows thiếu RAM; lần sập khi đang giải nén làm hỏng ảnh gốc trong bộ nhớ đệm build | Bật web từ nhà, 11/11 sáng sớm | Chuyển vai trò `web` sang labsoe-18 (cùng LAN với cụm, không cần hạ MTU); `khoi_dong_may.sh --chi=<vai_tro>` để thêm một dịch vụ vào máy đang chạy mà không tạo lại dịch vụ khác; Ctam giữ làm dự phòng; kiểm thử |
 
 ---
 
@@ -207,7 +210,7 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - [ ] Sửa `so_loi`, `bo_nho` trong `cau_hinh/cum.env` theo `nproc`, `free -g` của từng máy.
 - [x] Push mã lên repo của nhóm (10/11/2026); mọi máy `git clone` cùng một bản.
 - [ ] Chạy `scripts/kiem_tra_cuc_bo.sh` trên một máy có Internet (xác nhận phần Delta).
-- [x] Triển khai cụm theo docs/TRIEN_KHAI_CUM.md (6 máy lab + laptop điều khiển; còn máy web Ctam).
+- [x] Triển khai cụm theo docs/TRIEN_KHAI_CUM.md (6 máy lab + laptop điều khiển; web chạy trên labsoe-18 từ 11/11).
 - [x] Tải dữ liệu, chạy bộ phát, `chay_lan_dau.sh` với lưới 27 tổ hợp (10/11).
 - [~] Chạy `tien_hoa_luoc_do.py` (xong, silver 0 → 2) rồi pipeline lần hai (DAG 1 đang chạy từ 10/11 23:21).
 - [x] Chạy DAG 5 (trùng khớp), `do_zorder.py`; bật lịch `kn_pipeline_hang_ngay`, `kn_tinh_ab`, `kn_bao_tri` (`kn_giam_sat_streaming` bật trước buổi diễn tập).

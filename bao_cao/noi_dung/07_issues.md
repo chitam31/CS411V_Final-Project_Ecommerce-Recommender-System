@@ -22,7 +22,7 @@ Table: Configuration errors found in the inherited cluster {#tab:ra-soat w=4,26,
 
 ## Issues Found During Development and Operation
 
-@tab:loi lists the issues found while developing and running the project, in the order they appeared. Issues 1–12 were found by tests or code review before deployment; issues 13–22 appeared on the cluster.
+@tab:loi lists the issues found while developing and running the project, in the order they appeared. Issues 1–12 were found by tests or code review before deployment; issues 13–26 appeared on the cluster.
 
 Table: Issues found during development and operation {#tab:loi w=4,46,50}
 | # | Issue | Fix |
@@ -49,6 +49,10 @@ Table: Issues found during development and operation {#tab:loi w=4,46,50}
 | 20 | Replaying data a second time would corrupt silver: new offsets give new event ids, doubling hourly counts and turning genuine users into bots | Deduplicate by content before the bot filter; disable synthetic users in the second replay |
 | 21 | The Airflow API server restarted in a loop: the authentication manager opens the password file in append mode, but the container ran as UID 50000 | Run the containers with the UID of the project owner; password file mode 600 |
 | 22 | Design risk: maintenance (OPTIMIZE/DELETE) and streaming MERGE write the same tables; the second commit fails and the stream stops | Retry helper for Delta conflict exceptions in both streams and the maintenance job |
+| 23 | The nightly run could never replace the model: the minimal grid fixes alpha = 10 while the served model uses alpha = 40, so the best nightly combination always lost by more than the 1 % tolerance, even with model version 2 | The served model's hyperparameters are always appended to the grid; a manual run of DAG 1 can skip the data sensor |
+| 24 | The hourly A/B DAG (run timeout 50 min) failed twice while its task waited for the single pool slot held by the nightly pipeline | No data lost: the job resumes from the last processed Change Data Feed version; two slots in the daytime |
+| 25 | A web application started from home would hang reading HDFS: the home network drops large ZeroTier packets (1,300-byte pings pass, 1,400-byte pings are lost) | `ZT_MTU=1280` lowers the MTU of the ZeroTier interface before the services start |
+| 26 | The first web host (Ubuntu in WSL2 on the laptop, 3.8 GB) crashed twice while building and starting the web container because Windows ran short of memory; one crash corrupted the cached base image | The web role moved to labsoe-18 inside the laboratory LAN; `--chi=<role>` starts one role without recreating the other services of a machine |
 
 ## Key Incidents
 
@@ -66,11 +70,15 @@ Writing silver with `partitionBy("ngay")` right after a 64-partition shuffle mad
 
 ### Operating the cluster from outside the campus
 
-From home, SSH connections to the master hung during key exchange (`expecting SSH2_MSG_KEX_ECDH_REPLY`) while connections to other machines worked and large pings failed: a path MTU black hole dropped the large key-exchange packet. Jumping through another laboratory machine (`ProxyJump labsoe-18`) avoided the problem. The paths from home were also unstable — the same machine was reachable one minute and not the next, and seven parallel connections all failed. Three changes made remote operation workable: every long command runs inside `tmux` on the target machine and writes its output to a file there (a result export streamed over SSH was lost when the connection dropped); the code distribution retries `git push` on network errors; and a read-only status script (`tinh_trang.sh`) gives a one-screen view of memory, Spark applications and Airflow runs without nested quoting.
+From home, SSH connections to the master hung during key exchange (`expecting SSH2_MSG_KEX_ECDH_REPLY`) while connections to other machines worked and large pings failed: a path MTU black hole dropped the large key-exchange packet. Jumping through another laboratory machine (`ProxyJump labsoe-18`) avoided the problem. The paths from home were also unstable — the same machine was reachable one minute and not the next, and seven parallel connections all failed. Three changes made remote operation workable: every long command runs inside `tmux` on the target machine and writes its output to a file there (a result export streamed over SSH was lost when the connection dropped); the code distribution retries `git push` on network errors; and a read-only status script (`tinh_trang.sh`) gives a one-screen view of memory, Spark applications and Airflow runs without nested quoting. The same black hole affected the first web host: from home, 1,300-byte pings to the master passed and 1,400-byte pings were lost, so HDFS reads by the web application would have hung until the MTU of the ZeroTier interface was lowered to 1,280 (issue 25). That host, Ubuntu in WSL2 on the control laptop, then crashed twice for lack of memory (issue 26), and the web application was moved to labsoe-18, which shares the laboratory LAN with the DataNodes; from outside the campus it is opened through an SSH tunnel.
 
 ### Memory on the master host
 
 Measurements before enabling Airflow showed only 3.2 GB available on the master, because a Cassandra server unrelated to the project used 2.47 GB. Since every PySpark driver runs on the master (client mode), the three streaming drivers (about 2.4 GB measured) and one batch driver could not fit together with Airflow. Three measures resolved it: stopping Cassandra for the duration of the project with the team's agreement (stopped, not disabled, so it can be restarted unchanged); a slim Airflow configuration of about 0.9 GB; and a one-slot pool so that at most one batch driver runs at a time. Moving Airflow to another machine was considered and rejected: the drivers would stay on the master anyway because tasks submit through the Spark Master container, and the worker machines have only about 1 GB to spare.
+
+### A nightly pipeline that never deploys
+
+The first scheduled run of DAG 1 on the real data (night of 10 November) trained model version 2 on the evolved silver table and then kept the old model. The reason was a design flaw, not the data. The nightly run uses the minimal grid, in which alpha is fixed at 10 to save time, while the served model had been selected from the full grid with alpha = 40. The best nightly combination (rank 50, regParam 1.0, alpha 10) reached NDCG@10 = 0.0574 against 0.0680 for the served model, so the branch `giu_mo_hinh_cu` was taken — and it would have been taken every night, whatever the data, because the nightly grid could not contain the served configuration. The run nevertheless gave two useful results: the nine alpha = 10 combinations reproduced the earlier values to four decimals after the schema evolution and the second replay of 857,072 events, confirming that content deduplication (issue 20) kept silver intact; and at equal hyperparameters the price filter of model version 2 improved NDCG@10 from 0.0574 to 0.0587 (+2.3 %) and coverage from 2.49 % to 2.70 %. The fix (issue 23) appends the served model's hyperparameters to any grid that lacks them, so a new model is always compared with the old one under the same configuration as well as under new ones.
 
 ## Lessons Learned
 
@@ -81,4 +89,5 @@ Measurements before enabling Airflow showed only 3.2 GB available on the master,
 - **Small files are a real cost, not a textbook warning.** Repartitioning before a partitioned write turned a 15-minute step into seconds.
 - **Concurrency must be designed, not assumed.** Optimistic concurrency in Delta is correct but rejects conflicting writers; long-running streams need explicit retries when maintenance touches the same tables.
 - **Reproducibility needs more than time travel.** It also needs the ground truth in the same table version, stable indexers, fixed seeds, recorded parameters and a retention period longer than the reproduction horizon.
+- **Champion and challenger must be comparable.** An automatic deployment gate is only as good as the candidates it sees: if the retraining grid cannot reproduce the served configuration, the gate silently freezes the model.
 - **Operate remote systems asynchronously.** Commands that outlive a network connection belong in `tmux`, with output in files; a status script that reads state without side effects is worth writing early.

@@ -37,7 +37,7 @@ Table: Components of the system {#tab:thanh-phan w=19,24,57}
 
 ### Machines and roles
 
-The cluster consists of six laboratory machines and one web host, all members of the ZeroTier network `ttunet`, plus the control laptop used to operate them (@fig:cluster). Each laboratory machine has 12 logical cores and 7 GB of RAM, which makes memory, not CPU, the binding constraint. Roles are assigned in a single directory file, `cau_hinh/cum.env` (@sec:config), summarised in @tab:may.
+The cluster consists of six laboratory machines, one of which also hosts the web application, all members of the ZeroTier network `ttunet`, plus the control laptop used to operate them (@fig:cluster). Each laboratory machine has 12 logical cores and 7 GB of RAM, which makes memory, not CPU, the binding constraint. Roles are assigned in a single directory file, `cau_hinh/cum.env` (@sec:config), summarised in @tab:may.
 
 ![Physical deployment: machines, containers, ports and resources](hinh/f02_cum.png){#fig:cluster w=15.8}
 
@@ -49,8 +49,8 @@ Table: Machines of the cluster and their roles {#tab:may w=17,15,40,14,14}
 | labsit | 10.68.71.204 | DataNode, Spark Worker, Kafka broker and UI, replay producer | 6 | 2 GB |
 | labsit-may25 | 10.68.71.42 | DataNode, Spark Worker (shared with another group's services) | 4 | 2 GB |
 | labsit-may26 | 10.68.71.90 | DataNode, Spark Worker (shared with another group's Airflow worker) | 8 | 3 GB |
-| labsoe-18 | 10.68.71.149 | DataNode, Spark Worker, SSH jump host | 8 | 3 GB |
-| Ctam | 10.68.71.205 | Web application (FastAPI with local Spark) | – | – |
+| labsoe-18 | 10.68.71.149 | DataNode, Spark Worker, web application (FastAPI with local Spark), SSH jump host | 8 | 3 GB |
+| ctam | 10.68.71.205 | Standby (Ubuntu in WSL2 on the laptop; first web host, see @sec:issues) | – | – |
 | whitehathacker | 10.68.71.182 | Control laptop (Windows, Git Bash) | – | – |
 
 Memory was sized from measurements taken with `scripts/cum/khao_sat_may.sh` on 10 November 2026 using a simple rule: reserve about 2 GB for Ubuntu with its desktop, 1 GB for the DataNode and the memory of any other service on the machine, and give the rest to the Spark worker. Executors of batch jobs use 2 GB, so a worker must offer at least 2 GB or it would never receive an executor. Machines shared with other groups received less. The workers total **34 cores and 13 GB of executor memory**.

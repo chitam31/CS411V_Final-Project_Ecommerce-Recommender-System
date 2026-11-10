@@ -17,7 +17,7 @@ s.mui("m", "kd", "e", "w", ta=0.5, tb=0.35)
 s.hop("svc", 4.85, 2.75, 2.43, 1.45, "per role\nnamenode → hadoop master\ndatanode → hadoop worker\nspark-master / spark-worker\nkafka → broker + UI\nairflow → Airflow stack\nweb → bd03-web", MAU["spark"], co=6.3)
 s.mui("kd", "svc", "s", "n")
 
-s.hop("env", 0.12, 3.25, 4.45, 0.98, "cau_hinh/cum.env (excerpt)\nMAY_1=\"labsoe-11|10.68.71.113|namenode,spark-master,airflow|0|0\"\nMAY_3=\"labsit|10.68.71.204|datanode,spark-worker,kafka|6|2g\"\nMAY_7=\"ctam|10.68.71.205|web|0|0\"   HE_SO_SAO_CHEP=2   LOI_ALS=10",
+s.hop("env", 0.12, 3.25, 4.45, 0.98, "cau_hinh/cum.env (excerpt)\nMAY_1=\"labsoe-11|10.68.71.113|namenode,spark-master,airflow|0|0\"\nMAY_3=\"labsit|10.68.71.204|datanode,spark-worker,kafka|6|2g\"\nMAY_6=\"labsoe-18|10.68.71.149|datanode,spark-worker,web|8|3g\"   HE_SO_SAO_CHEP=2   LOI_ALS=10",
       "#FBFBF3", co=6.0, canh="left")
 s.mui("env", "kd", "e", "w", ta=0.3, tb=0.85, net="--", nhan="read", co=6.0)
 s.chu(2.35, 3.1, "secrets never committed: ha_tang/*/.env, .env.rieng, mat_khau.json, kaggle.json", co=6.0, nghieng=True, mau="#B04A4A")

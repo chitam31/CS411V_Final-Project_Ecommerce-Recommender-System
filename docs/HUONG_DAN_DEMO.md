@@ -14,7 +14,7 @@ Kịch bản dưới đây đi qua đủ 8 mục nghiệm thu, mỗi mục ghi r
 - [ ] `gold.ket_qua_ab` có ít nhất 3 ngày (mô phỏng `--so-ngay 7` đã sinh đủ).
 - [ ] Đã chạy DAG `kn_tai_lap` ít nhất một lần thành công (bảng `gold.ket_qua_tai_lap` có dòng `trung_khop = true`).
 - [ ] Đã chạy `bao_tri/do_zorder.py` (bảng `gold.do_hieu_nang_zorder` có 3 dòng `truoc_toi_uu` / `sau_optimize` / `sau_zorder`: so dòng 2 với dòng 3 để thấy tác dụng riêng của ZORDER, tách khỏi tác dụng gộp tệp).
-- [ ] Chọn sẵn: 1 user quen (có ALS, nhóm A), 1 user quen nhóm B, 1 sản phẩm **ít người xem** (không nằm trong khối thịnh hành) để demo độ trễ. Lấy user mẫu ở `http://10.68.71.205:8000/api/nguoi-dung-mau`; xem nhóm A/B ngay trên trang chủ.
+- [ ] Chọn sẵn: 1 user quen (có ALS, nhóm A), 1 user quen nhóm B, 1 sản phẩm **ít người xem** (không nằm trong khối thịnh hành) để demo độ trễ. Lấy user mẫu ở `http://10.68.71.149:8000/api/nguoi-dung-mau`; xem nhóm A/B ngay trên trang chủ.
 - [ ] Chụp màn hình dự phòng mọi màn hình web.
 
 ### Trước giờ bảo vệ 30 phút
@@ -80,7 +80,7 @@ Làm trên giao diện:
 Đo tự động và in thời gian (từ máy Windows hoặc master):
 
 ```bash
-python3 scripts/demo_vong_khep_kin.py --web http://10.68.71.205:8000 --san-pham <ma_san_pham> --so-lan 3
+python3 scripts/demo_vong_khep_kin.py --web http://10.68.71.149:8000 --san-pham <ma_san_pham> --so-lan 3
 # ... Bảng thịnh hành đã cập nhật sau NN giây (cửa sổ ..., thêm giỏ ...) -> ĐẠT/KHÔNG ĐẠT
 ```
 
@@ -150,7 +150,7 @@ bash ha_tang/spark/submit.sh nhanh kiem_tra/tim_su_kien_bronze.py --ma-nguoi-dun
 
 | Sự cố | Xử lý nhanh |
 |---|---|
-| Web không phản hồi | `docker restart bd03-web` trên Ctam (khởi động lại mất khoảng 30 giây vì phải tạo phiên Spark) |
+| Web không phản hồi | `docker restart bd03-web` trên labsoe-18 (khởi động lại mất khoảng 30 giây vì phải tạo phiên Spark) |
 | Khối thịnh hành đứng yên | `bash scripts/luong.sh trang_thai`; `bash scripts/luong.sh khoi_dong thinh_hanh`; kiểm tra bộ phát còn chạy |
 | Một worker rớt | Spark tự chạy lại task trên worker khác; HDFS còn bản sao (replication 2) — có thể dùng để minh họa khả năng chịu lỗi |
 | DAG 5 chạy quá lâu | Trình bày kết quả của lần chạy trước trong bảng tái lập, giải thích thời gian bằng cỡ dữ liệu |

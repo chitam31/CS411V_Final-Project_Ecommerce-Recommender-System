@@ -21,13 +21,13 @@
 ┌ labsit12 .198 ┐ ┌ labsit .204 ──────────────┐ ┌ may25 .42 ┐ ┌ may26 .90 ┐ ┌ labsoe-18 .149 ┐
 │ hadoop-worker │ │ hadoop-worker             │ │ hadoop-w. │ │ hadoop-w. │ │ hadoop-worker  │
 │ spark-worker  │ │ spark-worker              │ │ spark-w.  │ │ spark-w.  │ │ spark-worker   │
-│               │ │ kafka-server :9092        │ │           │ │           │ │                │
+│               │ │ kafka-server :9092        │ │           │ │           │ │ bd03-web :8000 │
 │               │ │ kafka-ui :8080            │ │           │ │           │ │                │
 │               │ │ producer/phat_lai_su_kien │ │           │ │           │ │                │
 └───────────────┘ └───────────────────────────┘ └───────────┘ └───────────┘ └────────────────┘
-┌ Ctam · 10.68.71.205 (Linux) ─────────────┐   ┌ Windows · 10.68.71.59 ─────────────────────┐
-│ bd03-web :8000 (FastAPI + Spark local[2] │   │ Trình duyệt: web :8000, Spark :8080,        │
-│ đọc Delta trên HDFS, đẩy sự kiện Kafka)  │   │ HDFS :9870, Airflow :8088, Kafka UI :8080   │
+┌ Laptop whitehathacker · 10.68.71.182 ────┐   ┌ Windows · 10.68.71.59 ──────────────────────┐
+│ Git Bash: SSH vào cụm, trình chiếu       │   │ Trình duyệt: web :8000, Spark :8080,        │
+│ WSL2 "Ctam" .205: dự phòng               │   │ HDFS :9870, Airflow :8088, Kafka UI :8080   │
 └──────────────────────────────────────────┘   └─────────────────────────────────────────────┘
 ```
 
@@ -36,7 +36,7 @@
 - Số bản sao HDFS lấy từ `HE_SO_SAO_CHEP` trong `cau_hinh/cum.env`, áp dụng cho cả HDFS và mọi job Spark (`spark.hadoop.dfs.replication`): 2 khi các máy nối thẳng với nhau (mất một máy vẫn còn dữ liệu), 1 khi ZeroTier phải đi đường chuyển tiếp (executor ghi bản duy nhất xuống DataNode của chính máy mình).
 - Spark Master chạy `network_mode: host` với `--host 10.68.71.113` để quảng bá đúng địa chỉ cho worker. Spark driver chạy bên trong container `spark-master` (client mode, do `submit.sh` gọi `docker exec`), nên dùng chung mạng của máy master. Mỗi hồ sơ job có cổng driver riêng để nhiều job chạy song song.
 - NameNode chạy trong mạng bridge: `dfs.namenode.rpc-address = 10.68.71.113:8020` là địa chỉ quảng bá (DataNode đọc dòng này để tìm NameNode), còn `rpc-bind-host = 0.0.0.0` để lắng nghe bên trong container.
-- Web chạy Spark cục bộ `local[2]` ngay trong tiến trình FastAPI để đọc Delta trực tiếp từ HDFS; không chiếm lõi của cụm.
+- Web (`bd03-web`, trên labsoe-18 cạnh DataNode và Spark worker) chạy Spark cục bộ `local[2]` ngay trong tiến trình FastAPI để đọc Delta trực tiếp từ HDFS; dùng 2 trong 4 lõi máy chưa giao cho worker, không chiếm lõi của cụm.
 
 ### Hồ sơ tài nguyên (`ha_tang/spark/submit.sh`)
 

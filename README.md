@@ -39,7 +39,7 @@
                                                                                          ▼
                                                      gold.goi_y_nguoi_dung (ZORDER BY ma_nguoi_dung)
                                                                                          │
-                                         Web giả lập sàn TMĐT (Ctam 10.68.71.205:8000) ◄─┘
+                                         Web giả lập sàn TMĐT (labsoe-18 10.68.71.149:8000) ◄─┘
 ```
 
 Mọi bảng nằm trên HDFS `hdfs://10.68.71.113:8020/lake/...`. Bronze là Parquet; silver, features và gold là Delta Lake 3.2.0. Năm DAG Airflow 3.3.1 trên máy master điều phối các job lô. Chi tiết ở [docs/KIEN_TRUC.md](docs/KIEN_TRUC.md).
@@ -53,8 +53,8 @@ Mọi bảng nằm trên HDFS `hdfs://10.68.71.113:8020/lake/...`. Bronze là Pa
 | labsit | 10.68.71.204 | DataNode + Spark Worker + **Kafka** (bộ phát chạy ở đây) |
 | labsit-may25 | 10.68.71.42 | DataNode + Spark Worker |
 | labsit-may26 | 10.68.71.90 | DataNode + Spark Worker |
-| labsoe-18 | 10.68.71.149 | DataNode + Spark Worker |
-| Ctam (cá nhân, Linux) | 10.68.71.205 | Web giả lập sàn TMĐT (cổng 8000) |
+| labsoe-18 | 10.68.71.149 | DataNode + Spark Worker + **web** giả lập sàn TMĐT (cổng 8000) |
+| Ctam (WSL2 trong laptop) | 10.68.71.205 | Dự phòng (chạy web đến 11/11, xem TRIEN_KHAI_CUM mục 5) |
 | Máy Windows cá nhân | 10.68.71.59 | Máy trình chiếu: trình duyệt mở web và các trang giám sát |
 
 Danh bạ này là nguồn sự thật duy nhất, nằm ở [cau_hinh/cum.env](cau_hinh/cum.env). Tài nguyên đã đo trên máy thật (10/11/2026): mỗi máy lab 12 lõi, 7 GB RAM; RAM giao cho Spark ở từng worker được tính theo số đo đó (docs/TRIEN_KHAI_CUM.md, mục 1.4). Laptop điều khiển `whitehathacker` (10.68.71.182) cũng có trong danh bạ.
@@ -155,7 +155,7 @@ bash scripts/chay_lan_dau.sh                       # toàn bộ pipeline theo th
 bash scripts/luong.sh khoi_dong tat_ca             # 3 luồng streaming chạy liên tục
 ```
 
-Sau đó Airflow (http://10.68.71.113:8088) chạy DAG hằng đêm, web ở http://10.68.71.205:8000.
+Sau đó Airflow (http://10.68.71.113:8088) chạy DAG hằng đêm, web ở http://10.68.71.149:8000 (ngoài trường: `ssh -N -L 8001:localhost:8000 labsoe-18`, rồi mở http://localhost:8001).
 
 ---
 

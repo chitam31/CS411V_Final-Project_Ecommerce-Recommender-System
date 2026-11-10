@@ -7,7 +7,7 @@ s.hop("home", 0.2, 0.45, 1.22, 1.15, "Home page\n'For you': 10 slots\n+ 'Trendin
 s.hop("prod", 0.2, 1.75, 1.22, 1.0, "Product page\nrelated items\nView · Add to cart\n· Buy buttons", MAU["trang"], co=6.5)
 s.hop("dash", 0.2, 2.9, 1.22, 1.45, "Dashboards\nA/B results\nmodel quality\nreproduction:\npick a day → re-run", MAU["trang"], co=6.5)
 
-s.nhom(1.68, 0.1, 1.82, 4.35, "FastAPI web (Ctam)", MAU["web"], "#B8964E")
+s.nhom(1.68, 0.1, 1.82, 4.35, "FastAPI web (labsoe-18)", MAU["web"], "#B8964E")
 s.hop("w1", 1.78, 0.45, 1.62, 1.15, "GET /api/goi-y/{u}\ngroup = parity of md5(u)\nA: ALS only, B: ALS + 30 %\ntrending; newest trending\nreplaces trending slots", MAU["trang"], co=6.2)
 s.hop("w2", 1.78, 1.75, 1.62, 1.0, "POST /api/hien-thi\nPOST /api/su-kien\nKafka producer\n(no direct Delta writes)", MAU["trang"], co=6.2)
 s.hop("w3", 1.78, 2.9, 1.62, 1.45, "GET /api/ab/ket-qua\nPOST /api/tai-lap/{ngay}\nreads Delta with local\nSpark; re-aggregates the\nimpression log\nVERSION AS OF v", MAU["trang"], co=6.2)

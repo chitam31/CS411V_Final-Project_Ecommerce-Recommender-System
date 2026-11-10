@@ -14,8 +14,8 @@ MAY_2="labsit12|10.68.71.198|datanode,spark-worker|8|3g"
 MAY_3="labsit|10.68.71.204|datanode,spark-worker,kafka|6|2g"
 MAY_4="labsit-may25|10.68.71.42|datanode,spark-worker|4|2g"
 MAY_5="labsit-may26|10.68.71.90|datanode,spark-worker|8|3g"
-MAY_6="labsoe-18|10.68.71.149|datanode,spark-worker|8|3g"
-MAY_7="ctam|10.68.71.205|web|0|0"
+MAY_6="labsoe-18|10.68.71.149|datanode,spark-worker,web|8|3g"
+MAY_7="ctam|10.68.71.205|du-phong|0|0"            # standby
 TAI_KHOAN_SSH="labsoe-11=hduser labsit12=labsit12 labsit=labsit ..."   # SSH account per host
 SPARK_MASTER_IP=10.68.71.113
 HDFS_GOC=hdfs://10.68.71.113:8020
