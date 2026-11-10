@@ -6,7 +6,7 @@
 #   MAT_KHAU_AIRFLOW='...' bash scripts/cum/tao_cau_hinh_airflow.sh   # tự đặt mật khẩu
 #   GHI_DE=1 bash scripts/cum/tao_cau_hinh_airflow.sh        # tạo lại khi đã có
 #
-# Cả hai tệp nằm trong .gitignore. Ghi lại mật khẩu: web trên máy Ctam cần nó (AIRFLOW_PASS).
+# Cả hai tệp nằm trong .gitignore. Ghi lại mật khẩu: web trên máy labsoe-18 cần nó (AIRFLOW_PASS).
 set -euo pipefail
 THU_MUC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 A="$THU_MUC/ha_tang/airflow"
@@ -42,4 +42,4 @@ python3 -c "import json, sys; json.dump({'admin': sys.argv[1]}, open(sys.argv[2]
 chmod 600 "$A/mat_khau.json"
 echo "Đã tạo $A/.env (BD03_HOST_DIR=$THU_MUC, AIRFLOW_UID=$UID_MAY, DOCKER_GID=$gid) và mat_khau.json."
 echo "Tài khoản Airflow: admin / $mk"
-echo "Ghi lại mật khẩu này: web trên máy Ctam cần nó (AIRFLOW_PASS trong ha_tang/web/.env.rieng)."
+echo "Ghi lại mật khẩu này: web trên máy labsoe-18 cần nó (AIRFLOW_PASS trong ha_tang/web/.env.rieng)."

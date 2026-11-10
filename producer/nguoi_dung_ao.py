@@ -8,7 +8,7 @@ Mô hình click CHỈ phụ thuộc vị trí, P(click) = p0 / vi_tri^eta, khôn
 kết quả A/B kỳ vọng là "không khác biệt": một phép thử A/A giúp kiểm tra kiểm định không
 báo khác biệt giả.
 
-    python3 producer/nguoi_dung_ao.py --web http://10.68.71.205:8000 --so-luot 500
+    python3 producer/nguoi_dung_ao.py --web http://10.68.71.149:8000 --so-luot 500
 """
 import argparse
 import json
@@ -46,7 +46,7 @@ def mo_phong_mot_luot(web, ma_nguoi_dung, rnd, p0, eta, p_mua):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--web", default="http://10.68.71.205:8000")
+    ap.add_argument("--web", default="http://10.68.71.149:8000")
     ap.add_argument("--so-luot", type=int, default=200)
     ap.add_argument("--p0", type=float, default=0.15)
     ap.add_argument("--eta", type=float, default=0.7)

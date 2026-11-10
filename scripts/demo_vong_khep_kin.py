@@ -6,7 +6,7 @@
 Cách đo: đọc số lượt thêm giỏ hiện tại của sản phẩm trong gold.thinh_hanh_15p, gửi N lần
 "Thêm giỏ", rồi thăm dò mỗi 3 giây tới khi con số tăng. In số giây đã trôi qua.
 
-    python3 scripts/demo_vong_khep_kin.py --web http://10.68.71.205:8000 --san-pham 461686
+    python3 scripts/demo_vong_khep_kin.py --web http://10.68.71.149:8000 --san-pham 461686
 Nên chọn một sản phẩm ÍT người xem (không nằm trong khối thịnh hành) để con số chỉ đổi vì lần bấm này.
 Sau đó xác nhận sự kiện đã nằm trong bronze:
     bash ha_tang/spark/submit.sh nhanh kiem_tra/tim_su_kien_bronze.py --ma-nguoi-dung demo_vong_kin
@@ -28,7 +28,7 @@ def goi(phuong_thuc, url, du_lieu=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--web", default="http://10.68.71.205:8000")
+    ap.add_argument("--web", default="http://10.68.71.149:8000")
     ap.add_argument("--san-pham", required=True)
     ap.add_argument("--nguoi-dung", default="demo_vong_kin")
     ap.add_argument("--so-lan", type=int, default=3)
