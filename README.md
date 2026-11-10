@@ -86,7 +86,7 @@ bd03_khuyen_nghi/
 ├── airflow/dags/           5 DAG theo mục 3.9
 ├── ha_tang/                Docker compose cho Hadoop, Spark, Kafka, Airflow, Web
 ├── scripts/                Khởi động từng máy, kiểm tra cụm, chạy lần đầu, demo, chạy cục bộ
-├── tests/                  59 kiểm thử pytest, chạy trên Spark local thật
+├── tests/                  60 kiểm thử pytest, chạy trên Spark local thật
 ├── docs/                   KIEN_TRUC, TRIEN_KHAI_CUM, HUONG_DAN_DEMO, DOI_CHIEU_YEU_CAU
 └── models/                 Ghi chú về mô hình (mô hình thật nằm trên HDFS /lake/models)
 ```
@@ -102,7 +102,7 @@ Cần Python 3.10–3.11 và Java 17.
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-pytest                      # 58 test chạy trên Spark local; test DAG tự bỏ qua nếu thiếu Airflow
+pytest                      # 59 test chạy trên Spark local; test DAG tự bỏ qua nếu thiếu Airflow
 ```
 
 Test DAG Airflow (tùy chọn, nên dùng venv riêng vì Airflow kéo nhiều thư viện):

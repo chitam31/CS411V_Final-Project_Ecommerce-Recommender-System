@@ -92,6 +92,16 @@ bash scripts/cum/khoi_dong_may.sh
 
 Script sinh `ha_tang/hadoop/.env`, `ha_tang/spark/.env`, rồi chạy `hadoop-master` và build ảnh `bd03/spark:3.5.3` (thêm numpy, jar Delta 3.2.0 và Kafka connector vào `apache/spark:3.5.3`). Lần build đầu cần Internet tới PyPI và Maven Central.
 
+Script chỉ build ảnh khi máy chưa có (thêm `--build` để buộc build lại sau khi sửa `ha_tang/spark/Dockerfile`). Nếu các máy worker không ra được Internet, build một lần trên master rồi chép ảnh sang:
+
+```bash
+# Trên master
+docker save bd03/spark:3.5.3 | gzip > /tmp/bd03_spark.tar.gz
+scp /tmp/bd03_spark.tar.gz <user>@10.68.71.198:/tmp/      # lặp lại cho từng worker
+# Trên mỗi worker, trước khi chạy khoi_dong_may.sh
+gunzip -c /tmp/bd03_spark.tar.gz | docker load
+```
+
 Kiểm tra:
 
 ```bash

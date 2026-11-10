@@ -65,6 +65,20 @@ def test_khoi_dong_may_nhan_dung_vai_tro():
     assert "spark-master" not in kq.split("vai trò:")[1].split("\n")[0]
 
 
+def test_khoi_dong_may_chi_build_khi_chua_co_anh(tmp_path):
+    # Giả lập lệnh docker: "image inspect" thành công, tức máy đã có ảnh bd03/spark.
+    gia = tmp_path / "docker"
+    gia.write_text("#!/bin/sh\nexit 0\n")
+    gia.chmod(0o755)
+    moi_truong = dict(os.environ, PATH="{}:{}".format(tmp_path, os.environ["PATH"]))
+    lenh = ["bash", os.path.join(GOC, "scripts", "cum", "khoi_dong_may.sh"), "labsit12", "--in-thu"]
+    dong_spark = lambda kq: [d for d in kq.splitlines() if "docker-compose-worker.yml" in d][0]
+    kq = subprocess.run(lenh, capture_output=True, text=True, check=True, env=moi_truong).stdout
+    assert dong_spark(kq).endswith("up -d")  # đã có ảnh: không build lại
+    kq = subprocess.run(lenh + ["--build"], capture_output=True, text=True, check=True, env=moi_truong).stdout
+    assert dong_spark(kq).endswith("up -d --build")
+
+
 def test_dags_airflow():
     pytest.importorskip("airflow.sdk")  # thư mục airflow/ của dự án không phải gói Airflow
     from airflow.dag_processing.dagbag import DagBag

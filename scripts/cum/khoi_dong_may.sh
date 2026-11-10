@@ -6,15 +6,17 @@
 #   bash scripts/cum/khoi_dong_may.sh labsit12     # chỉ định tên máy
 #   bash scripts/cum/khoi_dong_may.sh --in-thu     # chỉ in lệnh, không chạy
 #   bash scripts/cum/khoi_dong_may.sh --dung       # dừng các dịch vụ của máy này
+#   bash scripts/cum/khoi_dong_may.sh --build      # buộc build lại ảnh bd03/spark (sau khi sửa Dockerfile)
 set -euo pipefail
 THU_MUC="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$THU_MUC/cau_hinh/cum.env"
 
-IN_THU=0; DUNG=0; TEN_CHI_DINH=""
+IN_THU=0; DUNG=0; BUILD_LAI=0; TEN_CHI_DINH=""
 for a in "$@"; do
   case "$a" in
     --in-thu) IN_THU=1 ;;
     --dung) DUNG=1 ;;
+    --build) BUILD_LAI=1 ;;
     *) TEN_CHI_DINH="$a" ;;
   esac
 done
@@ -74,8 +76,13 @@ fi
 co_vai namenode && chay $HADOOP up -d master
 co_vai datanode && chay $HADOOP up -d worker
 co_vai kafka && chay $KAFKA up -d
-co_vai spark-master && chay $SPARK_M up -d --build
-co_vai spark-worker && chay $SPARK_W up -d --build
+# Ảnh bd03/spark chỉ build khi máy chưa có (hoặc khi gọi kèm --build). Mã job được gắn qua
+# volume nên git pull xong không cần build lại; máy không ra Internet vẫn bật được nếu đã
+# nạp sẵn ảnh bằng docker load (xem docs/TRIEN_KHAI_CUM.md, mục 2.1).
+CO_BUILD=""
+if [ "$BUILD_LAI" = "1" ] || ! docker image inspect bd03/spark:3.5.3 > /dev/null 2>&1; then CO_BUILD="--build"; fi
+co_vai spark-master && chay $SPARK_M up -d $CO_BUILD
+co_vai spark-worker && chay $SPARK_W up -d $CO_BUILD
 if co_vai airflow; then
   if [ -f "$THU_MUC/ha_tang/airflow/.env" ] && [ -f "$THU_MUC/ha_tang/airflow/mat_khau.json" ]; then
     chay $AIRFLOW up -d --build
