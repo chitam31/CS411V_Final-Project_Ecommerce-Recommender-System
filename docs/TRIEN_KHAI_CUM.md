@@ -378,10 +378,10 @@ Theo dõi job: Spark UI của từng job ở `http://10.68.71.113:4140`–`4150`
 
 ## 9. Bật lịch Airflow
 
-Trong giao diện Airflow, bật (unpause) lần lượt: `kn_giam_sat_streaming`, `kn_tinh_ab`, `kn_bao_tri`, `kn_pipeline_hang_ngay`. `kn_tai_lap` là DAG thủ công, không cần bật lịch. Hoặc dùng dòng lệnh:
+Trong giao diện Airflow, bật (unpause) lần lượt: `kn_giam_sat_streaming`, `kn_tinh_ab`, `kn_bao_tri`, `kn_pipeline_hang_ngay`. `kn_tai_lap` không có lịch (chỉ chạy khi được kích hoạt), nhưng vẫn phải unpause: DAG mới tạo ở trạng thái tạm dừng, và lần chạy kích hoạt tay (kể cả từ nút "Chạy lại mô hình" trên web) của DAG đang tạm dừng chỉ nằm chờ, không chạy. Hoặc dùng dòng lệnh:
 
 ```bash
-for d in kn_giam_sat_streaming kn_tinh_ab kn_bao_tri kn_pipeline_hang_ngay; do
+for d in kn_tai_lap kn_giam_sat_streaming kn_tinh_ab kn_bao_tri kn_pipeline_hang_ngay; do
   docker exec bd03-airflow-airflow-scheduler-1 airflow dags unpause $d
 done
 ```
