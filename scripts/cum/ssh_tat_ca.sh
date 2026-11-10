@@ -135,12 +135,27 @@ if [ "$CHE_DO" = "dong_bo_ma" ]; then
       git -C ~/bd03_khuyen_nghi config receive.denyCurrentBranch updateInstead'; then
       echo "!! $ten: chưa chuẩn bị được repo trên máy này"; LOI=1; continue
     fi
-    if git -C "$THU_MUC" push -q "$ten:bd03_khuyen_nghi" HEAD:main; then
+    # Điều khiển từ mạng ngoài (ở nhà), SSH qua ZeroTier có lúc rớt ở bước bắt tay
+    # ("banner exchange"): lỗi mạng thì thử lại tối đa 3 lần; lỗi khác (máy đích có tệp sửa
+    # tay, git từ chối) thì dừng ngay, không thử lại vô ích.
+    TEP_LOI="$(mktemp)"; DAY=0
+    for lan in 1 2 3; do
+      if git -C "$THU_MUC" push -q "$ten:bd03_khuyen_nghi" HEAD:main 2> "$TEP_LOI"; then DAY=1; break; fi
+      grep -qiE "timed out|connection (reset|closed|refused)|broken pipe|could not resolve" "$TEP_LOI" || break
+      [ "$lan" -lt 3 ] && { echo "   mạng chập chờn, thử lại lần $((lan + 1))..."; sleep 3; }
+    done
+    if [ "$DAY" = "1" ]; then
       ssh -n "${TUY_CHON_NOI[@]}" "$ten" 'git -C ~/bd03_khuyen_nghi log --oneline -1'
+    elif grep -qiE "timed out|connection (reset|closed|refused)|broken pipe|could not resolve" "$TEP_LOI"; then
+      sed 's/^/   /' "$TEP_LOI"
+      echo "!! $ten: mất kết nối SSH sau 3 lần thử; chạy lại lệnh sau ít phút"
+      LOI=1
     else
+      sed 's/^/   /' "$TEP_LOI"
       echo "!! $ten: git push thất bại; thường do có tệp bị sửa tay ở đó (ssh $ten 'cd ~/bd03_khuyen_nghi && git status')"
       LOI=1
     fi
+    rm -f "$TEP_LOI"
   done
   exit $LOI
 fi

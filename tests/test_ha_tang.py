@@ -434,3 +434,45 @@ def test_tao_cau_hinh_airflow_uid_va_quyen(tmp_path):
     assert stat.S_IMODE((a / "mat_khau.json").stat().st_mode) == 0o600
     kq = subprocess.run(["bash", tep], check=True, capture_output=True, text=True, env=mt)
     assert "Đã thêm" not in kq.stdout and (a / ".env").read_text().count("AIRFLOW_UID=") == 1
+
+
+def test_ssh_tat_ca_dong_bo_ma_thu_lai_khi_mang_rot(tmp_path):
+    """Lỗi mạng khi git push (rớt ở bước bắt tay SSH) được thử lại; rớt quá 3 lần thì báo mất kết nối,
+    không đổ lỗi cho tệp sửa tay."""
+    import shutil
+    repo = tmp_path / "repo"
+    (repo / "scripts" / "cum").mkdir(parents=True)
+    (repo / "cau_hinh").mkdir()
+    shutil.copy(os.path.join(GOC, "scripts", "cum", "ssh_tat_ca.sh"), repo / "scripts" / "cum")
+    shutil.copy(os.path.join(GOC, "cau_hinh", "cum.env"), repo / "cau_hinh")
+    danh_tinh = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t", GIT_COMMITTER_NAME="t",
+                     GIT_COMMITTER_EMAIL="t@t")
+    for lenh_git in (["init", "-q", "-b", "main"], ["add", "-A"], ["commit", "-q", "-m", "ban dau"]):
+        subprocess.run(["git", "-C", str(repo), *lenh_git], check=True, capture_output=True, env=danh_tinh)
+
+    goc_may, dem = tmp_path / "may", tmp_path / "dem"
+    gia = tmp_path / "bin" / "ssh"
+    gia.parent.mkdir()
+    # Lần gọi git-receive-pack thứ 1..SO_LAN_ROT giả vờ rớt mạng.
+    gia.write_text(
+        "#!/bin/bash\n"
+        "while [ $# -gt 0 ]; do case \"$1\" in -o|-p) shift 2;; -G) exit 0;; -*) shift;; *) break;; esac; done\n"
+        "h=\"$1\"; shift\n"
+        "if [[ \"$*\" == *receive-pack* ]]; then n=$(( $(cat \"$DEM\" 2>/dev/null || echo 0) + 1 )); echo $n > \"$DEM\";\n"
+        "  [ $n -le $SO_LAN_ROT ] && { echo 'Connection timed out during banner exchange' >&2; exit 255; }; fi\n"
+        "mkdir -p \"$GOC_MAY/$h\"; cd \"$GOC_MAY/$h\"\n"
+        "HOME=\"$GOC_MAY/$h\" exec bash -c \"$*\"\n"
+    )
+    gia.chmod(0o755)
+    mt = dict(danh_tinh, PATH="{}:{}".format(gia.parent, os.environ["PATH"]), GOC_MAY=str(goc_may),
+              GIT_SSH_VARIANT="ssh", DEM=str(dem))
+    lenh = ["bash", str(repo / "scripts" / "cum" / "ssh_tat_ca.sh"), "--may", "labsit12", "--dong-bo-ma"]
+
+    kq = subprocess.run(lenh, capture_output=True, text=True, env=dict(mt, SO_LAN_ROT="2"))
+    assert kq.returncode == 0, kq.stdout + kq.stderr
+    assert kq.stdout.count("thử lại lần") == 2 and (goc_may / "labsit12" / "bd03_khuyen_nghi" / "cau_hinh").is_dir()
+
+    dem.unlink()
+    kq = subprocess.run(lenh, capture_output=True, text=True, env=dict(mt, SO_LAN_ROT="5"))
+    assert kq.returncode == 1 and "mất kết nối SSH sau 3 lần thử" in kq.stdout
+    assert "tệp bị sửa tay" not in kq.stdout and dem.read_text().strip() == "3"
