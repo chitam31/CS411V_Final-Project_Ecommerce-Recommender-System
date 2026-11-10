@@ -87,7 +87,7 @@ fi
 # Kiểm tra trước để dừng sớm với hướng dẫn rõ ràng, chưa bật dịch vụ nào.
 XUNG_DOT=0
 kiem_tra_container() {  # $1 = tên container, $2 = project dự án sẽ dùng, $3 = du_lieu nếu có volume dữ liệu
-  [ "$IN_THU" = "1" ] && return 0
+  # Chỉ đọc (docker inspect), nên chạy cả ở chế độ --in-thu để biết trước máy nào sẽ vướng.
   local du_an
   du_an="$(docker inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$1" 2>/dev/null)" || return 0
   [ "$du_an" = "$2" ] && return 0
@@ -108,7 +108,9 @@ co_vai spark-worker && kiem_tra_container spark-worker spark-cluster
 co_vai kafka && kiem_tra_container kafka-server kafka-docker du_lieu
 co_vai kafka && kiem_tra_container kafka-ui kafka-docker
 co_vai web && kiem_tra_container bd03-web bd03-web
-if [ "$XUNG_DOT" = "1" ]; then
+if [ "$XUNG_DOT" = "1" ] && [ "$IN_THU" = "1" ]; then
+  echo "(Chạy thử) Khi chạy thật, script sẽ dừng ở đây cho tới khi xử lý xong các dòng !! ở trên."
+elif [ "$XUNG_DOT" = "1" ]; then
   echo "Dừng lại, chưa bật dịch vụ nào. Xử lý các dòng !! ở trên rồi chạy lại."
   exit 1
 fi

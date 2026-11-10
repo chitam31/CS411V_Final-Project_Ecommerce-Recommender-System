@@ -52,6 +52,16 @@ docker compose version            # cần Compose v2
 timedatectl status | grep synchronized   # đồng hồ phải đồng bộ (Kafka, watermark, Airflow)
 ```
 
+### 1.2b. Không cho máy tự ngủ
+
+Ubuntu có giao diện mặc định có thể tự ngủ khi không ai dùng, kể cả ở màn hình đăng nhập; máy ngủ thì cụm mất DataNode, worker hoặc cả master. Sau khi xin phép phòng máy, tắt chế độ ngủ cho máy trong cụm (gỡ lại bằng `unmask` khi trả máy):
+
+```bash
+sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+```
+
+Từ máy điều khiển có thể làm cho cả 6 máy một lần: `bash scripts/cum/ssh_tat_ca.sh --tty "sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target"`.
+
 ### 1.3. Tường lửa
 
 Spark executor mở cổng ngẫu nhiên cho block manager; cách đơn giản và an toàn trong mạng riêng là **cho phép mọi kết nối đi vào từ giao diện ZeroTier**:

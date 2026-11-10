@@ -77,6 +77,7 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
   - labsit-may25 chạy ứng dụng `coffeehouse-face` (PostgreSQL, MySQL, RabbitMQ), labsit-may26 chạy `airflow-worker-kafka` của nhóm khác: không động vào; labsit-may25 chỉ giao 2 GB cho Spark.
   - Tài khoản `labsit` trên máy labsit chưa có quyền Docker.
 - `khoi_dong_may.sh` kiểm tra container cũ trùng tên thuộc project compose khác và dừng sớm kèm hướng dẫn. `ssh_tat_ca.sh --dong-bo-ma`: đẩy mã từ laptop sang 6 máy bằng `git push` qua SSH (`receive.denyCurrentBranch=updateInstead`), máy lab không cần token GitHub; có kiểm thử trên repo tạm, gồm cả trường hợp máy đích có tệp sửa tay (phải từ chối, không ghi đè).
+- 10:45: labsoe-11 mất kết nối (ping không trả lời) trong khi 5 máy còn lại vẫn thông, nghi máy tự ngủ. Thêm hướng dẫn tắt chế độ ngủ (`systemctl mask sleep.target ...`, docs/TRIEN_KHAI_CUM.md mục 1.2b). `khoi_dong_may.sh --in-thu` giờ cũng báo trước container trùng tên (chỉ đọc).
 
 ---
 
