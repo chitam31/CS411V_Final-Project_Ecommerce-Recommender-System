@@ -34,6 +34,7 @@ from common.tron import (
     NGUON_ALS,
     NGUON_DANH_MUC,
     NGUON_THINH_HANH,
+    bo_sung_thinh_hanh,
     chon_nhom,
     danh_sach_it_tuong_tac,
     danh_sach_nguoi_quen,
@@ -49,30 +50,32 @@ LUOC_DO_DAU_RA = "ma_nguoi_dung string, xep_hang int, ma_san_pham string, diem_d
 
 
 def lay_thinh_hanh(spark, thong_ke):
-    """Top thịnh hành của cửa sổ mới nhất; nếu luồng chưa có dữ liệu thì dùng xem 24h.
+    """Top thịnh hành của cửa sổ mới nhất, bù bằng xem nhiều 24h khi cửa sổ có ít món.
 
     Trả về (danh sách gợi ý, nhãn nguồn dữ liệu) để báo cáo rõ đã dùng phương án nào.
     """
+    tu_luong = []
     if bang_ton_tai(spark, "gold.thinh_hanh_15p"):
         th = doc_delta(spark, "gold.thinh_hanh_15p")
         moi_nhat = th.agg(F.max("cua_so_ket_thuc")).first()[0]
         if moi_nhat is not None:
-            dong = (
-                th.filter(F.col("cua_so_ket_thuc") == F.lit(moi_nhat))
+            tu_luong = [
+                {"ma_san_pham": r["ma_san_pham"], "diem_du_doan": float(r["diem_thinh_hanh"]), "nguon": NGUON_THINH_HANH}
+                for r in th.filter(F.col("cua_so_ket_thuc") == F.lit(moi_nhat))
                 .orderBy(F.desc("diem_thinh_hanh"), "ma_san_pham")
                 .limit(SO_THINH_HANH)
                 .collect()
-            )
-            if dong:
-                return [
-                    {"ma_san_pham": r["ma_san_pham"], "diem_du_doan": float(r["diem_thinh_hanh"]), "nguon": NGUON_THINH_HANH}
-                    for r in dong
-                ], "luong_15_phut"
-    dong = thong_ke.orderBy(F.desc("so_xem_24h"), F.desc("diem_pho_bien"), "ma_san_pham").limit(SO_THINH_HANH).collect()
-    return [
+            ]
+    if len(tu_luong) >= SO_THINH_HANH:
+        return tu_luong, "luong_15_phut"
+    du_phong = [
         {"ma_san_pham": r["ma_san_pham"], "diem_du_doan": float(r["so_xem_24h"]), "nguon": NGUON_THINH_HANH}
-        for r in dong
-    ], "du_phong_xem_24h"
+        for r in thong_ke.orderBy(F.desc("so_xem_24h"), F.desc("diem_pho_bien"), "ma_san_pham")
+        .limit(SO_THINH_HANH)
+        .collect()
+    ]
+    nhan = "luong_15_phut_{}_mon+xem_24h".format(len(tu_luong)) if tu_luong else "du_phong_xem_24h"
+    return bo_sung_thinh_hanh(tu_luong, du_phong, SO_THINH_HANH), nhan
 
 
 def ban_chay_theo_danh_muc(thong_ke, so_luong):

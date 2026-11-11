@@ -3,6 +3,7 @@ from collections import Counter
 
 from common.tron import (
     MAU_KHOI,
+    bo_sung_thinh_hanh,
     chon_nhom,
     danh_sach_it_tuong_tac,
     danh_sach_nguoi_moi,
@@ -112,3 +113,14 @@ def test_xep_ung_vien_phuc_vu():
     assert len(ket_qua) == 3 and ket_qua[0] == ("hiem", 0.7)  # 0,75 + 0,73 cao nhất
     assert dict(ket_qua) == {i: d for i, d in ung_vien if i in dict(ket_qua)}
     assert xep_ung_vien_phuc_vu([], nov, 1.0, 3) == []
+
+
+def test_bo_sung_thinh_hanh_khi_cua_so_vang():
+    """Lỗi 29: cửa sổ mới nhất chỉ có 1 món (luồng vắng) thì cả bảng gold chỉ có 1 món thịnh hành."""
+    g = lambda m: {"ma_san_pham": m, "diem_du_doan": 1.0, "nguon": "thinh_hanh"}
+    du_phong = [g("x"), g("p1"), g("y"), g("z")]
+    kq = [d["ma_san_pham"] for d in bo_sung_thinh_hanh([g("p1")], du_phong, 3)]
+    assert kq == ["p1", "x", "y"]                     # giữ món của luồng trước, bù không trùng
+    assert len(bo_sung_thinh_hanh([g("a"), g("b"), g("c")], du_phong, 3)) == 3
+    assert [d["ma_san_pham"] for d in bo_sung_thinh_hanh([], du_phong, 2)] == ["x", "p1"]
+    assert len(bo_sung_thinh_hanh([], du_phong[:1], 5)) == 1   # dự phòng cũng thiếu thì trả những gì có

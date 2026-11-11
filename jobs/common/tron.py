@@ -125,6 +125,25 @@ def loc_theo_tam_gia(als, gia_thap, gia_cao, toi_thieu=10):
     return trong + ngoai
 
 
+def bo_sung_thinh_hanh(tu_luong, du_phong, so_luong):
+    """Danh sách thịnh hành cho bước trộn batch.
+
+    Cửa sổ 15 phút mới nhất có thể chỉ còn vài sản phẩm khi luồng vắng (producer dừng, chỉ còn
+    vài click thử): khi đó cả 265.000 danh sách sẽ lưu cùng một món ở ô thịnh hành, các ô còn
+    lại bị lấp bằng nguồn khác. Thiếu bao nhiêu thì bù bằng danh sách xem nhiều 24 giờ, không
+    trùng, giữ thứ tự của luồng trước.
+    """
+    ket_qua = list(tu_luong[:so_luong])
+    da_co = set(g["ma_san_pham"] for g in ket_qua)
+    for g in du_phong:
+        if len(ket_qua) >= so_luong:
+            break
+        if g["ma_san_pham"] not in da_co:
+            ket_qua.append(g)
+            da_co.add(g["ma_san_pham"])
+    return ket_qua
+
+
 def thay_o_thinh_hanh(danh_sach, thinh_hanh_moi):
     """Web thay các ô nguồn thịnh hành bằng dữ liệu mới nhất từ luồng, giữ nguyên vị trí."""
     da_co = set(g["ma_san_pham"] for g in danh_sach if g["nguon"] != NGUON_THINH_HANH)
