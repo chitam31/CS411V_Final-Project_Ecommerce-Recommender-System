@@ -44,11 +44,22 @@ def _so(chuoi):
     return int(hashlib.md5(str(chuoi).encode("utf-8")).hexdigest()[:8], 16)
 
 
-def nganh_hang(ma_danh_muc_goc, ma_san_pham=None):
-    """Ngành hàng minh họa của một danh mục gốc (thiếu danh mục thì theo mã sản phẩm)."""
-    khoa = ma_danh_muc_goc if ma_danh_muc_goc not in (None, "") else "sp:" + str(ma_san_pham)
-    k, ten, loai, dam, nhat = NGANH_HANG[_so(khoa) % len(NGANH_HANG)]
+def _dict_nganh(dong):
+    k, ten, loai, dam, nhat = dong
     return {"khoa": k, "ten": ten, "loai": loai, "mau_dam": dam, "mau_nhat": nhat}
+
+
+_THEO_KHOA = {d[0]: _dict_nganh(d) for d in NGANH_HANG}
+
+
+def co_nganh(khoa):
+    return khoa in _THEO_KHOA
+
+
+def nganh_hang(ma_danh_muc_goc, ma_san_pham=None):
+    """Ngành hàng minh họa của một danh mục (thiếu danh mục thì theo mã sản phẩm)."""
+    khoa = ma_danh_muc_goc if ma_danh_muc_goc not in (None, "") else "sp:" + str(ma_san_pham)
+    return _dict_nganh(NGANH_HANG[_so(khoa) % len(NGANH_HANG)])
 
 
 def trang_tri(sp, ma_danh_muc_goc=None):
@@ -58,7 +69,9 @@ def trang_tri(sp, ma_danh_muc_goc=None):
     return {
         "nganh": nh,
         "ten_hien_thi": "{} {}".format(nh["loai"], ma),
-        "anh": "/anh/{}.svg".format(ma),
+        # Khóa ngành hàng nằm ngay trong địa chỉ ảnh: chữ trên thẻ và ảnh không thể lệch nhau,
+        # kể cả khi trình duyệt còn giữ ảnh vẽ theo cách gán cũ trong bộ nhớ đệm.
+        "anh": "/anh/{}/{}.svg".format(nh["khoa"], ma),
         "nhan_nguon": NHAN_NGUON.get(sp.get("nguon"), sp.get("nguon")),
     }
 
@@ -200,9 +213,9 @@ def _pha(mau_hex, ty_le):
     return "#{:02X}{:02X}{:02X}".format(r, g, b)
 
 
-def anh_svg(ma_san_pham, ma_danh_muc_goc=None):
+def anh_svg(ma_san_pham, ma_danh_muc_goc=None, khoa=None):
     """Ảnh 320 x 320 của một sản phẩm: nền theo ngành hàng, biến thể màu theo mã sản phẩm."""
-    nh = nganh_hang(ma_danh_muc_goc, ma_san_pham)
+    nh = _THEO_KHOA[khoa] if khoa else nganh_hang(ma_danh_muc_goc, ma_san_pham)
     so = _so("anh:" + str(ma_san_pham))
     sac = (-0.18, 0.0, 0.22)[so % 3]           # ba biến thể độ đậm của biểu tượng
     dam = _pha(nh["mau_dam"], sac)

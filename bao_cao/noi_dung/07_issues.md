@@ -22,7 +22,7 @@ Table: Configuration errors found in the inherited cluster {#tab:ra-soat w=4,26,
 
 ## Issues Found During Development and Operation
 
-@tab:loi lists the issues found while developing and running the project, in the order they appeared. Issues 1–12 were found by tests or code review before deployment; issues 13–29 appeared on the cluster.
+@tab:loi lists the issues found while developing and running the project, in the order they appeared. Issues 1–12 were found by tests or code review before deployment; issues 13–30 appeared on the cluster.
 
 Table: Issues found during development and operation {#tab:loi w=4,46,50}
 | # | Issue | Fix |
@@ -56,6 +56,7 @@ Table: Issues found during development and operation {#tab:loi w=4,46,50}
 | 27 | Restarting a stream left a zombie driver: cancelling the application through the Spark Master did not stop the client-mode driver, which later collided with the new stream on the same checkpoint and stopped both streams | `luong.sh dung` also stops the driver process; `khoi_dong` removes a leftover driver first; `trang_thai` warns |
 | 28 | The maintenance DAG deleted recommendations older than *today* minus 7 days, so seven days without a new deployment would have emptied the served table (on the morning of the defence) | The cut-off is now the latest deployment minus 7 days; only rows of users missing from recent deployments are removed |
 | 29 | Both deployments of 11 November blended the lists while the producer was stopped: the newest trending window held only one test product, so all 265,043 stored lists carried a single trending product and the other trending slots fell back to category best sellers, which also inflated the measured coverage of the served table | When the newest window holds fewer than 30 products, the trending list is topped up with the most viewed products of the last 24 hours, and the job reports which source it used; blending and publishing were re-run for the same model |
+| 30 | After the web redesign the browser kept the old stylesheet and the product pictures drawn with the earlier department mapping, so some cards showed a book under the title "Tạ tay" (dumbbell) | Static files are addressed with a hash of their content, and the address of each picture contains its department, so a card and its picture cannot disagree |
 
 ## Key Incidents
 

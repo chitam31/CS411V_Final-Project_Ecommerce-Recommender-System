@@ -181,13 +181,12 @@ def create_app(kho=None, gui=None, phien=None):
             },
         )
 
-    @app.get("/anh/{ma_san_pham}.svg")
-    def anh_san_pham(ma_san_pham: str):
-        """Ảnh minh họa vẽ tại chỗ theo ngành hàng; không phải ảnh thật của sản phẩm."""
-        goc = goc_danh_muc(kho.san_pham(ma_san_pham).get("ma_danh_muc"))
-        if goc is None:
-            goc = kho.san_pham(ma_san_pham).get("ma_danh_muc")
-        return Response(minh_hoa.anh_svg(ma_san_pham, goc), media_type="image/svg+xml",
+    @app.get("/anh/{khoa}/{ma_san_pham}.svg")
+    def anh_san_pham(khoa: str, ma_san_pham: str):
+        """Ảnh minh họa vẽ tại chỗ theo ngành hàng ghi trong địa chỉ; không phải ảnh thật của sản phẩm."""
+        if not minh_hoa.co_nganh(khoa):
+            raise HTTPException(status_code=404, detail="Không có ngành hàng minh họa " + khoa)
+        return Response(minh_hoa.anh_svg(ma_san_pham, khoa=khoa), media_type="image/svg+xml",
                         headers={"Cache-Control": "public, max-age=86400"})
 
     @app.get("/ab", response_class=HTMLResponse)

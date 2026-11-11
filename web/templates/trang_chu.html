@@ -29,7 +29,11 @@
   <div class="ho-so-chu">
     <div class="ho-so-ten">Người dùng <b>{{ kq.ma_nguoi_dung }}</b></div>
     <div class="the-nho-hang">
+      {% if kq.chien_luoc == "als" %}
       <span class="chip chip-nhom-{{ kq.nhom_ab }}">Nhóm {{ kq.nhom_ab }} · {{ "ALS thuần" if kq.nhom_ab == "A" else "ALS trộn 30% thịnh hành" }}</span>
+      {% else %}
+      <span class="chip" title="Thí nghiệm A/B chỉ tính lượt hiển thị của người dùng có gợi ý ALS">Nhóm {{ kq.nhom_ab }} · ngoài thí nghiệm A/B</span>
+      {% endif %}
       <span class="chip">Chiến lược <b>{{ kq.chien_luoc }}</b></span>
       {% if kq.phien_ban_mo_hinh %}<span class="chip">Mô hình {{ kq.phien_ban_mo_hinh }}</span>{% endif %}
       <span class="chip chip-xanh">Đã ghi {{ kq.goi_y|length }} impression</span>
@@ -41,7 +45,7 @@
   <div class="dau-muc">
     <h2>Dành cho bạn</h2>
     <span class="mo">
-      {% if kq.chien_luoc == "als" %}Gợi ý cá nhân hóa từ ALS, đã xếp lại theo độ mới{% if kq.nhom_ab == "B" %}; ô thịnh hành lấy từ cửa sổ mới nhất{% endif %}
+      {% if kq.chien_luoc == "als" %}Gợi ý cá nhân hóa từ ALS, xếp lại theo độ mới lạ (novelty){% if kq.phien_ban_mo_hinh and kq.phien_ban_mo_hinh.startswith("als_v2_") %}, lọc theo tầm giá (mô hình v2){% endif %}{% if kq.nhom_ab == "B" %}; ô thịnh hành lấy từ cửa sổ mới nhất{% endif %}
       {% elif kq.chien_luoc == "nguoi_moi" %}Người dùng mới: lấy từ cửa sổ thịnh hành 15 phút mới nhất
       {% else %}Ít tương tác: bán chạy trong danh mục đã xem, xen kẽ thịnh hành{% endif %}
     </span>
@@ -63,7 +67,7 @@
 </section>
 {% else %}
 <section class="hop ba-chien-luoc">
-  <div><span class="chip chip-nhom-A">als</span><p>Người dùng quen: ALS xếp lại theo độ mới; nhóm B trộn 30% thịnh hành.</p></div>
+  <div><span class="chip chip-nhom-A">als</span><p>Người dùng quen: ALS xếp lại theo độ mới lạ; nhóm B trộn 30% thịnh hành.</p></div>
   <div><span class="chip">it_tuong_tac</span><p>Dưới 5 tương tác: bán chạy trong các danh mục đã xem, xen kẽ thịnh hành.</p></div>
   <div><span class="chip chip-xanh">nguoi_moi</span><p>Người dùng mới hoàn toàn: top thịnh hành 15 phút, đổi theo từng cú click.</p></div>
 </section>

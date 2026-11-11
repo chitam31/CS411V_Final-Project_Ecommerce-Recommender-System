@@ -77,7 +77,7 @@ ND.push(bang(["Hạng mục", "Số liệu"], [
   ["Tái lập", "Độ lệch 0,000000 trên features phiên bản 0 (1,78·10⁻¹⁵ khi không làm tròn)"],
   ["Vòng khép kín", "Kafka → bronze 10,3 giây; bấm → bảng thịnh hành 51 giây (ngưỡng 90 giây)"],
   ["Mô hình v2", "Đã triển khai 11/11 (als_v2_r20261110T230924, alpha 40): NDCG@10 0,0680 → 0,0694 (+2,1 %), coverage 3,44 % → 3,72 %, 4.346 → 4.699 item; ở alpha 10: +2,3 %"],
-  ["Cụm", "6 máy lab, mỗi máy 12 lõi, 7 GB RAM; 5 worker: 34 lõi, 13 GB executor; HDFS sao chép 2; 29 lỗi đã sửa, 91 kiểm thử"],
+  ["Cụm", "6 máy lab, mỗi máy 12 lõi, 7 GB RAM; 5 worker: 34 lõi, 13 GB executor; HDFS sao chép 2; 30 lỗi đã sửa, 95 kiểm thử"],
 ], [24, 76]));
 
 ND.push(muc("2. Tổng quan và kiến trúc"));

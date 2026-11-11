@@ -1,6 +1,6 @@
 # Implementation {#sec:impl}
 
-The code base contains about 9,900 lines: 35 PySpark job and library files (4,100 lines), 5 Airflow DAGs with a shared module, a web application of 17 files, the Kafka producers, 19 operational scripts, 14 Docker and Hadoop configuration files and 12 test files (Appendix A). This chapter follows the outline of the pipeline: infrastructure, Spark jobs, orchestration, the web application, the A/B pipeline, reproducibility and testing.
+The code base contains about 10,400 lines: 35 PySpark job and library files (4,100 lines), 5 Airflow DAGs with a shared module, a web application of 18 files, the Kafka producers, 19 operational scripts, 14 Docker and Hadoop configuration files and 12 test files (Appendix A). This chapter follows the outline of the pipeline: infrastructure, Spark jobs, orchestration, the web application, the A/B pipeline, reproducibility and testing.
 
 ## Infrastructure Setup (Docker) {#sec:impl-infra}
 
@@ -197,7 +197,7 @@ Table: Screens and API of the web application {#tab:web w=20,45,35}
 
 Auxiliary endpoints return trending items (`/api/thinh-hanh`, and per product for latency measurements), sample users for the demonstration and a health check that shows the data mode and the Kafka client in use. The application has two data modes: `delta`, the default, reads the cluster; `gia` serves generated data so that the interface can be developed without the cluster.
 
-**An illustrative display layer.** RetailRocket is anonymised: products have no names or pictures, categories are numeric ids, and the other attributes are hashed. So that the pages read like a marketplace, a display layer (`web/dich_vu/minh_hoa.py`) assigns each second-level category of the category tree (a direct child of one of its roots, found by walking `category_tree.csv` upwards) one of sixteen illustrative departments (phones, fashion, kitchenware, …), derives a display name from the department and the product id ("Tai nghe 102605"), formats the anonymised price attribute as a price, and draws a product picture as an SVG image on the server: the department's icon on a background whose shade varies with the product id. The mapping is deterministic, needs no Internet access, and touches no table, model or metric. Every picture carries the words "ảnh minh họa" (illustration), the footer of every page states that names, departments and pictures are illustrative, and the real product and category ids remain visible on every card.
+**An illustrative display layer.** RetailRocket is anonymised: products have no names or pictures, categories are numeric ids, and the other attributes are hashed. So that the pages read like a marketplace, a display layer (`web/dich_vu/minh_hoa.py`) assigns each second-level category of the category tree (a direct child of one of its roots, found by walking `category_tree.csv` upwards) one of sixteen illustrative departments (phones, fashion, kitchenware, …), derives a display name from the department and the product id ("Tai nghe 102605"), formats the anonymised price attribute as a price, and draws a product picture as an SVG image on the server: the department's icon on a background whose shade varies with the product id. The address of the picture contains the department (`/anh/<department>/<id>.svg`), so a card and its picture always agree, even when a browser still holds pictures drawn under an earlier mapping (issue 30). The mapping is deterministic, needs no Internet access, and touches no table, model or metric. Every picture carries the words "ảnh minh họa" (illustration), the footer of every page states that names, departments and pictures are illustrative, and the real product and category ids remain visible on every card.
 
 Brand-new users created on the home page receive an id `moi_<8 characters>` and the trending-only strategy. Their clicks go to Kafka like any other event, but they would reach silver only at the next nightly run; to demonstrate the "fewer than five interactions" strategy on the spot, the application keeps the interactions of the session in memory and applies the same blending function as the batch job. The memory is lost when the application restarts, which matches the nature of a session. The "Re-run model" button triggers DAG 5 through the Airflow 3 REST API: it obtains a JWT from `/auth/token` with the password stored in the host's `.env.rieng` and posts a run to `/api/v2/dags/kn_tai_lap/dagRuns`.
 
@@ -229,7 +229,7 @@ Reproducing an experiment requires the same data, the same code and the same par
 
 ## Testing and Quality Assurance {#sec:impl-test}
 
-The repository contains 91 automated tests (89 run in the standard environment, two are skipped when Airflow is not installed). They run with `pytest` on a real local Spark session, so they exercise the same DataFrame code as the cluster (@tab:tests). Infrastructure scripts are tested by putting fake `ssh`, `docker`, `curl`, `getent` or `ping` commands first on the `PATH` and checking what the scripts do with them.
+The repository contains 95 automated tests (93 run in the standard environment, two are skipped when Airflow is not installed). They run with `pytest` on a real local Spark session, so they exercise the same DataFrame code as the cluster (@tab:tests). Infrastructure scripts are tested by putting fake `ssh`, `docker`, `curl`, `getent` or `ping` commands first on the `PATH` and checking what the scripts do with them.
 
 Table: Automated tests by area {#tab:tests w=27,8,65}
 | Test file | Tests | What is checked |
@@ -240,7 +240,7 @@ Table: Automated tests by area {#tab:tests w=27,8,65}
 | `test_tron.py` | 11 | A/B templates, stable group assignment, cold-start strategies, new-item placement, re-ranking, trending top-up |
 | `test_ab_va_tron.py`, `test_thong_ke.py` | 9 | A/B aggregation, z-test and sample size against reference values |
 | `test_streaming.py` | 8 | Event normalisation, windows and watermark, trending score, impression aggregation, one-shot progress summary |
-| `test_web.py` | 8 | Every screen and API in simulated mode, Kafka client stub |
+| `test_web.py` | 12 | Every screen and API in simulated mode, Kafka client stub, illustrative pictures always matching the department on the card, cold-start users shown outside the experiment |
 | `test_xuat_ket_qua.py`, `test_xung_dot_delta.py` | 9 | Result export, pooled A/B, retry on Delta conflicts only, maintenance keeps the latest deployment |
 | `test_ha_tang.py` | 23 | Table schemas, startup script roles, single-role start and image build, ZeroTier MTU, stream stop that also stops the driver, sensor bypass for manual runs, SSH control and code distribution (including retries), network measurement, resumable first run, data copy and cleanup scripts, Airflow configuration, status script, DAG structure |
 

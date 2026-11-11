@@ -104,15 +104,38 @@ def test_anh_minh_hoa_va_ghi_chu(web):
     import xml.etree.ElementTree as ET
 
     c, _ = web
-    r = c.get("/anh/sp3.svg")
+    r = c.get("/anh/sach/sp3.svg")
     assert r.status_code == 200 and r.headers["content-type"].startswith("image/svg+xml")
     ET.fromstring(r.text)                                  # XML hợp lệ (tên ngành có "&" đã được escape)
-    assert "ảnh minh họa" in r.text and r.text == c.get("/anh/sp3.svg").text
+    assert "ảnh minh họa" in r.text and r.text == c.get("/anh/sach/sp3.svg").text
+    assert c.get("/anh/khong_co/sp3.svg").status_code == 404
     trang = c.get("/?u=u_als_1").text
     assert "/anh/" in trang and "minh họa" in trang
     assert "/static/style.css?v=" in trang                 # trình duyệt không dùng lại CSS cũ sau khi cập nhật
-    sp = c.get("/san-pham/sp3").text
-    assert "/anh/sp3.svg" in sp
+
+
+def test_anh_luon_khop_ten_nganh_tren_the(web):
+    """Lỗi 30: ảnh cũ trong bộ nhớ đệm trình duyệt hiện quyển sách dưới thẻ "Tạ tay". Địa chỉ ảnh
+    mang khóa ngành hàng nên mọi thẻ và trang sản phẩm có ảnh đúng ngành ghi trên thẻ."""
+    import html
+    import re
+
+    from dich_vu import minh_hoa
+
+    c, _ = web
+    ten = {k: t for k, t, *_ in minh_hoa.NGANH_HANG}
+    for url in ("/?u=u_als_1", "/?u=u_it_2", "/?u=moi_x1", "/san-pham/sp3"):
+        trang = c.get(url).text
+        cap = re.findall(r'<img src="/anh/([a-z_]+)/[^"]+\.svg".*?class="nganh"[^>]*>([^<]+)<', trang, re.S)
+        assert cap, url
+        assert all(ten[k] == html.unescape(t).strip() for k, t in cap), url
+
+
+def test_nguoi_dung_ngoai_thi_nghiem_khong_hien_nhan_nhom(web):
+    """User mới và user ít tương tác không vào A/B (common/ab chỉ đếm chiến lược als)."""
+    c, _ = web
+    assert "ngoài thí nghiệm A/B" in c.get("/?u=moi_x2").text
+    assert "ngoài thí nghiệm A/B" not in c.get("/?u=u_als_1").text
 
 
 def test_nganh_hang_theo_danh_muc_cap_2():
@@ -125,7 +148,7 @@ def test_nganh_hang_theo_danh_muc_cap_2():
     assert goc_cua("9", cha) in ("9", "9x")                         # không treo khi cây có vòng
     a, b = minh_hoa.trang_tri({"ma_san_pham": "1", "ma_danh_muc": "5"}, "1"), minh_hoa.trang_tri({"ma_san_pham": "2"}, "1")
     assert a["nganh"] == b["nganh"]                               # cùng danh mục cấp 2 -> cùng ngành hàng
-    assert a["ten_hien_thi"].endswith(" 1") and a["anh"] == "/anh/1.svg"
+    assert a["ten_hien_thi"].endswith(" 1") and a["anh"] == "/anh/{}/1.svg".format(a["nganh"]["khoa"])
     assert minh_hoa.dinh_dang_gia(479880.0) == "479.880 ₫" and minh_hoa.dinh_dang_gia(None) is None
     import xml.etree.ElementTree as ET
     for i in range(64):

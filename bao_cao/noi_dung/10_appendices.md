@@ -32,9 +32,9 @@ Table: Size of the code base by component {#tab:loc w=30,15,15,40}
 | Component | Files | Lines | Content |
 |---|---|---|---|
 | `jobs/` | 35 | 4,132 | Streaming, batch, ML, maintenance and verification jobs, shared library |
-| `web/` | 17 | 1,443 | Application, services, templates, static files |
+| `web/` | 18 | 1,893 | Application, services, illustrative display layer, templates, static files |
 | `scripts/` | 19 | 1,535 | Cluster control and pipelines |
-| `tests/` | 12 | 1,635 | 91 tests |
+| `tests/` | 12 | 1,691 | 95 tests |
 | `ha_tang/` | 14 | 561 | Compose files, Dockerfiles, Hadoop XML |
 | `airflow/` | 6 | 359 | DAGs |
 | `producer/` | 2 | 241 | Kafka replay and virtual users |
