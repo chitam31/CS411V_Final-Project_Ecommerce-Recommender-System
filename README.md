@@ -1,6 +1,6 @@
 # bd03_khuyen_nghi — Hệ khuyến nghị sản phẩm cho sàn thương mại điện tử
 
-Đề tài 3, học phần **Dữ liệu lớn (Big Data)** — chương trình Thạc sĩ Khoa học Máy tính, Trường Đại học Tân Tạo.
+Đề tài 3, học phần **Dữ liệu lớn (Big Data)** — Trường Đại học Tân Tạo.
 
 **Trọng tâm kỹ thuật:** MLlib ALS (implicit feedback) + kết hợp batch và streaming + thí nghiệm A/B tái lập được bằng Delta Lake time travel.
 
@@ -208,4 +208,4 @@ Tài liệu này không chứa số liệu thí nghiệm nào. Mọi con số (N
 
 ## 7. Nhóm thực hiện
 
-Học viên Lê Chí Tâm và các thành viên nhóm đề tài 3. Repo cũ của nhóm (`spark-cluster`, `hadoop-cluster`, `kafka-docker`) vẫn tương thích: dự án giữ nguyên tên container, tên volume và cổng, chỉ sửa các lỗi cấu hình ghi ở NHAT_KY.md.
+Sinh viên Lê Chí Tâm và Lê Nguyễn Quốc Anh. Repo cũ của nhóm (`spark-cluster`, `hadoop-cluster`, `kafka-docker`) vẫn tương thích: giữ nguyên tên container, tên volume và cổng, sửa các lỗi cấu hình ghi ở NHAT_KY.md.
