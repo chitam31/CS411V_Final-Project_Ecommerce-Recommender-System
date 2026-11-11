@@ -150,7 +150,7 @@ Table: Model version 2 against plain ALS on the same model and feature version (
 
 The model-quality screen of the web application (@fig:mo-hinh-web) shows the state after deployment: the latest model and its metrics, and the history of the five evaluations recorded in `gold.lich_su_huan_luyen` — the first run and its re-evaluation with the re-ranked serving configuration, the night run that kept the old model (`r20261110T162756`, NDCG@10 = 0.0574), and the two runs of 11 November that deployed version 2.
 
-![Model-quality screen after deployment of model version 2: metrics of every method and the history of the five evaluations (times in UTC)](hinh/s04_mo_hinh_web.png){#fig:mo-hinh-web w=14.5}
+![Model-quality screen after deployment of model version 2: metrics of every method and the history of the five evaluations (times in UTC)](hinh/s04_mo_hinh_web.png){#fig:mo-hinh-web w=12.5}
 
 **The served table after deployment.** Both deployments blended the lists while the producer was stopped, so the newest trending window held only the test product: every stored list received one trending product and the remaining trending slots fell back to category best sellers, which inflated the distinct products of the table to 22,011 (issue 29). After the fix, `tron_goi_y` and `ghi_gold` were re-run for the same model at 10:15 (gold version 14; 5,264,440 rows updated, 36,176 inserted). @tab:phu-phuc-vu-v2 compares the result with the version 1 table of @tab:phu-phuc-vu: the price filter, applied to forty re-ranked candidates, brings 7 % more distinct products into the ALS slots, and the table as a whole covers 16,001 products, 12.7 % of the training items (3.8 % of the catalogue).
 
@@ -183,9 +183,9 @@ Table: Pooled A/B result over seven days (simulated traffic, no bonus for trendi
 - **Limitation.** Impressions of the same user are correlated, so an impression-level z-test may understate the p-value; aggregating by user or a user-level bootstrap would be stricter. The project keeps the z-test because the specification requires it.
 - These figures were measured on the lists before re-ranking was deployed (version 1 of the recommendation table).
 
-The A/B dashboard of the web application reads `gold.ket_qua_ab` and shows the same pooled result, conclusion and required sample size, together with the share of simulated traffic for each group and the daily CTR curves (@fig:ab-web). Group B lies below group A on all seven days (by 0.02 to 0.22 percentage points), which is consistent with the pooled test even though no single day is significant on its own.
+The A/B dashboard of the web application reads `gold.ket_qua_ab` and shows the pooled result, conclusion and required sample size, together with the share of simulated traffic for each group and the daily CTR curves (@fig:ab-web). The screenshot was taken on 11 November, after the screenshots of the live system had logged 230 real impressions of ALS users (180 in group A with 7 clicks, 50 in group B with 1 click). The dashboard therefore pools eight days — 176,140 against 174,250 impressions, p = 0.0135 — while the primary analysis of @tab:ab keeps the seven simulated days up to data version 2 (p = 0.015); the jump of group A on 11 November is noise from 180 impressions. On the seven simulated days group B lies below group A every day (by 0.02 to 0.22 percentage points), which is consistent with the pooled test even though no single day is significant on its own.
 
-![A/B dashboard of the web application: pooled result with p-values and conclusions (top) and CTR per day (bottom)](hinh/s03_ab_web.png){#fig:ab-web w=15.5}
+![A/B dashboard of the web application on 11 November: pooled result with p-values and conclusions (top) and CTR per day, including the first day of real web impressions (bottom)](hinh/s03_ab_web.png){#fig:ab-web w=15}
 
 ## OPTIMIZE and Z-ORDER {#sec:res-zorder}
 
@@ -216,7 +216,7 @@ The deviation is zero to six decimal places (tolerance 10^{−6}). This is a mea
 
 The reproduction screen of the web application reads the same table (@fig:tai-lap-web). It shows the maximum deviation without rounding: exactly 0 for the training row and 1.78 × 10^{−15} for the tuning row, a difference in the last bits of a floating-point sum that the 10^{−6} tolerance is designed to absorb.
 
-![Reproduction screen of the web application: the two comparisons of DAG 5 on feature version 0](hinh/s02_tai_lap_web.png){#fig:tai-lap-web w=15.5}
+![Reproduction screen of the web application: A/B results that can be recomputed at their recorded data version (top) and the two comparisons of DAG 5 on feature version 0 (bottom)](hinh/s02_tai_lap_web.png){#fig:tai-lap-web w=14.5}
 
 ## Streaming and Operations {#sec:res-streaming}
 
@@ -231,9 +231,9 @@ Table: Closed-loop and latency measurements on the cluster (11 November 2026) {#
 | Click → updated trending table (`demo_vong_khep_kin.py`, three clicks) | 102605, `demo_vong_kin` | **51 s** (window ending 22:50 UTC); target ≤ 90 s |
 | Recovery after the stream failure | 320844 | the three clicks of the failed attempt counted in the window 22:22–22:37 UTC after restart |
 
-**Cold start on the live system.** A user created with the *New user (cold start)* button receives the strategy `nguoi_moi`: all ten "For you" slots come from the newest trending window and coincide with the trending block below, and ten impressions are logged for the A/B pipeline (@fig:cold-start-web).
+**Cold start on the live system.** A user created with the *New user (cold start)* button receives the strategy `nguoi_moi`: all ten "For you" slots come from the newest trending window and coincide with the trending block below (@fig:cold-start-web). Ten impressions are written to the impression log, but the A/B computation leaves them out because it counts only users with ALS recommendations, and the page therefore labels the user as outside the experiment.
 
-![Home page of a user created on the spot: strategy `nguoi_moi`, ten trending slots, ten impressions logged](hinh/s01_cold_start_web.png){#fig:cold-start-web w=15.5}
+![Home page of a user created on the spot: strategy `nguoi_moi`, outside the A/B experiment; the "For you" slots (top) are the products of the trending block (bottom)](hinh/s01_cold_start_web.png){#fig:cold-start-web w=14.5}
 
 ## Acceptance Checklist {#sec:res-checklist}
 
@@ -251,10 +251,12 @@ Table: Status of the acceptance criteria {#tab:ket-qua-nghiem-thu w=5,28,24,43}
 | 7 | Reproduction with `VERSION AS OF` | Met | Deviation 0.000000 on version 0 (@tab:tai-lap) |
 | 8 | OPTIMIZE/Z-ORDER figures for the per-user lookup | Met | Files read 67 → 1.07, median 8.4× faster than compaction only (@tab:zorder) |
 
-**Personalised lists on the live system.** @fig:trang-chu-ab shows the home pages of two active users after the deployment of model version 2, taken on 11 November with the producer replaying events so that the trending windows were full. Both pages name the model that produced the list (`als_v2_r20261110T230924`) and log ten impressions. The group A user receives eight re-ranked, price-filtered ALS items followed by two items from the new-item source of the user's main category. The group B user receives five ALS items, the same two new items, and trending items at positions 3, 6 and 8; these three slots were stored at night but are replaced at request time by the three newest trending products, which are exactly positions 1 to 3 of the trending block below the list. The template of @fig:mau-khoi is therefore visible on the page itself.
+**Personalised lists on the live system.** @fig:trang-chu-a and @fig:trang-chu-b show the home pages of two active users after the deployment of model version 2, taken on 11 November with the producer replaying events so that the trending windows were full. Both pages name the model that produced the list (`als_v2_r20261110T230924`) and log ten impressions. Product names, departments and pictures come from the illustrative display layer of @sec:impl-web; the product and category ids under each card are the real ones. The group A user receives eight re-ranked, price-filtered ALS items followed by two items from the new-item source of the user's main category. The group B user receives five ALS items, the same two new items, and trending items at positions 3, 6 and 8; these three slots were stored at night but are replaced at request time by the three newest trending products, which are exactly positions 1 to 3 of the trending block below the list. The template of @fig:mau-khoi is therefore visible on the page itself.
 
-![Home pages of two active users after deployment of model version 2 (11 November, producer running): (a) group A, eight ALS items and two new items; (b) group B, trending items at positions 3, 6 and 8 refreshed from the newest window](hinh/s05_trang_chu_ab.png){#fig:trang-chu-ab w=16}
+![Home page of a group A user after deployment of model version 2 (11 November, producer running): eight ALS items and two new items of the user's main category](hinh/s05a_trang_chu_a.png){#fig:trang-chu-a w=14.5}
+
+![Home page of a group B user: trending items at positions 3, 6 and 8, refreshed at request time with positions 1–3 of the trending block (bottom)](hinh/s05b_trang_chu_b.png){#fig:trang-chu-b w=14.5}
 
 Clicking a recommended item opens the product page (@fig:san-pham-web): it records the click against the impression it came from (`mh` in the address, shown as "đến từ impression"), so that the A/B pipeline can join clicks to impressions, and it shows the product's latest row in the trending table and the related products of `gold.san_pham_lien_quan`: products that the same users interacted with on the same day, ranked by cosine similarity of their user counts.
 
-![Product page reached from a recommendation: impression id of the click, state in the trending table and related products](hinh/s06_san_pham_web.png){#fig:san-pham-web w=13}
+![Product page reached from slot 6 of @fig:trang-chu-a: impression id of the click, state in the trending table and related products](hinh/s06_san_pham_web.png){#fig:san-pham-web w=14.5}

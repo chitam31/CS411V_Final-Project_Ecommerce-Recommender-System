@@ -222,6 +222,14 @@ ND.push(cau("Làm sao điều khiển cụm từ nhà?"));
 ND.push(y("Mạng ở nhà làm rớt gói ZeroTier lớn (ping 1.300 byte qua, 1.400 byte mất) → SSH qua máy trung gian `labsoe-18`, hạ MTU ZeroTier 1.280."));
 ND.push(y("Lệnh dài chạy trong `tmux`, ghi kết quả ra tệp; script `tinh_trang.sh` xem nhanh RAM, Spark, Airflow."));
 
+ND.push(cau("Ảnh và tên sản phẩm trên web là thật à? Sao RetailRocket lại có ảnh?"));
+ND.push(y("Không phải ảnh thật: RetailRocket đã ẩn danh, không có tên, không có ảnh, danh mục chỉ là mã số."));
+ND.push(y("Lớp minh họa `web/dich_vu/minh_hoa.py` gán mỗi danh mục cấp 2 một trong 16 ngành hàng, vẽ ảnh SVG tại chỗ; ảnh nào cũng ghi \"ảnh minh họa\", chân trang nói rõ."));
+ND.push(y("Mã sản phẩm và mã danh mục thật vẫn hiện trên từng thẻ; lớp này không đụng bảng, mô hình hay số đo nào."));
+ND.push(y("Địa chỉ ảnh chứa khóa ngành hàng nên chữ và ảnh luôn khớp (lỗi 30: trình duyệt từng giữ ảnh cũ)."));
+ND.push(cau("Vì sao bảng A/B trên web khác báo cáo một chút (p = 0,0135 so với 0,015)?"));
+ND.push(y("Ngày 11/11, lúc chụp màn hình, web ghi thêm 230 impression thật của user ALS (A: 180, 7 click; B: 50, 1 click)."));
+ND.push(y("Bảng điều khiển gộp 8 ngày; phân tích chính trong báo cáo cố định 7 ngày mô phỏng đến phiên bản dữ liệu 2 — định trước khi xem dữ liệu."));
 ND.push(muc("10. Câu hỏi mở"));
 ND.push(cau("Nếu có thêm thời gian, nhóm sẽ cải thiện gì đầu tiên?"));
 ND.push(y("Thêm nguồn ứng viên ngoài ALS (item-to-item, danh mục) trước khi xếp lại → mục tiêu coverage 10 %."));

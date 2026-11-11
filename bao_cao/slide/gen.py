@@ -27,8 +27,8 @@ IMG = {
     "c03": ("/_blob/96cb971f6b7a92dc76b5e7e42e46fe07", 1473, 556),
     "c04": ("/_blob/66015142357b19e4b684e7336447b0f5", 1155, 587),
     "c05": ("/_blob/e52851c509d2c261899e1de36eae5fa7", 1173, 510),
-    "s01": ("/_blob/56fa31840152250ce5ade608a83b2df3", 1745, 1033),
-    "s03": ("/_blob/8caf05578d7f8553b3e528e833c023da", 1720, 1308),
+    "s01": ("/_blob/d74fa9afdacef1c40c17f19df041f67c", 1350, 1034),
+    "s03": ("/_blob/47ac9f5a98784585209076b04e959092", 1350, 870),
     "eq_als": ("/_blob/4576264a7d76e2eb4a8cf05a603503e4", 975, 113),
     "eq_pref": ("/_blob/9b09edcb48b80f018b0ea744ca353cbe", 671, 63),
 }
@@ -361,7 +361,8 @@ slide("coldstart", tieu_de("Model and evaluation", "Cold start and the blended �
       "Three cold-start strategies are pure functions shared by the batch job and the web application. A brand-new user sees the "
       "newest trending items; a user with fewer than five interactions sees best-sellers of the categories they viewed, "
       "interleaved with trending; and new items that ALS does not know enter through the last two slots. The screenshot is the live "
-      "system: a user created with one click immediately gets the new-user strategy.")
+      "system: a user created with one click immediately gets the new-user strategy, and the page marks that user as outside the A/B "
+      "experiment. Product names and pictures are illustrations, because RetailRocket is anonymised.")
 
 # ------------------------------------------------------------------ 16. A/B
 slide("abtest", tieu_de("Experiment and lakehouse", "A/B test: blending trending items lowers CTR") +
@@ -372,11 +373,12 @@ slide("abtest", tieu_de("Experiment and lakehouse", "A/B test: blending trending
       so_lon("p = 0.015", "CTR 2.094 % (A) vs 1.978 % (B), z = −2.43: B is 5.5 % worse", ORANGE, 64) +
       dong("Conversion", "0.234 % vs 0.239 %, p = 0.75: no difference", 26, 150) +
       dong("Power", "76,972 impressions per group needed — reached; B below A on all 7 days", 26, 150) +
-      "</div>" + hinh("s03", "A/B dashboard of the web application", cao=600) + "</div>",
+      "</div>" + hinh("s03", "A/B dashboard of the web application", rong=820) + "</div>",
       "Group A sees ALS only, group B ALS with thirty percent trending items. Real visitors are too few, so impressions are "
       "simulated with a position-dependent click model and labelled as simulated. Over 350 thousand impressions, B has a "
       "significantly lower click-through rate, p equals 0.015, and no difference in conversion. The conclusion holds only under the "
-      "assumptions of the simulation, which gives trending items no bonus.")
+      "assumptions of the simulation, which gives trending items no bonus. The dashboard on the right also counts the 230 real web "
+      "impressions logged on 11 November, which is why it reads p equals 0.0135 over eight days.")
 
 # ------------------------------------------------------------------ 17. Delta Lake
 slide("delta", tieu_de("Experiment and lakehouse", "Delta Lake features in use") +
