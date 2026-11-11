@@ -99,3 +99,49 @@ def test_bootstrap_ab_loc_dung_va_khop_z_theo_impression(spark):
     assert kq["ctr"]["theo_cum_user"]["p_value"] > p     # click dồn vào một user -> kém chắc chắn hơn
     ca_web = phan_tich([r.asDict() for r in theo_user(df, chi_mo_phong=False).collect()], 200, 1)
     assert ca_web["quy_mo"]["A"]["so_hien_thi"] == 21
+
+
+# ---- thêm nguồn ứng viên ngoài ALS
+from kiem_tra.thu_nguon_ung_vien import chon_cau_hinh, ghep_danh_sach, ung_vien_dong_xuat_hien  # noqa: E402
+
+
+def test_ghep_danh_sach_giu_dau_them_cuoi_va_bu_thieu():
+    phuc_vu = list(range(1, 31))
+    assert ghep_danh_sach(phuc_vu, [99, 98], [77], 0, 0) == list(range(1, 11))
+    assert ghep_danh_sach(phuc_vu, [99, 98], [77], 2, 1) == [1, 2, 3, 4, 5, 6, 7, 99, 98, 77]
+    # món trùng với phần đã giữ thì bỏ qua; nguồn thiếu thì bù bằng món kế tiếp của danh sách phục vụ
+    assert ghep_danh_sach(phuc_vu, [3, 99], None, 3, 1) == [1, 2, 3, 4, 5, 6, 99, 7, 8, 9]
+    assert len(set(ghep_danh_sach(phuc_vu, [1, 2, 3], [4, 5], 3, 2))) == 10
+
+
+def test_chon_cau_hinh_theo_luat_dat_truoc():
+    dong = [
+        {"q_c": 0, "q_d": 0, "ndcg_val": 0.100, "coverage_val": 0.05},
+        {"q_c": 1, "q_d": 0, "ndcg_val": 0.097, "coverage_val": 0.07},
+        {"q_c": 3, "q_d": 0, "ndcg_val": 0.090, "coverage_val": 0.12},   # NDCG < 95 % -> loại
+        {"q_c": 2, "q_d": 0, "ndcg_val": 0.096, "coverage_val": 0.09},
+    ]
+    kq = chon_cau_hinh(dong)
+    assert (kq["q_c"], kq["q_d"]) == (2, 0)
+
+
+def test_ung_vien_dong_xuat_hien_chi_tu_train(spark, lake_tam):
+    d0 = date(2015, 5, 1)
+    dong = []
+    for u in ("u1", "u2", "u3"):             # cả ba cùng xem sp1 và sp2 trong cùng một ngày
+        for sp in ("sp1", "sp2"):
+            dong.append((u, sp, d0, 1.0, "phat_lai"))
+        dong.append((u, "sp{}".format(u[-1] * 2), d0 + timedelta(days=1), 1.0, "phat_lai"))
+    dong.append(("u1", "sp5", d0 + timedelta(days=60), 3.0, "phat_lai"))  # tháng test
+    silver = spark.createDataFrame(
+        [(u, sp, datetime(n.year, n.month, n.day, 12), "xem", w, n, nguon) for u, sp, n, w, nguon in dong], SILVER)
+    features, tt = dung_ma_tran(spark, silver, min_tuong_tac=3)
+    train = features.filter("tap = 'train'").select("user_idx", "item_idx", "diem")
+    silver_train = silver.filter(silver.ngay < tt["ngay_cat"])
+    nguoi = train.select("user_idx").distinct()
+    kq = ung_vien_dong_xuat_hien(spark, silver_train, train, nguoi)
+    from pyspark.ml.feature import StringIndexerModel
+    nhan = StringIndexerModel.load(ch.duong_dan_mo_hinh("item_indexer")).labels
+    ds = {r["user_idx"]: {nhan[i] for i in r["ds_c"]} for r in kq.collect()}
+    assert len(ds) == 3
+    assert all(v == {"sp1", "sp2"} for v in ds.values())   # chỉ cặp có ≥ 2 người; sp5 (tháng test) không xuất hiện
