@@ -251,4 +251,10 @@ Table: Status of the acceptance criteria {#tab:ket-qua-nghiem-thu w=5,28,24,43}
 | 7 | Reproduction with `VERSION AS OF` | Met | Deviation 0.000000 on version 0 (@tab:tai-lap) |
 | 8 | OPTIMIZE/Z-ORDER figures for the per-user lookup | Met | Files read 67 → 1.07, median 8.4× faster than compaction only (@tab:zorder) |
 
-> [!TODO] Add screenshots of the home pages of a group A and a group B user with ALS lists and of a product page, taken with the producer running (the model-quality screen is @fig:mo-hinh-web).
+**Personalised lists on the live system.** @fig:trang-chu-ab shows the home pages of two active users after the deployment of model version 2, taken on 11 November with the producer replaying events so that the trending windows were full. Both pages name the model that produced the list (`als_v2_r20261110T230924`) and log ten impressions. The group A user receives eight re-ranked, price-filtered ALS items followed by two items from the new-item source of the user's main category. The group B user receives five ALS items, the same two new items, and trending items at positions 3, 6 and 8; these three slots were stored at night but are replaced at request time by the three newest trending products, which are exactly positions 1 to 3 of the trending block below the list. The template of @fig:mau-khoi is therefore visible on the page itself.
+
+![Home pages of two active users after deployment of model version 2 (11 November, producer running): (a) group A, eight ALS items and two new items; (b) group B, trending items at positions 3, 6 and 8 refreshed from the newest window](hinh/s05_trang_chu_ab.png){#fig:trang-chu-ab w=16}
+
+Clicking a recommended item opens the product page (@fig:san-pham-web): it records the click against the impression it came from (`mh` in the address, shown as "đến từ impression"), so that the A/B pipeline can join clicks to impressions, and it shows the product's latest row in the trending table and the related products of `gold.san_pham_lien_quan`: products that the same users interacted with on the same day, ranked by cosine similarity of their user counts.
+
+![Product page reached from a recommendation: impression id of the click, state in the trending table and related products](hinh/s06_san_pham_web.png){#fig:san-pham-web w=13}
