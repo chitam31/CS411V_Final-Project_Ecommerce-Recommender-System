@@ -1,6 +1,7 @@
 // tao_bao_cao.js - dựng báo cáo Word từ các tệp Markdown rút gọn trong noi_dung/.
 //
-//   node tao_bao_cao.js            -> BD03_Recommender_System_Report.docx
+//   node tao_bao_cao.js            -> BD03_Recommender_System_Report.docx   (tiếng Anh, noi_dung/)
+//   node tao_bao_cao.js vi         -> BD03_Bao_cao_He_thong_goi_y.docx       (tiếng Việt, noi_dung_vi/)
 //
 // Cú pháp hỗ trợ (đủ cho báo cáo, không phải Markdown đầy đủ):
 //   # Title {#sec:id}            chương (tự đánh số 1, 2, ...; "# !Title" không đánh số; "# @A Title" phụ lục A)
@@ -31,9 +32,33 @@ const RONG_TRANG = 21 * CM, LE_TRAI = 3 * CM, LE_PHAI = 2 * CM;
 const RONG_CHU = RONG_TRANG - LE_TRAI - LE_PHAI;   // 9072 DXA = 16 cm
 const PX_CM = 37.795;                // docx-js tính ảnh theo px ở 96 dpi
 
+// ------------------------------------------------------------------ ngôn ngữ
+const VI = process.argv.includes("vi");
+const L = VI ? {
+  thuMuc: "noi_dung_vi", ra: "BD03_Bao_cao_He_thong_goi_y.docx",
+  chuong: "Chương ", muc: "Mục ", hinh: "Hình ", bang: "Bảng ", ct: "Công thức ", phuLuc: "Phụ lục ",
+  mucLuc: "Mục lục", dsHinh: "Danh mục hình", dsBang: "Danh mục bảng",
+  dauTrang: "Hệ thống gợi ý sản phẩm thương mại điện tử – Báo cáo đồ án",
+  truong: "TRƯỜNG ĐẠI HỌC TÂN TẠO", khoa: "KHOA CÔNG NGHỆ THÔNG TIN", loai: "BÁO CÁO ĐỒ ÁN CUỐI KỲ",
+  tenDeTai: "HỆ THỐNG GỢI Ý SẢN PHẨM THƯƠNG MẠI ĐIỆN TỬ", monHoc: "Học phần: Dữ liệu lớn (CS411V)", hocKy: "Học kỳ Thu 2026",
+  nhom: "THÀNH VIÊN NHÓM", tv: "Thành viên", ma: "MSSV", gv: "Giảng viên hướng dẫn: TS. Cao Tiến Dũng",
+  ten1: "Lê Chí Tâm", ten2: "Lê Nguyễn Quốc Anh",
+  tieuDeTep: "Hệ thống gợi ý sản phẩm thương mại điện tử – Báo cáo đồ án (CS411V Dữ liệu lớn)",
+} : {
+  thuMuc: "noi_dung", ra: "BD03_Recommender_System_Report.docx",
+  chuong: "Chapter ", muc: "Section ", hinh: "Figure ", bang: "Table ", ct: "Equation ", phuLuc: "Appendix ",
+  mucLuc: "Table of Contents", dsHinh: "List of Figures", dsBang: "List of Tables",
+  dauTrang: "E-commerce Product Recommender System – Final Report",
+  truong: "TAN TAO UNIVERSITY", khoa: "SCHOOL OF INFORMATION TECHNOLOGY", loai: "Report of Final Project",
+  tenDeTai: "E-COMMERCE PRODUCT RECOMMENDER SYSTEM", monHoc: "Course: Big Data (CS411V)", hocKy: "Fall 2026",
+  nhom: "GROUP MEMBER", tv: "Member", ma: "Student code", gv: "Supervisor: Cao Tien Dung, PhD",
+  ten1: "Le Chi Tam", ten2: "Le Nguyen Quoc Anh",
+  tieuDeTep: "E-commerce Product Recommender System – Final Project Report (CS411 Big Data)",
+};
+
 // ------------------------------------------------------------------ đọc nội dung
-const tep = fs.readdirSync(path.join(GOC, "noi_dung")).filter((t) => /^\d\d_.*\.md$/.test(t)).sort();
-const nguon = tep.map((t) => ({ ten: t, dong: fs.readFileSync(path.join(GOC, "noi_dung", t), "utf8").split(/\r?\n/) }));
+const tep = fs.readdirSync(path.join(GOC, L.thuMuc)).filter((t) => /^\d\d_.*\.md$/.test(t)).sort();
+const nguon = tep.map((t) => ({ ten: t, dong: fs.readFileSync(path.join(GOC, L.thuMuc, t), "utf8").split(/\r?\n/) }));
 
 // ------------------------------------------------------------------ lượt 1: đánh số và nhãn
 const nhan = {};
@@ -52,17 +77,17 @@ for (const f of nguon) {
         if (tieuDe.startsWith("@")) { phuLuc = tieuDe.slice(1, 2); }
         else if (tieuDe.startsWith("!")) { /* không đánh số */ }
         else { phuLuc = null; chuong += 1; }
-        if (id) nhan[id] = phuLuc ? "Appendix " + phuLuc : "Chapter " + chuong;
-      } else if (cap === 2) { m2 += 1; m3 = 0; if (id) nhan[id] = "Section " + tienTo() + "." + m2; }
-      else { m3 += 1; if (id) nhan[id] = "Section " + tienTo() + "." + m2 + "." + m3; }
+        if (id) nhan[id] = phuLuc ? L.phuLuc + phuLuc : L.chuong + chuong;
+      } else if (cap === 2) { m2 += 1; m3 = 0; if (id) nhan[id] = L.muc + tienTo() + "." + m2; }
+      else { m3 += 1; if (id) nhan[id] = L.muc + tienTo() + "." + m2 + "." + m3; }
     } else if ((m = dong.match(/^!\[.*\]\(.*\)\{([^}]*)\}/))) {
       soHinh += 1; const id = (m[1].match(/#(fig:[\w-]+)/) || [])[1];
-      if (id) nhan[id] = "Figure " + tienTo() + "." + soHinh;
+      if (id) nhan[id] = L.hinh + tienTo() + "." + soHinh;
     } else if ((m = dong.match(/^Table: (?!- )(?!-$).*\{([^}]*)\}/))) {
       soBang += 1; const id = (m[1].match(/#(tab:[\w-]+)/) || [])[1];
-      if (id) nhan[id] = "Table " + tienTo() + "." + soBang;
+      if (id) nhan[id] = L.bang + tienTo() + "." + soBang;
     } else if ((m = dong.match(/^\$\$(\w+)\$\$\s*\{#(eq:[\w-]+)\}/))) {
-      soCT += 1; nhan[m[2]] = "Equation (" + tienTo() + "." + soCT + ")";
+      soCT += 1; nhan[m[2]] = L.ct + "(" + tienTo() + "." + soCT + ")";
     }
   }
 }
@@ -196,7 +221,7 @@ function dung(dongs) {
       let so = "";
       if (cap === 1) {
         m2 = m3 = soHinh = soBang = soCT = 0;
-        if (t.startsWith("@")) { phuLuc = t.slice(1, 2); so = "Appendix " + phuLuc + ". "; t = t.slice(3); }
+        if (t.startsWith("@")) { phuLuc = t.slice(1, 2); so = L.phuLuc + phuLuc + ". "; t = t.slice(3); }
         else if (t.startsWith("!")) { t = t.slice(1); }
         else { phuLuc = null; chuong += 1; so = chuong + "  "; }
       } else if (cap === 2) { m2 += 1; m3 = 0; so = tienTo() + "." + m2 + "  "; }
@@ -237,7 +262,7 @@ function dung(dongs) {
       const w = parseFloat((m[3].match(/w=([\d.]+)/) || [])[1] || "15.5");
       const cao = parseFloat((m[3].match(/h=([\d.]+)/) || [])[1] || "22");
       ra.push(new Paragraph({ alignment: AlignmentType.CENTER, keepNext: true, spacing: { before: 120, after: 60, line: 240, lineRule: "auto" }, children: [anh(m[2], w, cao)] }));
-      ra.push(new Paragraph({ style: "ChuThichHinh", children: [new TextRun({ text: "Figure " + tienTo() + "." + soHinh + ". ", bold: true }), ...chuTrongDoan(m[1], 24, { italics: true })] }));
+      ra.push(new Paragraph({ style: "ChuThichHinh", children: [new TextRun({ text: L.hinh + tienTo() + "." + soHinh + ". ", bold: true }), ...chuTrongDoan(m[1], 24, { italics: true })] }));
       i++; continue;
     }
     if ((m = dong.match(/^\$\$(\w+)\$\$/))) {
@@ -264,7 +289,7 @@ function dung(dongs) {
       const ti = (thuocTinh.match(/w=([\d.,]+)/) || [])[1];
       if (m[1] !== "-") {
         soBang += 1;
-        ra.push(new Paragraph({ style: "ChuThichBang", keepNext: true, children: [new TextRun({ text: "Table " + tienTo() + "." + soBang + ". ", bold: true }), ...chuTrongDoan(m[1], 24, { italics: true })] }));
+        ra.push(new Paragraph({ style: "ChuThichBang", keepNext: true, children: [new TextRun({ text: L.bang + tienTo() + "." + soBang + ". ", bold: true }), ...chuTrongDoan(m[1], 24, { italics: true })] }));
       }
       i++;
       const dongBang = [];
@@ -315,22 +340,22 @@ const RONG_LOGO = 6.0 * PX_CM;
 function dongThanhVien(stt, ten, ma, sau) {
   return new Paragraph({ spacing: { before: 0, after: sau, line: 276, lineRule: "auto" }, indent: { left: 0.58 * CM },
     tabStops: [{ type: TabStopType.LEFT, position: 9.48 * CM }],
-    children: [new TextRun({ text: `Member ${stt}: ${ten}`, font: CHU, size: 26, bold: true }),
-      new TextRun({ text: `\tStudent code: ${ma}`, font: CHU, size: 26, bold: true })] });
+    children: [new TextRun({ text: `${L.tv} ${stt}: ${ten}`, font: CHU, size: 26, bold: true }),
+      new TextRun({ text: `\t${L.ma}: ${ma}`, font: CHU, size: 26, bold: true })] });
 }
 const bia = [
-  dongBia("TAN TAO UNIVERSITY", 28, {}, 240, 480),
-  dongBia("SCHOOL OF INFORMATION TECHNOLOGY", 28, {}, 280),
+  dongBia(L.truong, 28, {}, 240, 480),
+  dongBia(L.khoa, 28, {}, 280),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 },
     children: [new ImageRun({ type: "png", data: anhLogo, transformation: { width: RONG_LOGO, height: RONG_LOGO * 588 / 798 } })] }),
-  dongBia("Report of Final Project", 26, {}, 220),
-  dongBia("E-COMMERCE PRODUCT RECOMMENDER SYSTEM", 32, {}, 220),
-  dongBia("Course: Big Data (CS411V)", 26, {}, 220),
-  dongBia("Fall 2026", 26, { italics: true }, 900),
-  dongBia("GROUP MEMBER", 26, {}, 240),
-  dongThanhVien(1, "Le Chi Tam", "2302220", 240),
-  dongThanhVien(2, "Le Nguyen Quoc Anh", "2302283", 2400),
-  dongBia("Supervisor: Cao Tien Dung, PhD", 26, {}, 200),
+  dongBia(L.loai, 26, {}, 220),
+  dongBia(L.tenDeTai, 32, {}, 220),
+  dongBia(L.monHoc, 26, {}, 220),
+  dongBia(L.hocKy, 26, { italics: true }, 900),
+  dongBia(L.nhom, 26, {}, 240),
+  dongThanhVien(1, L.ten1, "2302220", 240),
+  dongThanhVien(2, L.ten2, "2302283", 2400),
+  dongBia(L.gv, 26, {}, 200),
   new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 0, line: 276, lineRule: "auto" }, children: [
     new TextRun({ text: "Github: ", font: CHU, size: 22, bold: true, italics: true }),
     new d.ExternalHyperlink({ link: REPO, children: [new TextRun({ text: REPO, font: CHU, size: 21, bold: true, italics: true, color: "0000EE", underline: {} })] }),
@@ -344,12 +369,12 @@ const truocMucLuc = [].concat(...nguon.filter((f) => f.ten.startsWith("00_a")).m
 const sauMucLuc = [].concat(...nguon.filter((f) => f.ten.startsWith("00_b")).map((f) => f.dong.concat([""])));
 const chinh = nguon.filter((f) => !f.ten.startsWith("00_"));
 phanDau.push(...dung(truocMucLuc));
-phanDau.push(tieuDeKhongSo("Table of Contents"));
-phanDau.push(new TableOfContents("Table of Contents", { hyperlink: true, headingStyleRange: "1-3" }));
-phanDau.push(tieuDeKhongSo("List of Figures"));
-phanDau.push(new TableOfContents("List of Figures", { hyperlink: true, stylesWithLevels: [new StyleLevel("Figure Caption", 1)] }));
-phanDau.push(tieuDeKhongSo("List of Tables"));
-phanDau.push(new TableOfContents("List of Tables", { hyperlink: true, stylesWithLevels: [new StyleLevel("Table Caption", 1)] }));
+phanDau.push(tieuDeKhongSo(L.mucLuc));
+phanDau.push(new TableOfContents(L.mucLuc, { hyperlink: true, headingStyleRange: "1-3" }));
+phanDau.push(tieuDeKhongSo(L.dsHinh));
+phanDau.push(new TableOfContents(L.dsHinh, { hyperlink: true, stylesWithLevels: [new StyleLevel("Figure Caption", 1)] }));
+phanDau.push(tieuDeKhongSo(L.dsBang));
+phanDau.push(new TableOfContents(L.dsBang, { hyperlink: true, stylesWithLevels: [new StyleLevel("Table Caption", 1)] }));
 const sau = dung(sauMucLuc);
 phanDau.push(new Paragraph({ children: [new PageBreak()] }), ...sau);
 
@@ -365,7 +390,7 @@ const trang = (batDau, kieu) => ({ size: { width: RONG_TRANG, height: 29.7 * CM 
 
 const doc = new Document({
   creator: "Le Chi Tam, Le Nguyen Quoc Anh",
-  title: "E-commerce Product Recommender System – Final Project Report (CS411 Big Data)",
+  title: L.tieuDeTep,
   description: "Topic 3, bd03_khuyen_nghi",
   features: { updateFields: true },
   styles: {
@@ -405,10 +430,10 @@ const doc = new Document({
     { properties: { page: { size: { width: RONG_TRANG, height: 29.7 * CM }, margin: { ...BIA_LE, header: 0.9 * CM, footer: 0.9 * CM },
         borders: { pageBorders: { display: d.PageBorderDisplay.ALL_PAGES, offsetFrom: d.PageBorderOffsetFrom.TEXT },
           pageBorderTop: VIEN_BIA, pageBorderLeft: VIEN_BIA, pageBorderBottom: VIEN_BIA, pageBorderRight: VIEN_BIA } } }, children: bia },
-    { properties: { page: trang(1, NumberFormat.LOWER_ROMAN) }, headers: { default: hdr("E-commerce Product Recommender System – Final Report") }, footers: { default: ftr() }, children: phanDau },
-    { properties: { page: trang(1, NumberFormat.DECIMAL) }, headers: { default: hdr("E-commerce Product Recommender System – Final Report") }, footers: { default: ftr() }, children: than },
+    { properties: { page: trang(1, NumberFormat.LOWER_ROMAN) }, headers: { default: hdr(L.dauTrang) }, footers: { default: ftr() }, children: phanDau },
+    { properties: { page: trang(1, NumberFormat.DECIMAL) }, headers: { default: hdr(L.dauTrang) }, footers: { default: ftr() }, children: than },
   ],
 });
 
-const ra = path.join(GOC, "BD03_Recommender_System_Report.docx");
+const ra = path.join(GOC, L.ra);
 Packer.toBuffer(doc).then((b) => { fs.writeFileSync(ra, b); console.log("đã ghi", ra, Math.round(b.length / 1024), "KB; nhãn:", Object.keys(nhan).length); });

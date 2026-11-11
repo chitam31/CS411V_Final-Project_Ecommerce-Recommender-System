@@ -154,6 +154,10 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 - 21:00: chuẩn hóa hình thức slide và hình: toàn bộ chữ của slide dùng Times New Roman (máy không có TNR thì dùng Tinos, cùng kích thước chữ); mọi hình trên slide có chú thích đánh số "Figure n." in nghiêng như bài báo. Sửa hình cho đúng chuẩn khoa học: c03 trục hoành từ 0 % (cột chồng tỉ lệ không được cắt trục) và ghi tỉ lệ N1 trên từng cột; c02–c04 ghi tên phương pháp (Global/Category best-sellers) thay cho "Baseline 1/2"; c05 nhãn trục "Per-user lookup latency (ms)" và cỡ mẫu 30 lượt/pha; f07 bỏ tham chiếu mục cũ; f09 thêm features v2, v3 và lần tái lập 11/11 trên v3. Báo cáo dựng lại: 107 trang.
 - 22:00: vẽ lại toàn bộ sơ đồ theo phong cách hình kiến trúc của bài báo hội nghị (thư viện `bao_cao/hinh/ve.py` viết lại: bảng màu draw.io, khối viền đậm cùng tông, khung phân vùng, chú giải ký hiệu, mũi tên phân loại theo màu: dữ liệu lô, luồng, điều khiển, phản hồi người dùng, đọc để phục vụ). Mỗi hình xuất PNG 300 dpi (báo cáo) và SVG vector (slide). Bản ngang mới cho slide: kiến trúc (`f01b`), DAG 1 (`f05b`); cụm máy, ba luồng (thanh ngân sách độ trễ tỉ lệ theo giây), vòng khép kín, tái lập chuyển sang khổ ngang; biểu đồ A/B đổi từ cột cắt trục sang điểm + khoảng tin cậy 95 %. Slide: hình trải hết chiều ngang, PDF xuất dạng vector (chữ và hình không vỡ khi phóng to).
 
+### 12/11/2026
+
+- 02:30–04:30: báo cáo bản tiếng Việt (`bao_cao/noi_dung_vi/`, dựng bằng `node tao_bao_cao.js vi` → `BD03_Bao_cao_He_thong_goi_y.docx` + PDF, 104 trang). Cùng cấu trúc, bảng, công thức, hình và 130 nhãn tham chiếu với bản tiếng Anh; số trong văn bản và bảng theo kiểu Việt (dấu phẩy thập phân); chữ trong hình giữ tiếng Anh. Trình dựng có thêm chế độ `vi` (bìa, nhãn Hình/Bảng/Chương/Mục, mục lục, đầu trang).
+
 ---
 
 ## 4. Lỗi tìm thấy khi phát triển và cách sửa
