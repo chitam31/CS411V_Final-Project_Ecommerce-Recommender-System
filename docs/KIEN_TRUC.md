@@ -16,7 +16,7 @@
 ┌───────────────────────────── labsoe-11 · 10.68.71.113 ─────────────────────────────┐
 │ hadoop-master (NameNode :8020, UI :9870)    spark-master (:7077, UI :8080,         │
 │ Airflow 3.3.1: api-server :8088, scheduler,  driver 4041-4060, job UI 4140-4150)   │
-│   dag-processor, triggerer, postgres         ./jobs gắn vào /opt/spark/jobs        │
+│   dag-processor, postgres (triggerer tắt)    ./jobs gắn vào /opt/spark/jobs        │
 └────────────────────────────────────────────────────────────────────────────────────┘
 ┌ labsit12 .198 ┐ ┌ labsit .204 ──────────────┐ ┌ may25 .42 ┐ ┌ may26 .90 ┐ ┌ labsoe-18 .149 ┐
 │ hadoop-worker │ │ hadoop-worker             │ │ hadoop-w. │ │ hadoop-w. │ │ hadoop-worker  │
