@@ -120,6 +120,7 @@ curl -s http://localhost:8000/api/suc-khoe
 ### 2.5 Airflow
 
 - Đăng nhập `http://10.68.71.113:8088`. Phải thấy 5 DAG: `kn_pipeline_hang_ngay`, `kn_giam_sat_streaming`, `kn_tinh_ab`, `kn_bao_tri`, `kn_tai_lap`.
+- **Thử nút Kích hoạt kn_tai_lap** trên web (màn Tái lập thí nghiệm, chọn features v0) để chắc web gọi được Airflow với mật khẩu mới. Chờ lần chạy xong (khoảng 15 phút), không chạy job tay nào khác trong lúc đó. Ngày 18/11 sẽ kích hoạt lại đúng một lần ở mốc T−15.
 - **Khuyến nghị: tạm dừng (pause) `kn_pipeline_hang_ngay` từ tối 17/11 đến sau buổi bảo vệ.**
   - Lý do: buổi tập tối 17/11 sẽ đẩy sự kiện mới vào bronze. Sensor của DAG 1 thấy dữ liệu mới thì chạy lại toàn bộ lúc 02:00 ngày 18/11.
   - Lần chạy đó có thể đổi tên mô hình đang phục vụ, đổi số trên màn hình Chất lượng mô hình, hoặc để lại một lần chạy đỏ trên trang chủ Airflow đúng ngày bảo vệ.
@@ -205,6 +206,7 @@ ssh -N -L 8001:localhost:8000 labsoe-18
 | T−30 | Kiểm tra web | Mở 4 trang web; `curl .../api/suc-khoe` | `"che_do":"delta"` | ☐ |
 | T−20 | Đăng nhập Airflow, mở Kafka UI, Spark, HDFS | Trình duyệt | Đã đăng nhập, không phải gõ mật khẩu lúc demo | ☐ |
 | T−15 | Ghi p-value đang hiện trên bảng A/B | Web → Bảng điều khiển A/B | Báo cho Quốc Anh số cần nói | ☐ |
+| T−15 | **Kích hoạt DAG 5** (đề ghi “Bắt buộc demo”): web → **Tái lập thí nghiệm** → mục *Tái lập huấn luyện mô hình* → chọn dòng **features v0** → **Kích hoạt kn_tai_lap** | Web, hoặc Airflow → `kn_tai_lap` → Trigger với `{"phien_ban_delta": 0, "che_do": "mo_hinh_chon"}` | Web báo đã kích hoạt; Airflow có lần chạy mới. Job khoảng 15 phút, xong trong lúc trình bày | ☐ |
 | T−10 | **Bật bộ phát** để khối thịnh hành có dữ liệu sống | `[labsit]` lệnh ngay dưới bảng | Dòng tiến độ in ra đều | ☐ |
 | T−5 | Tải lại trang chủ | Web | Khối “Đang thịnh hành” có nhiều sản phẩm (không chỉ 1–2) | ☐ |
 | T−2 | Về slide 1, điện thoại im lặng, uống nước | — | — | ☐ |
@@ -312,7 +314,8 @@ Chỉ làm khi hội đồng hỏi “hệ thống có chạy phân tán thật 
 
 - **Thao tác:** menu **Tái lập thí nghiệm** → chọn một ngày cũ → **Chạy lại**.
 - **Phải thấy:** bảng cũ/mới cho từng chỉ số, cột lệch = 0, kết luận trùng khớp. Bảng tái lập huấn luyện bên dưới có độ lệch 1,78·10⁻¹⁵.
-- **Không** bấm kích hoạt `kn_tai_lap` (DAG 5) trong buổi bảo vệ: job chạy nhiều phút. Nếu hội đồng muốn xem, mở Airflow → `kn_tai_lap` → lần chạy thành công cũ → Graph và Log.
+- **DAG 5 đã được kích hoạt ở mốc T−15** (đề bài ghi DAG 5 “Bắt buộc demo”). Tải lại trang: bảng tái lập huấn luyện có **dòng mới với giờ hôm nay**, độ lệch < 10⁻⁶, trùng khớp. Mở thêm Airflow → `kn_tai_lap` → lần chạy hôm nay → Graph để thấy các bước.
+- Nếu lần chạy chưa xong: mở Airflow cho thấy nó đang chạy, nói “it retrains the selected model on feature version 0, about fifteen minutes; the previous run is here” và chỉ dòng cũ. Không kích hoạt thêm lần nữa.
 - **Câu chốt:** “Same Delta version, same seed, same metrics.”
 
 ---
@@ -358,7 +361,7 @@ Ghi chú:
 
 - Không dừng hay xóa container của nhóm khác trên labsit-may25 và labsit-may26.
 - Không chạy `docker compose down -v`: tham số `-v` xóa volume dữ liệu.
-- Không kích hoạt DAG 1 (`kn_pipeline_hang_ngay`) hay DAG 5 (`kn_tai_lap`) trong buổi bảo vệ: cả hai chạy nhiều phút và chiếm RAM master.
+- Không kích hoạt DAG 1 (`kn_pipeline_hang_ngay`) trong buổi bảo vệ. DAG 5 (`kn_tai_lap`) chỉ kích hoạt **đúng một lần** ở mốc T−15; không chạy job tay nào khác trong lúc nó chạy (lỗi 31).
 - Không chạy `producer/nguoi_dung_ao.py` vào ngày bảo vệ: script này ghi thêm traffic `mo_phong_web` vào nhật ký hiển thị và làm số trên bảng A/B thay đổi.
 - Không mở trên màn hình các tệp bí mật: `ha_tang/*/.env`, `ha_tang/web/.env.rieng`, `ha_tang/airflow/mat_khau.json`, `kaggle.json`. Không gõ mật khẩu khi màn hình đang chiếu.
 - Không đưa token GitHub hay khóa Kaggle lên máy lab. Mã chỉ lên máy lab qua `--dong-bo-ma`.
