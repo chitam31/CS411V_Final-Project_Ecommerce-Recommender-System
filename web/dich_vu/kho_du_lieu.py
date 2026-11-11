@@ -56,6 +56,14 @@ def _sang_json(gia_tri):
     return gia_tri
 
 
+def goc_cua(ma, cha, toi_da=20):
+    """Đi ngược cây danh mục tới gốc; chặn vòng lặp nếu dữ liệu cha-con lỗi."""
+    buoc = 0
+    while cha.get(ma) not in (None, "") and buoc < toi_da:
+        ma, buoc = cha[ma], buoc + 1
+    return ma
+
+
 def _dong(r):
     return {k: _sang_json(v) for k, v in r.asDict().items()}
 
@@ -168,6 +176,26 @@ class KhoDelta:
 
     def san_pham(self, ma_san_pham):
         return self._danh_muc_san_pham().get(str(ma_san_pham), {"ma_san_pham": str(ma_san_pham)})
+
+    def _cay_danh_muc(self):
+        """ma_danh_muc -> danh mục gốc, từ category_tree.csv của RetailRocket (chỉ dùng để hiển thị)."""
+        from common import cau_hinh as ch
+
+        def tinh():
+            try:
+                df = self.spark.read.option("header", True).csv(ch.duong_dan_landing("category_tree.csv"))
+                cha = {r["categoryid"]: r["parentid"] for r in df.collect()}
+            except Exception:  # thiếu tệp gốc: lớp minh họa dùng chính mã danh mục
+                logging.getLogger(__name__).warning("Không đọc được category_tree.csv", exc_info=True)
+                return {}
+            return {c: goc_cua(c, cha) for c in cha}
+
+        return self.dem_lon.lay("cay_danh_muc", tinh)
+
+    def danh_muc_goc(self, ma_danh_muc):
+        if ma_danh_muc in (None, ""):
+            return None
+        return self._cay_danh_muc().get(str(ma_danh_muc), str(ma_danh_muc))
 
     def _ban_chay_tat_ca(self):
         from pyspark.sql import Window

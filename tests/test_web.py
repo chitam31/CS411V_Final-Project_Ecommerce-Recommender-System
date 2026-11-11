@@ -97,3 +97,34 @@ def test_thinh_hanh_cap_nhat_sau_them_gio(web):
     c.post("/api/su-kien", json={"ma_nguoi_dung": "x", "ma_san_pham": "sp200", "loai": "them_gio"})
     assert c.get("/api/thinh-hanh/sp200").json()["so_luot_them_gio"] == truoc + 1
     assert json.dumps(c.get("/api/thinh-hanh").json())
+
+
+def test_anh_minh_hoa_va_ghi_chu(web):
+    """Lớp minh họa (RetailRocket ẩn danh): ảnh SVG hợp lệ, tất định, có chữ "ảnh minh họa", chân trang nói rõ."""
+    import xml.etree.ElementTree as ET
+
+    c, _ = web
+    r = c.get("/anh/sp3.svg")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("image/svg+xml")
+    ET.fromstring(r.text)                                  # XML hợp lệ (tên ngành có "&" đã được escape)
+    assert "ảnh minh họa" in r.text and r.text == c.get("/anh/sp3.svg").text
+    trang = c.get("/?u=u_als_1").text
+    assert "/anh/" in trang and "minh họa" in trang
+    sp = c.get("/san-pham/sp3").text
+    assert "/anh/sp3.svg" in sp
+
+
+def test_nganh_hang_theo_danh_muc_goc():
+    from dich_vu import minh_hoa
+    from dich_vu.kho_du_lieu import goc_cua
+
+    cha = {"5": "2", "2": "1", "1": "", "9": "9x", "9x": "9"}   # 9 <-> 9x là vòng lặp lỗi
+    assert goc_cua("5", cha) == "1" and goc_cua("1", cha) == "1"
+    assert goc_cua("9", cha) in ("9", "9x")                       # không treo khi cây có vòng
+    a, b = minh_hoa.trang_tri({"ma_san_pham": "1", "ma_danh_muc": "5"}, "1"), minh_hoa.trang_tri({"ma_san_pham": "2"}, "1")
+    assert a["nganh"] == b["nganh"]                               # cùng danh mục gốc -> cùng ngành hàng
+    assert a["ten_hien_thi"].endswith(" 1") and a["anh"] == "/anh/1.svg"
+    assert minh_hoa.dinh_dang_gia(479880.0) == "479.880 ₫" and minh_hoa.dinh_dang_gia(None) is None
+    import xml.etree.ElementTree as ET
+    for i in range(64):
+        ET.fromstring(minh_hoa.anh_svg(str(i), str(i)))

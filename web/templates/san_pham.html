@@ -1,37 +1,55 @@
 {% extends "base.html" %}
 {% block noi_dung %}
+<nav class="duong-dan"><a href="/{% if u %}?u={{ u }}{% endif %}">Trang chủ</a><span>›</span>{{ sp.nganh.ten }}<span>›</span>Danh mục {{ sp.ma_danh_muc or "chưa rõ" }}</nav>
 <section class="hop chi-tiet">
-  <div class="anh lon">{{ sp.ma_san_pham[-3:] }}</div>
-  <div>
-    <h1>Sản phẩm {{ sp.ma_san_pham }}</h1>
-    <p>Danh mục: {{ sp.ma_danh_muc or "chưa rõ" }}
-      {% if sp.gia_san_pham %} · Giá tham khảo: {{ "{:,.0f}".format(sp.gia_san_pham) }}{% endif %}
-      {% if sp.xep_hang_sao %} · Sao (thay thế): {{ "%.1f"|format(sp.xep_hang_sao) }}{% endif %}</p>
+  <div class="chi-tiet-anh"><img src="{{ sp.anh }}" alt="Ảnh minh họa: {{ sp.ten_hien_thi }}"></div>
+  <div class="chi-tiet-thong-tin">
+    <div class="nganh" style="color: {{ sp.nganh.mau_dam }}">{{ sp.nganh.ten }}</div>
+    <h1>{{ sp.ten_hien_thi }}</h1>
+    <div class="dong-phu">
+      Mã sản phẩm {{ sp.ma_san_pham }} · danh mục {{ sp.ma_danh_muc or "chưa rõ" }}
+      {% if sp.xep_hang_sao %}
+      {% set sao = (sp.xep_hang_sao|round|int) %}
+      · <span class="sao">{{ "★" * sao }}<span class="sao-rong">{{ "★" * (5 - sao) }}</span></span>
+        {{ "%.1f"|format(sp.xep_hang_sao) }} <span class="mo">(sao ước lượng)</span>
+      {% endif %}
+    </div>
+    <div class="gia-lon">{{ (sp.gia_san_pham|gia) or "Chưa có giá" }}</div>
+    {% if sp.con_hang is defined and sp.con_hang is not none %}
+    <div class="tinh-trang {{ 'con' if sp.con_hang else 'het' }}">{{ "Còn hàng" if sp.con_hang else "Tạm hết hàng" }}</div>
+    {% endif %}
     {% if u %}
-    <p>Đang thao tác với tư cách <b>{{ u }}</b>{% if mh %} · đến từ impression <code>{{ mh[:8] }}</code>{% endif %}</p>
-    <div class="hang">
-      <button onclick="guiSuKien('xem')">Xem</button>
-      <button onclick="guiSuKien('them_gio')">Thêm giỏ</button>
-      <button onclick="guiSuKien('mua')">Mua</button>
-      <a class="nut" href="/?u={{ u }}">Về trang chủ</a>
+    <div class="phien">Đang thao tác với tư cách <b>{{ u }}</b>{% if mh %} · đến từ impression <code>{{ mh[:8] }}</code>{% endif %}</div>
+    <div class="hang nut-hanh-dong">
+      <button class="nut-vien" onclick="guiSuKien('xem')">Xem chi tiết</button>
+      <button class="nut-cam" onclick="guiSuKien('them_gio')">Thêm vào giỏ</button>
+      <button class="nut-do" onclick="guiSuKien('mua')">Mua ngay</button>
+      <a class="nut nut-phu" href="/?u={{ u }}">Về trang chủ</a>
     </div>
     {% else %}
     <p class="mo">Chưa đăng nhập: chọn người dùng ở trang chủ để gửi sự kiện.</p>
     {% endif %}
-    <div id="ket-qua" class="mo"></div>
-    <h3>Trạng thái trong bảng thịnh hành</h3>
-    <div id="thinh-hanh">
-      {% if thinh_hanh %}
-        Cửa sổ kết thúc {{ thinh_hanh.cua_so_ket_thuc }} · xem {{ thinh_hanh.so_luot_xem }} · thêm giỏ {{ thinh_hanh.so_luot_them_gio }}
-      {% else %}Chưa có trong 15 phút gần nhất.{% endif %}
+    <div id="ket-qua" class="ket-qua-su-kien"></div>
+    <div class="hop-nho">
+      <h3><span class="cham-nong"></span>Trạng thái trong bảng thịnh hành</h3>
+      <div id="thinh-hanh">
+        {% if thinh_hanh %}
+          Cửa sổ kết thúc {{ thinh_hanh.cua_so_ket_thuc }} · xem {{ thinh_hanh.so_luot_xem }} · thêm giỏ {{ thinh_hanh.so_luot_them_gio }}
+        {% else %}Chưa có trong 15 phút gần nhất.{% endif %}
+      </div>
+      <p class="mo">Tự làm mới mỗi 5 giây; sau khi bấm "Thêm vào giỏ", trang ghi số giây tới khi bảng cập nhật (mục tiêu ≤ 90 giây).</p>
     </div>
   </div>
 </section>
 <section class="hop">
-  <h2>Sản phẩm liên quan</h2>
+  <div class="dau-muc">
+    <h2>Sản phẩm liên quan</h2>
+    <span class="mo">Được cùng người dùng xem trong cùng ngày, xếp theo độ tương đồng cosine</span>
+  </div>
   <div class="luoi">
     {% for g in lien_quan %}{% set vi_tri = loop.index %}{% include "_the_san_pham.html" %}{% endfor %}
   </div>
+  {% if not lien_quan %}<p class="mo">Chưa có sản phẩm liên quan cho mã này.</p>{% endif %}
 </section>
 <script>
 const U = {{ (u or "")|tojson }}, MH = {{ (mh or "")|tojson }}, SP = {{ sp.ma_san_pham|tojson }};
@@ -59,7 +77,7 @@ async function thamDo() {
       mocBam = null;
     }
     if (!mocBam) soThemGioTruoc = tg;
-    o.textContent = "Cửa sổ kết thúc " + d.cua_so_ket_thuc + " · xem " + d.so_luot_xem + " · thêm giỏ " + tg + them;
+    o.textContent = "Cửa sổ kết thúc " + d.cua_so_ket_thuc + " · xem " + (d.so_luot_xem ?? 0) + " · thêm giỏ " + tg + them;
   }
 }
 setInterval(thamDo, 5000); thamDo();

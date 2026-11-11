@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -31,6 +31,7 @@ from common.thong_ke import co_mau_can_thiet, ket_luan, ztest_hai_ty_le
 from common.tron import chon_nhom
 from dich_vu.goi_y import goi_y_trang_chu
 from dich_vu.gui_su_kien import GuiBoNho, GuiKafka, thong_diep_click_stream
+from dich_vu import minh_hoa
 from dich_vu.kho_du_lieu import lay_kho
 from dich_vu.phien import BoNhoPhien
 
@@ -64,6 +65,12 @@ def create_app(kho=None, gui=None, phien=None):
     app.mount("/static", StaticFiles(directory=str(THU_MUC / "static")), name="static")
     mau = Jinja2Templates(directory=str(THU_MUC / "templates"))
     mau.env.globals["gia_lap"] = bool(getattr(kho, "la_gia_lap", False))
+    mau.env.filters["gia"] = minh_hoa.dinh_dang_gia
+    goc_danh_muc = getattr(kho, "danh_muc_goc", lambda ma_danh_muc: None)
+
+    def trang_tri(sp):
+        """Thêm ngành hàng, tên hiển thị và ảnh minh họa (RetailRocket ẩn danh, xem dich_vu/minh_hoa.py)."""
+        return dict(sp, **minh_hoa.trang_tri(sp, goc_danh_muc(sp.get("ma_danh_muc"))))
     app.state.kho, app.state.gui, app.state.phien = kho, gui, phien
 
     # ------------------------------------------------------------ nghiệp vụ
@@ -102,7 +109,7 @@ def create_app(kho=None, gui=None, phien=None):
 
     def lam_giau(ds):
         """Gắn thông tin danh mục và giá cho từng gợi ý để hiển thị."""
-        return [dict(g, **{k: v for k, v in kho.san_pham(g["ma_san_pham"]).items() if k != "ma_san_pham"}) for g in ds]
+        return [trang_tri(dict(g, **{k: v for k, v in kho.san_pham(g["ma_san_pham"]).items() if k != "ma_san_pham"})) for g in ds]
 
     def goi_y_va_ghi(ma_nguoi_dung, ghi, nguon_traffic):
         kq = goi_y_trang_chu(ma_nguoi_dung, kho, phien)
@@ -163,11 +170,20 @@ def create_app(kho=None, gui=None, phien=None):
             {
                 "u": u,
                 "mh": mh,
-                "sp": kho.san_pham(ma_san_pham),
+                "sp": trang_tri(kho.san_pham(ma_san_pham)),
                 "lien_quan": lam_giau(kho.lien_quan(ma_san_pham)),
                 "thinh_hanh": kho.thinh_hanh_san_pham(ma_san_pham),
             },
         )
+
+    @app.get("/anh/{ma_san_pham}.svg")
+    def anh_san_pham(ma_san_pham: str):
+        """Ảnh minh họa vẽ tại chỗ theo ngành hàng; không phải ảnh thật của sản phẩm."""
+        goc = goc_danh_muc(kho.san_pham(ma_san_pham).get("ma_danh_muc"))
+        if goc is None:
+            goc = kho.san_pham(ma_san_pham).get("ma_danh_muc")
+        return Response(minh_hoa.anh_svg(ma_san_pham, goc), media_type="image/svg+xml",
+                        headers={"Cache-Control": "public, max-age=86400"})
 
     @app.get("/ab", response_class=HTMLResponse)
     def trang_ab(request: Request):

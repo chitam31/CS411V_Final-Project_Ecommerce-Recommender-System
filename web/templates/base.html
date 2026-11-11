@@ -8,14 +8,20 @@
   <script src="/static/bieu_do.js"></script>
 </head>
 <body>
-<header>
-  <div class="logo">bd03 · Sàn TMĐT giả lập</div>
-  <nav>
-    <a href="/">Trang chủ</a>
-    <a href="/ab">Bảng điều khiển A/B</a>
-    <a href="/mo-hinh">Chất lượng mô hình</a>
-    <a href="/tai-lap">Tái lập thí nghiệm</a>
-  </nav>
+{% set duong = request.url.path if request else "/" %}
+<header class="dau">
+  <div class="dau-trong">
+    <a class="thuong-hieu" href="/">
+      <span class="logo-o">bd03</span>
+      <span class="thuong-hieu-chu">Sàn TMĐT giả lập<small>Hệ khuyến nghị sản phẩm · CS411V</small></span>
+    </a>
+    <nav>
+      <a href="/" class="{{ 'dang-mo' if duong == '/' or duong.startswith('/san-pham') }}">Trang chủ</a>
+      <a href="/ab" class="{{ 'dang-mo' if duong == '/ab' }}">Bảng điều khiển A/B</a>
+      <a href="/mo-hinh" class="{{ 'dang-mo' if duong == '/mo-hinh' }}">Chất lượng mô hình</a>
+      <a href="/tai-lap" class="{{ 'dang-mo' if duong == '/tai-lap' }}">Tái lập thí nghiệm</a>
+    </nav>
+  </div>
 </header>
 {% if gia_lap %}
 <div class="canh-bao">Đang chạy với DỮ LIỆU GIẢ LẬP (WEB_CHE_DO=gia). Số liệu trên trang không phải kết quả thật của đề tài.</div>
@@ -23,6 +29,10 @@
 <main>
 {% block noi_dung %}{% endblock %}
 </main>
-<footer>Đề tài 3 · CS411V Dữ liệu lớn · Trường Đại học Tân Tạo</footer>
+<footer>
+  <div>Đề tài 3 · CS411V Dữ liệu lớn · Trường Đại học Tân Tạo</div>
+  <div class="mo">Dữ liệu RetailRocket đã ẩn danh: tên ngành hàng, tên hiển thị và ảnh sản phẩm là <b>minh họa</b>,
+    gán cố định theo cây danh mục; giá là thuộc tính 790 đã ẩn danh, chỉ có ý nghĩa so sánh.</div>
+</footer>
 </body>
 </html>
