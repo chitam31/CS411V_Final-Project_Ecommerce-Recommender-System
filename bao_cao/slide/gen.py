@@ -437,14 +437,15 @@ slide("v2", tieu_de("Experiment and lakehouse", "Schema evolution and model vers
           ["Coverage", "3.44 %", "<b>3.72 %</b>"],
           ["Distinct items", "4,346", "<b>4,699</b>"],
       ], [40, 25, 35], 28) +
-      '<p style="font-size:26px;line-height:1.4;color:{m}">Manual DAG 1 run, 11 November 06:09–06:52: the gate passed and '
-      'als_v2_r20261110T230924 was deployed. At alpha 10 the gain was the same (+2.3 %).</p>'.format(m=MUTED) +
+      '<p style="font-size:26px;line-height:1.4;color:{m}">11 November: the 02:00 run, woken at 05:22 by our web test clicks, '
+      'deployed v2 at 06:07 on its own; a manual run confirmed it. At alpha 10 the gain was the same (+2.3 %).</p>'.format(m=MUTED) +
       "</div></div>",
       "Week five of the specification asks for a schema change. We added price and star rating to silver with ALTER TABLE, filled "
       "them with MERGE, and built model version 2, which keeps recommendations inside the user’s usual price range. At equal "
       "hyper-parameters version 2 is better on every metric, by about two percent — small next to re-ranking. The first nightly "
       "run kept the old model for a design reason we explain on the operations slide; after the fix the gate compares like with "
-      "like, and the manual run on 11 November deployed version 2.")
+      "like: on 11 November the scheduled run, woken by our own test clicks on the web page, retrained and deployed version 2 without "
+      "anyone touching it.")
 
 # ------------------------------------------------------------------ 21. Vòng khép kín
 slide("loop", tieu_de("Live system and operations", "The closed loop, measured live") +

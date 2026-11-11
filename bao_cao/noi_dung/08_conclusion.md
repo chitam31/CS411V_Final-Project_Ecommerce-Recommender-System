@@ -8,6 +8,7 @@ Against the acceptance criteria, the results on the real dataset are:
 
 - the tuning table covers 27 combinations; the best ALS model reaches NDCG@10 = 0.0680, **+1,237 %** over the best-seller baseline and +43 % over the category baseline;
 - coverage of the model is **3.44 %**, below the 10 % target; the analysis attributes it to popularity bias (99.2 % of slots in the 10 % most popular items) rather than a structural limit, and a novelty re-ranking deployed in production raises NDCG@10 to 0.0865 and coverage to 6.47 % simultaneously;
+- after the schema evolution, the scheduled nightly run deployed model version 2 on its own; the price-range filter raises NDCG@10 from 0.0680 to 0.0694 and coverage from 3.44 % to 3.72 %, a small gain;
 - the simulated A/B test with 350,160 impressions finds that blending 30 % trending items lowers CTR from 2.094 % to 1.978 % (p = 0.015), with no difference in conversion;
 - Z-ORDER reduces the files read by a per-user lookup from 67 to 1.07 and the median latency 8.4 times relative to compaction alone;
 - the reproduction DAG re-ran the selected experiment on Delta version 0 of the feature table with a deviation of 0.000000, after the source tables had evolved.

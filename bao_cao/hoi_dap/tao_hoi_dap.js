@@ -232,7 +232,7 @@ ND.push(y("RAM driver trên master (chạy mọi driver) → chuyển sang clust
 ND.push(y("Một broker Kafka → nhiều broker, nhiều partition; ALS: tăng `numBlocks`, bộ nhớ executor."));
 ND.push(y("Phục vụ: bảng gợi ý đã Z-ORDER; với tải cao hơn, đưa gold sang kho truy vấn khóa–giá trị."));
 ND.push(cau("Mô hình v2 đã được triển khai chưa? Kết quả?"));
-ND.push(y("Đã triển khai: chạy tay DAG 1 sáng 11/11 (06:09–06:52, bỏ qua sensor), mã chạy r20261110T230924."));
+ND.push(y("Đã triển khai, hai lần trong sáng 11/11: lượt theo lịch 02:00 (sensor thấy click thử trên web vào bronze lúc 05:22) triển khai lúc 06:07; lượt chạy tay r20261110T230924 (06:09–06:52) triển khai lại."));
 ND.push(y("Lưới 10 tổ hợp = 9 tổ hợp tối thiểu + cấu hình đang phục vụ (sửa lỗi 23); tốt nhất rank 50, reg 1,0, alpha 40."));
 ND.push(y("NDCG@10 0,0680 = mô hình đang phục vụ → cai_thien = true → ghi_gold MERGE, phiên bản als_v2_r20261110T230924."));
 ND.push(y("v2 so với ALS thuần, cùng mô hình: NDCG@10 0,0680 → 0,0694 (+2,1 %), coverage 3,44 % → 3,72 % (+8 %); ở alpha 10 cũng +2,3 %."));
@@ -242,7 +242,11 @@ ND.push(y("Không: sự kiện phát lại bị khử trùng lặp theo nội du
 ND.push(y("ALS có seed cố định nên cho đúng mô hình cũ: thêm một bằng chứng tái lập độc lập với time travel."));
 ND.push(cau("Sau khi triển khai v2 nhóm phát hiện lỗi gì?"));
 ND.push(y("Lỗi 29: lúc trộn, producer đang dừng nên cửa sổ thịnh hành mới nhất chỉ có 1 sản phẩm → mọi danh sách lưu cùng 1 món thịnh hành."));
-ND.push(y("Sửa: cửa sổ dưới 30 món thì bù bằng top xem 24 giờ; chạy lại tron_goi_y + ghi_gold, không phải huấn luyện lại."));
+ND.push(y("Sửa: cửa sổ dưới 30 món thì bù bằng top xem 24 giờ; chạy lại tron_goi_y + ghi_gold lúc 10:15 (gold phiên bản 14), không phải huấn luyện lại."));
+ND.push(y("Bảng phục vụ v2: 16.001 sản phẩm = 12,7 % item train; ô ALS có 9.237 sản phẩm (v1: 8.612) nhờ lọc giá trên 40 ứng viên đã xếp lại."));
+ND.push(cau("Click trên web có đi qua cả nhánh batch không?"));
+ND.push(y("Có: click đo vòng khép kín lúc 05:22 vào bronze → sensor DAG 1 thấy dữ liệu mới → train, đánh giá, triển khai v2 lúc 06:07, không ai can thiệp."));
+ND.push(y("Vì vậy phép đo 51 giây diễn ra khi cụm đang tuning ALS: là số đo dưới tải batch."));
 
 const doc = new Document({
   creator: "Le Chi Tam",
