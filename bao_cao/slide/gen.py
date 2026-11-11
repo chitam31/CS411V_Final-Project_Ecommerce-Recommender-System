@@ -476,7 +476,7 @@ the = "".join(
         c=CARD, r=RULE, h=H, n=NAVY, t=t, tx=TEXT, m=m, b=BLUE, f=f) for t, m, f in van_de)
 slide("operations", tieu_de("Live system and operations", "Lessons from a shared, constrained cluster") +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 28px">' + the + "</div>" +
-      '<p style="font-size:26px;color:{m}">27 issues found and fixed, each with a regression test — 89 automated tests in total.</p>'.format(m=MUTED),
+      '<p style="font-size:26px;color:{m}">28 issues found and fixed, each with a regression test — 90 automated tests in total.</p>'.format(m=MUTED),
       "A large part of the work was operations. Four examples. A path-MTU black hole on the home network silently dropped large "
       "packets. Cancelling a Spark application through the Master did not stop its client-mode driver, and the zombie collided "
       "with the new stream on the checkpoint. Our nightly deployment gate could never open, because the nightly grid did not "

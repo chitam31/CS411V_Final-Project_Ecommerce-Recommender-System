@@ -174,6 +174,6 @@ The specification asks to explain why `silver.tuong_tac` is not partitioned by `
 
 ### Lineage
 
-@fig:lineage traces every table to the job that writes it and the jobs that read it. Streaming jobs are marked with ⟳. The three tables at the bottom are the ones the web application and the A/B pipeline consume.
+@fig:lineage traces every table to the job that writes it and the jobs that read it; the edges are taken from the read and write calls in `jobs/`. Solid edges carry the main data, dashed edges a secondary read (an attribute, a version or a model). Streaming jobs are marked with ⟳ and shaded. Tables with a heavy outline feed the user-facing blocks of the web application (*For you*, *Trending now*, *Related products*) and the A/B experiment. Two details are easy to miss: the serving model `<run>_phuc_vu` is fitted by `sinh_goi_y_toan_bo` from the parameters recorded by `danh_gia`, not by the tuning job, and `ghi_gold` writes back to `gold.lich_su_huan_luyen` to mark the run as deployed.
 
-![Table-level lineage: jobs (boxes) and tables (cylinders)](hinh/f04_dong_du_lieu.png){#fig:lineage w=11.5 h=22.5}
+![Table-level lineage: jobs (boxes) and tables (cylinders)](hinh/f04_dong_du_lieu.png){#fig:lineage w=16 h=22.5}

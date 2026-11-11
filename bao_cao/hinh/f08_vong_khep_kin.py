@@ -1,7 +1,7 @@
 """Hình: vòng khép kín của web và luồng dữ liệu thí nghiệm A/B."""
 from ve import MAU, So
 
-s = So(7.4, 4.72, y0=-0.1)
+s = So(7.4, 4.97, y0=-0.24)
 s.nhom(0.1, 0.1, 1.42, 4.35, "Browser", MAU["xam"])
 s.hop("home", 0.2, 0.45, 1.22, 1.15, "Home page\n'For you': 10 slots\n+ 'Trending now'\nuser picker,\n'new user' button", MAU["trang"], co=6.5)
 s.hop("prod", 0.2, 1.75, 1.22, 1.0, "Product page\nrelated items\nView · Add to cart\n· Buy buttons", MAU["trang"], co=6.5)
@@ -36,8 +36,8 @@ s.mui("gh", "nk", "e", "w", ta=0.5, tb=0.3); s.mui("mp", "nk", "e", "w", ta=0.5,
 s.mui("nk", "d3", "s", "e", ta=0.4, tb=0.3, cong=-0.2)
 s.mui("d3", "ab", "e", "w")
 # đọc lại bởi web
-s.duong([(6.8, 0.22), (6.8, 0.15), (2.6, 0.15), (2.6, 0.45)], net="--", mau="#8A6D3B")
-s.chu(4.5, 0.08, "web reads the newest trending window and the user's list (≤ 90 s loop for trending)", co=6.0, mau="#8A6D3B")
-s.duong([(6.8, 4.32), (6.8, 4.42), (2.6, 4.42), (2.6, 4.35)], net="--", mau="#8A6D3B")
-s.chu(4.5, 4.49, "dashboard reads ket_qua_ab; reproduction re-reads nhat_ky_hien_thi at the recorded version", co=6.0, mau="#8A6D3B")
+s.duong([(6.8, 0.22), (6.8, -0.02), (3.25, -0.02), (3.25, 0.45)], net="--", mau="#8A6D3B")
+s.chu(5.0, -0.12, "web reads the newest trending window and the user's list (≤ 90 s loop for trending)", co=6.0, mau="#8A6D3B")
+s.duong([(6.8, 4.32), (6.8, 4.53), (3.25, 4.53), (3.25, 4.35)], net="--", mau="#8A6D3B")
+s.chu(5.0, 4.6, "dashboard reads ket_qua_ab; reproduction re-reads nhat_ky_hien_thi at the recorded version", co=6.0, mau="#8A6D3B")
 s.luu("f08_vong_khep_kin.png")

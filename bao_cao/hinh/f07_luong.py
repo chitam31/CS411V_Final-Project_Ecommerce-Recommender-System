@@ -40,7 +40,7 @@ for i, (tieu_de, topic, buoc, dich, mau_dich, ckpt) in enumerate(lanes):
     y += 1.52
 
 # Ngân sách độ trễ của khối thịnh hành
-s.nhom(0.12, y, 7.16, 0.85, "Latency budget of the trending block (acceptance target ≤ 90 s from a click to the updated block)", "#FFFFFF", "#B04A4A", co=7.2)
+s.nhom(0.12, y, 7.16, 0.85, "Latency budget of the trending block (target ≤ 90 s from a click to the updated block; measured 51 s, Section 6.9)", "#FFFFFF", "#8C8C8C", co=7.2)
 doan = [("click → Kafka\n< 1 s", 0.8), ("wait for next trigger\n≤ 20 s", 1.5), ("micro-batch: aggregate\n+ MERGE, ~10–30 s", 2.1), ("web reads newest\nwindow, < 5 s", 1.25), ("margin", 1.2)]
 x = 0.25
 mau = ["#D9E8F8", "#DCF0DC", "#F8E7A1", "#FFF4DE", "#F2F2F2"]

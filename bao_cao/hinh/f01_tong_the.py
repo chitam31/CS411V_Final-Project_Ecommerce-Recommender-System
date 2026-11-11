@@ -40,7 +40,7 @@ s.mui("s2", "gd", "s", "n", ta=0.8, tb=0.25, nhan="upsert windows", vi_tri_nhan=
 s.mui("s3", "gd", "s", "n", ta=0.5, tb=0.8, nhan="upsert", vi_tri_nhan=0.45)
 
 # Tầng 5: batch
-s.nhom(0.15, 6.02, 7.1, 1.25, "5  Batch processing: Spark 3.5.3 + MLlib (nightly, DAG 1 / DAG 3 / DAG 4)", MAU["xam"])
+s.nhom(0.15, 6.02, 7.1, 1.25, "5  Batch processing: Spark 3.5.3 + MLlib (DAG 1 nightly, DAG 3 hourly, DAG 4 nightly)", MAU["xam"])
 bw, by = 1.3, 6.33
 s.hop("b1", 0.27, by, bw, 0.8, "bronze_to_silver\ndedup, bot filter,\nweights 1/3/5", MAU["lo"])
 s.hop("b2", 1.68, by, bw, 0.8, "chuan_bi_ma_tran\ntime split, decay,\nappend-only index", MAU["lo"])

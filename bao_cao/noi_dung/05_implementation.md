@@ -1,6 +1,6 @@
 # Implementation {#sec:impl}
 
-The code base contains about 9,800 lines: 35 PySpark job and library files (4,100 lines), 5 Airflow DAGs with a shared module, a web application of 17 files, the Kafka producers, 19 operational scripts, 14 Docker and Hadoop configuration files and 12 test files (Appendix A). This chapter follows the outline of the pipeline: infrastructure, Spark jobs, orchestration, the web application, the A/B pipeline, reproducibility and testing.
+The code base contains about 9,900 lines: 35 PySpark job and library files (4,100 lines), 5 Airflow DAGs with a shared module, a web application of 17 files, the Kafka producers, 19 operational scripts, 14 Docker and Hadoop configuration files and 12 test files (Appendix A). This chapter follows the outline of the pipeline: infrastructure, Spark jobs, orchestration, the web application, the A/B pipeline, reproducibility and testing.
 
 ## Infrastructure Setup (Docker) {#sec:impl-infra}
 
@@ -112,7 +112,7 @@ Table: Cold-start strategies {#tab:cold-start w=20,48,32}
 
 Trending slots are filled from the most recent window of `gold.thinh_hanh_15p`; when the streaming table does not exist yet, the job falls back to the items most viewed in the last 24 hours of data. At display time the web application replaces trending slots with the newest window, keeping their positions.
 
-**Publishing (`ghi_gold`).** The blended lists are written to `gold.goi_y_nguoi_dung` with a MERGE keyed on (user, rank) instead of overwriting the table: rows of users in the new run are updated or inserted, surplus ranks of those users (when a new list is shorter) are deleted through a `WHEN MATCHED AND s._xoa THEN DELETE` clause, and users absent from the run keep their previous lists. The maintenance DAG removes lists older than seven days. The model version (`als_<run id>` or `als_v2_<run id>`) and the generation time are written with every row.
+**Publishing (`ghi_gold`).** The blended lists are written to `gold.goi_y_nguoi_dung` with a MERGE keyed on (user, rank) instead of overwriting the table: rows of users in the new run are updated or inserted, surplus ranks of those users (when a new list is shorter) are deleted through a `WHEN MATCHED AND s._xoa THEN DELETE` clause, and users absent from the run keep their previous lists. The maintenance DAG removes lists generated more than seven days before the latest deployment, so a user missing from recent runs loses a stale list while the served table never empties (issue 28). The model version (`als_<run id>` or `als_v2_<run id>`) and the generation time are written with every row.
 
 ### Model version 2 and schema evolution {#sec:impl-v2}
 
@@ -167,7 +167,7 @@ Table: Airflow DAGs {#tab:dags w=24,15,61}
 | `kn_pipeline_hang_ngay` | 02:00 daily | Sensor for new bronze data → run id → cleaning, statistics, related products, matrix, tuning, evaluation → branch: generate, blend and publish, or keep the old model and warn. Parameters: grid (`toi_thieu` / `day_du`), minimum interactions |
 | `kn_giam_sat_streaming` | every 15 min | Checks that the trending application is alive and that the trending table has a window ending within the last 15 minutes; if either check fails, restarts the stream and appends a warning |
 | `kn_tinh_ab` | hourly | Reads the Change Data Feed of the impression log, recomputes the affected days, runs the z-tests and writes `gold.ket_qua_ab` with the data version |
-| `kn_bao_tri` | 04:00 daily | Deletes recommendation lists older than 7 days and trending windows older than 2 days, compacts six tables (Z-ORDER where useful), vacuums them |
+| `kn_bao_tri` | 04:00 daily | Deletes recommendation lists generated more than 7 days before the latest deployment and trending windows older than 2 days, compacts six tables (Z-ORDER where useful), vacuums them |
 | `kn_tai_lap` | manual | Takes `phien_ban_delta` (feature version) and `che_do` (selected model or whole grid) from the run configuration, re-runs training and evaluation on that version and compares with the history; fails if the deviation exceeds 10^{−6} |
 
 ![DAGs 2 to 5: stream monitor, hourly A/B, nightly maintenance and reproduction](hinh/f06_dag_khac.png){#fig:dags w=13.5}
@@ -227,7 +227,7 @@ Reproducing an experiment requires the same data, the same code and the same par
 
 ## Testing and Quality Assurance {#sec:impl-test}
 
-The repository contains 89 automated tests (87 run in the standard environment, two are skipped when Airflow is not installed). They run with `pytest` on a real local Spark session, so they exercise the same DataFrame code as the cluster (@tab:tests). Infrastructure scripts are tested by putting fake `ssh`, `docker`, `curl`, `getent` or `ping` commands first on the `PATH` and checking what the scripts do with them.
+The repository contains 90 automated tests (88 run in the standard environment, two are skipped when Airflow is not installed). They run with `pytest` on a real local Spark session, so they exercise the same DataFrame code as the cluster (@tab:tests). Infrastructure scripts are tested by putting fake `ssh`, `docker`, `curl`, `getent` or `ping` commands first on the `PATH` and checking what the scripts do with them.
 
 Table: Automated tests by area {#tab:tests w=27,8,65}
 | Test file | Tests | What is checked |
@@ -239,7 +239,7 @@ Table: Automated tests by area {#tab:tests w=27,8,65}
 | `test_ab_va_tron.py`, `test_thong_ke.py` | 9 | A/B aggregation, z-test and sample size against reference values |
 | `test_streaming.py` | 8 | Event normalisation, windows and watermark, trending score, impression aggregation, one-shot progress summary |
 | `test_web.py` | 8 | Every screen and API in simulated mode, Kafka client stub |
-| `test_xuat_ket_qua.py`, `test_xung_dot_delta.py` | 8 | Result export, pooled A/B, retry on Delta conflicts only |
+| `test_xuat_ket_qua.py`, `test_xung_dot_delta.py` | 9 | Result export, pooled A/B, retry on Delta conflicts only, maintenance keeps the latest deployment |
 | `test_ha_tang.py` | 23 | Table schemas, startup script roles, single-role start and image build, ZeroTier MTU, stream stop that also stops the driver, sensor bypass for manual runs, SSH control and code distribution (including retries), network measurement, resumable first run, data copy and cleanup scripts, Airflow configuration, status script, DAG structure |
 
 Every bug found during development or on the cluster received a regression test before it was fixed; @sec:issues lists them.

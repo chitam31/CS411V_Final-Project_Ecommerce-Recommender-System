@@ -299,21 +299,42 @@ function dongGiua(text, co, them = {}, sau = 120) {
   return new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 0, after: sau, line: 276, lineRule: "auto" },
     children: [new TextRun({ text, font: CHU, size: co, ...them })] });
 }
+// Bìa theo mẫu bìa đồ án của Trường (khung viền đôi dày–mảnh, logo, thông tin nhóm, giảng viên, GitHub).
+// Khung là viền trang của riêng phần bìa, cách vùng chữ 12 pt; lề phần bìa được nới để khung nằm
+// ở vị trí như mẫu (trái 3,2 cm, phải 1,7 cm, trên 3,2 cm, dưới 2,2 cm tính từ mép giấy).
+const BIA_LE = { top: 3.62 * CM, bottom: 2.62 * CM, left: 3.62 * CM, right: 2.12 * CM };
+// thinThickSmallGap = nét mảnh nằm trong nét dày (ECMA-376 17.18.2): nét dày ở ngoài, nét mảnh ở trong như mẫu
+const VIEN_BIA = { style: BorderStyle.THIN_THICK_SMALL_GAP, size: 24, color: "000000", space: 12 };
+const REPO = "https://github.com/chitam31/CS411V_Final-Project_Ecommerce-Recommender-System";
+function dongBia(chuoi, co, them = {}, sau = 200, truoc = 0) {
+  return new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: truoc, after: sau, line: 276, lineRule: "auto" },
+    children: [new TextRun({ text: chuoi, font: CHU, size: co, bold: true, ...them })] });
+}
+const anhLogo = fs.readFileSync(path.join(GOC, "hinh", "logo_ttu.png"));
+const RONG_LOGO = 6.0 * PX_CM;
+function dongThanhVien(stt, ten, ma, sau) {
+  return new Paragraph({ spacing: { before: 0, after: sau, line: 276, lineRule: "auto" }, indent: { left: 0.58 * CM },
+    tabStops: [{ type: TabStopType.LEFT, position: 9.48 * CM }],
+    children: [new TextRun({ text: `Member ${stt}: ${ten}`, font: CHU, size: 26, bold: true }),
+      new TextRun({ text: `\tStudent code: ${ma}`, font: CHU, size: 26, bold: true })] });
+}
 const bia = [
-  dongGiua("TAN TAO UNIVERSITY", 30, { bold: true }, 80),
-  dongGiua("CS411 – BIG DATA", 26, { bold: true }, 60),
-  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 600 }, border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: "1F3864", space: 4 } }, children: [] }),
-  new Paragraph({ spacing: { before: 1200 }, children: [] }),
-  dongGiua("FINAL PROJECT REPORT", 32, { bold: true, color: "1F3864" }, 600),
-  dongGiua("E-COMMERCE PRODUCT", 44, { bold: true }, 0),
-  dongGiua("RECOMMENDER SYSTEM", 44, { bold: true }, 360),
-  dongGiua("ALS collaborative filtering with batch and streaming processing on a Spark–Delta Lake cluster, an A/B test and time-travel reproducibility", 28, { italics: true }, 360),
-  dongGiua("Topic 3 · project code bd03_khuyen_nghi", 26, {}, 2000),
-  dongGiua("Students", 26, { bold: true }, 80),
-  dongGiua("Le Chi Tam – 2302220", 26, {}, 40),
-  dongGiua("Le Nguyen Quoc Anh – 2302283", 26, {}, 480),
-  dongGiua("Lecturer: ..................................................", 26, {}, 2600),
-  dongGiua("November 2026", 26, { bold: true }, 0),
+  dongBia("TAN TAO UNIVERSITY", 28, {}, 240, 480),
+  dongBia("SCHOOL OF INFORMATION TECHNOLOGY", 28, {}, 280),
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 120 },
+    children: [new ImageRun({ type: "png", data: anhLogo, transformation: { width: RONG_LOGO, height: RONG_LOGO * 588 / 798 } })] }),
+  dongBia("Report of Final Project", 26, {}, 220),
+  dongBia("E-COMMERCE PRODUCT RECOMMENDER SYSTEM", 32, {}, 220),
+  dongBia("Course: Big Data (CS411V)", 26, {}, 220),
+  dongBia("Fall 2026", 26, { italics: true }, 900),
+  dongBia("GROUP MEMBER", 26, {}, 240),
+  dongThanhVien(1, "Le Chi Tam", "2302220", 240),
+  dongThanhVien(2, "Le Nguyen Quoc Anh", "2302283", 2400),
+  dongBia("Supervisor: Cao Tien Dung, PhD", 26, {}, 200),
+  new Paragraph({ alignment: AlignmentType.CENTER, spacing: { after: 0, line: 276, lineRule: "auto" }, children: [
+    new TextRun({ text: "Github: ", font: CHU, size: 22, bold: true, italics: true }),
+    new d.ExternalHyperlink({ link: REPO, children: [new TextRun({ text: REPO, font: CHU, size: 21, bold: true, italics: true, color: "0000EE", underline: {} })] }),
+  ] }),
 ];
 
 const tieuDeKhongSo = (t) => new Paragraph({ style: "TieuDeMucLuc", pageBreakBefore: true, children: [new TextRun({ text: t })] });
@@ -381,7 +402,9 @@ const doc = new Document({
       { level: 1, format: LevelFormat.LOWER_LETTER, text: "%2)", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 1134, hanging: 340 } } } }] },
   ] },
   sections: [
-    { properties: { page: trang(1, NumberFormat.DECIMAL) }, children: bia },
+    { properties: { page: { size: { width: RONG_TRANG, height: 29.7 * CM }, margin: { ...BIA_LE, header: 0.9 * CM, footer: 0.9 * CM },
+        borders: { pageBorders: { display: d.PageBorderDisplay.ALL_PAGES, offsetFrom: d.PageBorderOffsetFrom.TEXT },
+          pageBorderTop: VIEN_BIA, pageBorderLeft: VIEN_BIA, pageBorderBottom: VIEN_BIA, pageBorderRight: VIEN_BIA } } }, children: bia },
     { properties: { page: trang(1, NumberFormat.LOWER_ROMAN) }, headers: { default: hdr("E-commerce Product Recommender System – Final Report") }, footers: { default: ftr() }, children: phanDau },
     { properties: { page: trang(1, NumberFormat.DECIMAL) }, headers: { default: hdr("E-commerce Product Recommender System – Final Report") }, footers: { default: ftr() }, children: than },
   ],
