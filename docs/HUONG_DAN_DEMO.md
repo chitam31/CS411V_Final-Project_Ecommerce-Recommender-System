@@ -27,10 +27,10 @@ bash scripts/luong.sh khoi_dong tat_ca    # nếu có luồng không chạy
 Trên máy labsit, bật bộ phát ở tốc độ thật để khối thịnh hành có dữ liệu "sống" trong lúc demo:
 
 ```bash
-python3 producer/phat_lai_su_kien.py --tep ~/du_lieu/retailrocket/events.csv --tu-ngay-ms 1438387200000 --ty-le-nguoi-moi 0
+python3 producer/phat_lai_su_kien.py --tep ~/du_lieu/retailrocket/events.csv --tu-ngay-ms 1438387200000 --ty-le-nguoi-moi 0 --giay-moi-ngay 90
 ```
 
-`1438387200000` là 01/08/2015 (UTC): phát 48 ngày cuối, khoảng 24 phút. Đây là lần phát thứ hai của cùng dữ liệu nên tắt người dùng mới (`--ty-le-nguoi-moi 0`): hạt giống cố định sẽ sinh lại các mã `moi_<n>` trùng với lần đầu nhưng duyệt sản phẩm khác. Các sự kiện gốc bị phát trùng không làm sai silver vì `bronze_to_silver` bỏ trùng theo nội dung trước khi lọc bot (MO_HINH mục 2).
+`1438387200000` là 01/08/2015 (UTC): phát 48 ngày cuối; với `--giay-moi-ngay 90` bộ phát chạy khoảng 72 phút (mặc định 30 giây/ngày chỉ khoảng 24 phút, cửa sổ thịnh hành sẽ vơi trước khi tới phần demo). Ngày bảo vệ: xem thêm `docs/CHUAN_BI_BAO_VE.md`. Đây là lần phát thứ hai của cùng dữ liệu nên tắt người dùng mới (`--ty-le-nguoi-moi 0`): hạt giống cố định sẽ sinh lại các mã `moi_<n>` trùng với lần đầu nhưng duyệt sản phẩm khác. Các sự kiện gốc bị phát trùng không làm sai silver vì `bronze_to_silver` bỏ trùng theo nội dung trước khi lọc bot (MO_HINH mục 2).
 
 Mở sẵn các tab: web (`:8000`), Spark Master (`:8080`), Kafka UI (`10.68.71.204:8080`), Airflow (`:8088`), HDFS (`:9870`).
 
