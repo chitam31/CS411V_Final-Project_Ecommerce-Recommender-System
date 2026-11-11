@@ -38,8 +38,10 @@ from common.als_lib import (
     chia_ky_validation,
     danh_chi_so_bang_indexer_da_luu,
     doc_features,
+    gop_nhan_tren_driver,
     phan_phoi_pho_bien,
     thong_ke_pho_bien,
+    thuc_te_cua,
     thuc_te_tu_su_kien,
     tinh_chi_so,
 )
@@ -145,10 +147,15 @@ def main():
     if ghi_chu.get("ngay_cuoi"):
         test_tho = test_tho.filter(F.col("ngay") <= F.lit(ghi_chu["ngay_cuoi"]).cast("date"))
     val_tho, kt_tho = chia_ky_validation(test_tho, ghi_chu["ngay_cat"], args.so_ngay_val)
-    thuc_te_val = thuc_te_tu_su_kien(danh_chi_so_bang_indexer_da_luu(val_tho), train).cache()
-    thuc_te_kt = thuc_te_tu_su_kien(danh_chi_so_bang_indexer_da_luu(kt_tho), train).cache()
-    nguoi = thuc_te.select("user_idx").union(thuc_te_val.select("user_idx")).union(
-        thuc_te_kt.select("user_idx")).distinct().cache()
+    # Ground truth gom về driver: bảng nhỏ không còn lineage, cache bị đẩy ra cũng không phải đọc lại silver.
+    nhan = gop_nhan_tren_driver(spark, {
+        "thang": thuc_te,
+        "val": thuc_te_tu_su_kien(danh_chi_so_bang_indexer_da_luu(val_tho), train),
+        "kt": thuc_te_tu_su_kien(danh_chi_so_bang_indexer_da_luu(kt_tho), train),
+    }).cache()
+    thuc_te = thuc_te_cua(nhan, "thang").cache()
+    thuc_te_val, thuc_te_kt = thuc_te_cua(nhan, "val").cache(), thuc_te_cua(nhan, "kt").cache()
+    nguoi = nhan.select("user_idx").cache()
 
     pho_bien = thong_ke_pho_bien(train).cache()
     so_item = pho_bien.count()
@@ -175,13 +182,17 @@ def main():
         phuc_vu = [int(i) for i in xep_lai_novelty(ds, nov_bc.value, beta, 3 * K)]
         c = [int(i) for i in (r["ds_c"] or [])]
         d = [int(i) for i in (r["ds_d"] or [])]
-        return [(r["user_idx"], "{}_{}".format(qc, qd), ghep_danh_sach(phuc_vu, c, d, qc, qd))
+        return [(r["user_idx"], "{}_{}".format(qc, qd), ghep_danh_sach(phuc_vu, c, d, qc, qd), bool(c))
                 for qc, qd in CAU_HINH]
 
-    tat_ca = spark.createDataFrame(gop.rdd.flatMap(dung), "user_idx int, cau_hinh string, ds array<int>").cache()
-    co_dong_xuat = tat_ca.filter(F.col("cau_hinh") == "0_0").join(dong_xuat, "user_idx").count()
+    # Tính ba nguồn MỘT lần (đồng xuất hiện là phép tự nối nặng nhất), thu danh sách về driver rồi
+    # tạo lại bảng không còn lineage: các lần đo sau không bao giờ phải tính lại ba nguồn.
+    dong_tat_ca = gop.rdd.flatMap(dung).collect()
+    co_dong_xuat = sum(1 for u, cau_hinh, _, co in dong_tat_ca if cau_hinh == "0_0" and co)
+    tat_ca = spark.createDataFrame([(u, h, ds) for u, h, ds, _ in dong_tat_ca],
+                                   "user_idx int, cau_hinh string, ds array<int>").cache()
     print("[ung_vien] {} user, {} user có ứng viên đồng xuất hiện ({:.1f} phút)".format(
-        nguoi.count(), co_dong_xuat, (time.time() - t0) / 60.0), flush=True)
+        len(dong_tat_ca) // len(CAU_HINH), co_dong_xuat, (time.time() - t0) / 60.0), flush=True)
 
     nguoi_val = thuc_te_val.select("user_idx")
     dong = []

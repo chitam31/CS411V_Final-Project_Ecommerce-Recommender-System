@@ -145,3 +145,29 @@ def test_ung_vien_dong_xuat_hien_chi_tu_train(spark, lake_tam):
     ds = {r["user_idx"]: {nhan[i] for i in r["ds_c"]} for r in kq.collect()}
     assert len(ds) == 3
     assert all(v == {"sp1", "sp2"} for v in ds.values())   # chỉ cặp có ≥ 2 người; sp5 (tháng test) không xuất hiện
+
+
+# ---- bản nhanh 11/11: ground truth không còn lineage, nhiều kỳ trong một lượt
+from common.als_lib import chi_so_nhieu_ky, gop_nhan_tren_driver, thuc_te_cua  # noqa: E402
+from kiem_tra.tuning_validation import doc_danh_sach  # noqa: E402
+
+
+def test_nhieu_ky_mot_luot_trung_tung_ky(spark):
+    a = spark.createDataFrame([(1, [3, 4]), (2, [9]), (3, [1])], "user_idx int, thuc_te array<int>")
+    b = spark.createDataFrame([(1, [1]), (4, [2])], "user_idx int, thuc_te array<int>")
+    nhan = gop_nhan_tren_driver(spark, {"a": a, "b": b})
+    assert nhan.count() == 4
+    assert {r["user_idx"]: list(r["thuc_te"]) for r in thuc_te_cua(nhan, "b").collect()} == {1: [1], 4: [2]}
+    ds = spark.createDataFrame([(1, [4, 1, 3]), (2, [1, 2]), (4, [7])], "user_idx int, ds array<int>")
+    gop = chi_so_nhieu_ky(ds, nhan, ["a", "b"], 10)
+    for ten, df in (("a", a), ("b", b)):
+        rieng = chi_so_xep_hang(ds, df, 10)
+        for khoa in ("precision_at_10", "recall_at_10", "ndcg_at_10", "map_at_10", "so_nguoi_danh_gia"):
+            assert gop[ten][khoa] == pytest.approx(rieng[khoa])
+
+
+def test_luoi_thu_hep_giu_thu_tu():
+    luoi = luoi_day_du(doc_danh_sach("30,50", int), doc_danh_sach("", float), doc_danh_sach("10,40", float))
+    assert len(luoi) == 12
+    assert luoi[0] == {"rank": 30, "regParam": 0.01, "alpha": 10.0}
+    assert luoi[-1] == {"rank": 50, "regParam": 1.0, "alpha": 40.0}

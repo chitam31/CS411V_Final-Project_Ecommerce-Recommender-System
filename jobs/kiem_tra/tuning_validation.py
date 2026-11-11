@@ -13,6 +13,9 @@ tháng test, nên số tuyệt đối hơi lạc quan. Job này làm lại đún
 Chỉ đọc: không ghi bảng, không lưu mô hình, không nối nhãn vào indexer.
 
     ssh labsoe-11 "cd ~/bd03_khuyen_nghi && tmux new -d -s val 'bash ha_tang/spark/submit.sh als kiem_tra/tuning_validation.py 2>/dev/null > ~/tuning_validation.md'"
+
+Lần chạy 11/11 thu hẹp còn 12 tổ hợp vì thời gian (rank 10 và alpha 1 đã kém xa ở cả validation):
+    ... kiem_tra/tuning_validation.py --cac-rank 30,50 --cac-alpha 10,40 ...
 """
 import argparse
 import itertools
@@ -28,12 +31,15 @@ from common.als_lib import (
     bang_danh_muc_item,
     baseline_danh_muc,
     baseline_toan_san,
+    chi_so_nhieu_ky,
     chi_so_xep_hang,
     chia_ky_validation,
     danh_chi_so_bang_indexer_da_luu,
     doc_features,
+    gop_nhan_tren_driver,
     tao_als,
     thong_ke_pho_bien,
+    thuc_te_cua,
     thuc_te_tu_su_kien,
     tinh_chi_so,
 )
@@ -44,13 +50,20 @@ K = ch.K_DANH_GIA
 NDCG = "ndcg_at_{}".format(K)
 
 
-def luoi_day_du():
-    """Đúng 27 tổ hợp và đúng thứ tự của huan_luyen_als.py --luoi day_du."""
+def luoi_day_du(cac_rank=None, cac_reg=None, cac_alpha=None):
+    """Mặc định đúng 27 tổ hợp và đúng thứ tự của huan_luyen_als.py --luoi day_du; có thể thu hẹp
+    từng trục (giữ nguyên thứ tự)."""
     luoi = ch.LUOI_DAY_DU
     return [
         {"rank": r, "regParam": g, "alpha": a}
-        for r, g, a in itertools.product(luoi["rank"], luoi["regParam"], luoi["alpha"])
+        for r, g, a in itertools.product(cac_rank or luoi["rank"], cac_reg or luoi["regParam"],
+                                         cac_alpha or luoi["alpha"])
     ]
+
+
+def doc_danh_sach(chuoi, kieu):
+    """'30,50' -> [30, 50]; chuỗi rỗng -> None (dùng giá trị mặc định của lưới)."""
+    return [kieu(x) for x in chuoi.split(",") if x.strip()] if chuoi else None
 
 
 def chon_theo(cac_dong, khoa):
@@ -80,6 +93,9 @@ def main():
     ap.add_argument("--max-iter", type=int, default=10)
     ap.add_argument("--cac-beta", default="0,0.25,0.5,1.0,1.5,2.0")
     ap.add_argument("--so-ung-vien", type=int, default=ch.SO_UNG_VIEN_XEP_LAI)
+    ap.add_argument("--cac-rank", default="", help="Thu hẹp lưới, ví dụ 30,50")
+    ap.add_argument("--cac-reg", default="")
+    ap.add_argument("--cac-alpha", default="", help="Ví dụ 10,40")
     args = ap.parse_args()
     bat_dau_job = time.time()
 
@@ -95,39 +111,48 @@ def main():
     if ghi_chu.get("ngay_cuoi"):
         test_tho = test_tho.filter(F.col("ngay") <= F.lit(ghi_chu["ngay_cuoi"]).cast("date"))
     val_tho, kt_tho = chia_ky_validation(test_tho, ghi_chu["ngay_cat"], args.so_ngay_val)
-    thuc_te_val = thuc_te_tu_su_kien(danh_chi_so_bang_indexer_da_luu(val_tho), train).cache()
-    thuc_te_kt = thuc_te_tu_su_kien(danh_chi_so_bang_indexer_da_luu(kt_tho), train).cache()
-    thuc_te_thang = thuc_te_thang.cache()
-    nguoi = thuc_te_thang.select("user_idx").union(thuc_te_val.select("user_idx")).union(
-        thuc_te_kt.select("user_idx")).distinct().cache()
+    # Ba bộ ground truth gom về driver thành một bảng nhỏ không còn lineage (gop_nhan_tren_driver).
+    nhan = gop_nhan_tren_driver(spark, {
+        "thang": thuc_te_thang,
+        "val": thuc_te_tu_su_kien(danh_chi_so_bang_indexer_da_luu(val_tho), train),
+        "kt": thuc_te_tu_su_kien(danh_chi_so_bang_indexer_da_luu(kt_tho), train),
+    }).cache()
+    thuc_te_val, thuc_te_kt = thuc_te_cua(nhan, "val").cache(), thuc_te_cua(nhan, "kt").cache()
+    nguoi = nhan.select("user_idx").cache()
 
     pho_bien = thong_ke_pho_bien(train).cache()
     so_item = pho_bien.count()
     so_nguoi_train = train.select("user_idx").distinct().count()
+    dem = nhan.select(
+        F.count(F.col("thang")).alias("thang"), F.count(F.col("val")).alias("val"), F.count(F.col("kt")).alias("kt"),
+        F.sum((F.col("val").isNotNull() & F.col("kt").isNotNull()).cast("int")).alias("ca_hai"),
+    ).first()
     quy_mo = {
         "phien_ban_features": phien_ban,
         "phien_ban_silver": ghi_chu["phien_ban_silver"],
         "ngay_cat": ghi_chu["ngay_cat"],
         "ngay_cuoi": ghi_chu.get("ngay_cuoi"),
         "so_ngay_val": args.so_ngay_val,
-        "so_user_ca_thang": thuc_te_thang.count(),
-        "so_user_val": thuc_te_val.count(),
-        "so_user_kiem_tra": thuc_te_kt.count(),
-        "so_user_ca_hai_ky": thuc_te_val.join(thuc_te_kt.select("user_idx"), "user_idx").count(),
+        "so_user_ca_thang": int(dem["thang"]),
+        "so_user_val": int(dem["val"]),
+        "so_user_kiem_tra": int(dem["kt"]),
+        "so_user_ca_hai_ky": int(dem["ca_hai"]),
         "so_item_train": so_item,
     }
     print("[val] quy mô: " + json.dumps(quy_mo, ensure_ascii=False), flush=True)
 
-    # 1. Lưới 27 tổ hợp: một mô hình, một lần sinh top-10, ba bộ ground truth.
+    # 1. Lưới (mặc định 27 tổ hợp): một mô hình, một lần sinh top-10, ba bộ ground truth trong một lượt.
     dong = []
     mo_hinh_chon, dong_chon = None, None
-    for tham_so in luoi_day_du():
+    luoi = luoi_day_du(doc_danh_sach(args.cac_rank, int), doc_danh_sach(args.cac_reg, float),
+                       doc_danh_sach(args.cac_alpha, float))
+    quy_mo["so_to_hop"] = len(luoi)
+    for tham_so in luoi:
         t0 = time.time()
         mo_hinh = tao_als(tham_so, args.max_iter, ch.HAT_GIONG).fit(train)
         ds = _danh_sach_tu_khuyen_nghi(mo_hinh.recommendForUserSubset(nguoi, K)).cache()
-        m_val = chi_so_xep_hang(ds, thuc_te_val, K)
-        m_kt = chi_so_xep_hang(ds, thuc_te_kt, K)
-        m_thang = chi_so_xep_hang(ds, thuc_te_thang, K)
+        m = chi_so_nhieu_ky(ds, nhan, ["val", "kt", "thang"], K)
+        m_val, m_kt, m_thang = m["val"], m["kt"], m["thang"]
         ds.unpersist()
         d = {
             "rank": int(tham_so["rank"]), "reg_param": float(tham_so["regParam"]), "alpha": float(tham_so["alpha"]),
@@ -173,8 +198,8 @@ def main():
 
     # 4. Bảng Markdown.
     print()
-    print("## Tuning trên kỳ validation riêng — features v{}, validation {} ngày đầu của tháng test".format(
-        phien_ban, args.so_ngay_val))
+    print("## Tuning trên kỳ validation riêng — features v{}, validation {} ngày đầu của tháng test, {} tổ hợp".format(
+        phien_ban, args.so_ngay_val, len(luoi)))
     print()
     print("| Kỳ | User |")
     print("|---|---|")

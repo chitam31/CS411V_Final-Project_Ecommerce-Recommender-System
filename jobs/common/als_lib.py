@@ -551,3 +551,48 @@ def danh_chi_so_bang_indexer_da_luu(su_kien):
         idx_item.transform(idx_user.transform(df))
         .select(F.col("user_idx").cast("int").alias("user_idx"), F.col("item_idx").cast("int").alias("item_idx"))
     )
+
+
+def gop_nhan_tren_driver(spark, cac_bang):
+    """cac_bang: {ten_cot: DataFrame (user_idx, thuc_te)}. Thu về driver rồi tạo lại MỘT bảng nhỏ
+    (user_idx, <ten_cot> array<int> ...; null nếu user không có mặt ở kỳ đó) KHÔNG còn lineage.
+
+    Lý do (lần chạy 11/11): ground truth dựng từ silver rất nhỏ (khoảng 9.500 user) nhưng có lineage
+    dài (đọc silver từ HDFS, StringIndexer, join). Khi ALS chiếm gần hết bộ nhớ executor, bản cache bị
+    đẩy ra và Spark tính lại từ HDFS ở mỗi lần đo, làm mỗi tổ hợp chậm 5-6 lần.
+    """
+    gop = {}
+    for ten, df in cac_bang.items():
+        for r in df.collect():
+            gop.setdefault(int(r["user_idx"]), {})[ten] = [int(i) for i in r["thuc_te"]]
+    ten_cot = list(cac_bang)
+    luoc_do = "user_idx int, " + ", ".join("{} array<int>".format(t) for t in ten_cot)
+    dong = [tuple([u] + [v.get(t) for t in ten_cot]) for u, v in sorted(gop.items())]
+    return spark.createDataFrame(dong, luoc_do)
+
+
+def thuc_te_cua(nhan, ten_cot):
+    """Lấy một bộ ground truth (user_idx, thuc_te) từ bảng gop_nhan_tren_driver."""
+    return nhan.filter(F.col(ten_cot).isNotNull()).select("user_idx", F.col(ten_cot).alias("thuc_te"))
+
+
+def chi_so_nhieu_ky(ds_goi_y, nhan, cac_cot, k=ch.K_DANH_GIA):
+    """4 metric xếp hạng cho nhiều bộ ground truth trong MỘT lượt duyệt.
+
+    nhan: bảng của gop_nhan_tren_driver. User không có mặt ở một kỳ (null) không được tính cho kỳ
+    đó; user có mặt mà không có gợi ý được tính với điểm 0, như tinh_chi_so.
+    """
+    cot = list(cac_cot)
+    rong = tuple((0.0, 0.0, 0.0, 0.0, 0) for _ in cot)
+
+    def mot(r):
+        ds = list(r["ds"]) if r["ds"] is not None else []
+        return tuple(
+            chi_so_mot_nguoi(ds, list(r[c]), k) if r[c] is not None else (0.0, 0.0, 0.0, 0.0, 0) for c in cot
+        )
+
+    def cong(a, b):
+        return tuple(cong_chi_so(x, y) for x, y in zip(a, b))
+
+    tong = nhan.join(ds_goi_y, "user_idx", "left").rdd.map(mot).fold(rong, cong)
+    return {c: trung_binh_chi_so(t, k) for c, t in zip(cot, tong)}
