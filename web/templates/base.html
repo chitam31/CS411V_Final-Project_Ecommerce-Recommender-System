@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block tieu_de %}bd03 - Hệ khuyến nghị{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/bieu_do.js"></script>
+  <link rel="stylesheet" href="/static/style.css?v={{ phien_ban_tinh }}">
+  <script src="/static/bieu_do.js?v={{ phien_ban_tinh }}"></script>
 </head>
 <body>
 {% set duong = request.url.path if request else "/" %}

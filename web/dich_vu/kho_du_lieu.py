@@ -57,11 +57,19 @@ def _sang_json(gia_tri):
 
 
 def goc_cua(ma, cha, toi_da=20):
-    """Đi ngược cây danh mục tới gốc; chặn vòng lặp nếu dữ liệu cha-con lỗi."""
-    buoc = 0
-    while cha.get(ma) not in (None, "") and buoc < toi_da:
-        ma, buoc = cha[ma], buoc + 1
-    return ma
+    """Danh mục cấp 2 (con trực tiếp của gốc) chứa `ma`; `ma` là gốc thì trả chính nó.
+
+    Lấy cấp 2 thay vì gốc vì RetailRocket chỉ có khoảng 25 gốc và phần lớn sản phẩm nằm dưới
+    vài gốc: gán theo gốc thì gần như mọi thẻ cùng một ngành hàng minh họa. Chặn vòng lặp nếu
+    dữ liệu cha-con lỗi.
+    """
+    duong = [ma]
+    while cha.get(duong[-1]) not in (None, "") and len(duong) <= toi_da:
+        tiep = cha[duong[-1]]
+        if tiep in duong:
+            break
+        duong.append(tiep)
+    return duong[-2] if len(duong) >= 2 else duong[-1]
 
 
 def _dong(r):
@@ -178,7 +186,7 @@ class KhoDelta:
         return self._danh_muc_san_pham().get(str(ma_san_pham), {"ma_san_pham": str(ma_san_pham)})
 
     def _cay_danh_muc(self):
-        """ma_danh_muc -> danh mục gốc, từ category_tree.csv của RetailRocket (chỉ dùng để hiển thị)."""
+        """ma_danh_muc -> danh mục cấp 2, từ category_tree.csv của RetailRocket (chỉ dùng để hiển thị)."""
         from common import cau_hinh as ch
 
         def tinh():

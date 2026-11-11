@@ -13,6 +13,7 @@ Biến môi trường:
   WEB_CHE_DO = delta (mặc định, đọc cụm thật) | gia (dữ liệu giả lập, không cần cụm)
   WEB_KAFKA  = bat (mặc định ở chế độ delta) | tat (chỉ ghi log, dùng khi thử giao diện)
 """
+import hashlib
 import logging
 import os
 import time
@@ -66,6 +67,10 @@ def create_app(kho=None, gui=None, phien=None):
     mau = Jinja2Templates(directory=str(THU_MUC / "templates"))
     mau.env.globals["gia_lap"] = bool(getattr(kho, "la_gia_lap", False))
     mau.env.filters["gia"] = minh_hoa.dinh_dang_gia
+    # Phiên bản tệp tĩnh = băm nội dung: trình duyệt đã lưu bản CSS cũ vẫn tải bản mới sau khi cập nhật.
+    mau.env.globals["phien_ban_tinh"] = hashlib.md5(
+        b"".join((THU_MUC / "static" / t).read_bytes() for t in ("style.css", "bieu_do.js"))
+    ).hexdigest()[:8]
     goc_danh_muc = getattr(kho, "danh_muc_goc", lambda ma_danh_muc: None)
 
     def trang_tri(sp):

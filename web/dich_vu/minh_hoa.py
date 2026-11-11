@@ -1,8 +1,8 @@
 """Lớp hiển thị minh họa cho sản phẩm (tên ngành hàng, tên hiển thị, ảnh SVG).
 
 RetailRocket đã ẩn danh: không có tên sản phẩm, không có ảnh, danh mục chỉ là mã số và các
-thuộc tính khác đã băm. Để giao diện trông như một sàn TMĐT, mỗi DANH MỤC GỐC trong cây danh
-mục được gán cố định một ngành hàng minh họa (điện thoại, thời trang...), và mỗi sản phẩm có
+thuộc tính khác đã băm. Để giao diện trông như một sàn TMĐT, mỗi danh mục CẤP 2 trong cây danh
+mục (con trực tiếp của một gốc) được gán cố định một ngành hàng minh họa (điện thoại, thời trang...), và mỗi sản phẩm có
 ảnh SVG vẽ tại chỗ theo ngành hàng của nó. Mọi thứ ở đây chỉ để trình bày:
   - không đi vào bất kỳ bảng dữ liệu, mô hình hay số đo nào;
   - tất định (cùng mã -> cùng ngành hàng, cùng ảnh), không cần Internet;

@@ -110,19 +110,21 @@ def test_anh_minh_hoa_va_ghi_chu(web):
     assert "ảnh minh họa" in r.text and r.text == c.get("/anh/sp3.svg").text
     trang = c.get("/?u=u_als_1").text
     assert "/anh/" in trang and "minh họa" in trang
+    assert "/static/style.css?v=" in trang                 # trình duyệt không dùng lại CSS cũ sau khi cập nhật
     sp = c.get("/san-pham/sp3").text
     assert "/anh/sp3.svg" in sp
 
 
-def test_nganh_hang_theo_danh_muc_goc():
+def test_nganh_hang_theo_danh_muc_cap_2():
     from dich_vu import minh_hoa
     from dich_vu.kho_du_lieu import goc_cua
 
-    cha = {"5": "2", "2": "1", "1": "", "9": "9x", "9x": "9"}   # 9 <-> 9x là vòng lặp lỗi
-    assert goc_cua("5", cha) == "1" and goc_cua("1", cha) == "1"
-    assert goc_cua("9", cha) in ("9", "9x")                       # không treo khi cây có vòng
+    cha = {"5": "2", "2": "1", "1": "", "7": "1", "9": "9x", "9x": "9"}   # 9 <-> 9x là vòng lặp lỗi
+    assert goc_cua("5", cha) == "2" and goc_cua("2", cha) == "2"   # cấp 2: con trực tiếp của gốc 1
+    assert goc_cua("7", cha) == "7" and goc_cua("1", cha) == "1"
+    assert goc_cua("9", cha) in ("9", "9x")                         # không treo khi cây có vòng
     a, b = minh_hoa.trang_tri({"ma_san_pham": "1", "ma_danh_muc": "5"}, "1"), minh_hoa.trang_tri({"ma_san_pham": "2"}, "1")
-    assert a["nganh"] == b["nganh"]                               # cùng danh mục gốc -> cùng ngành hàng
+    assert a["nganh"] == b["nganh"]                               # cùng danh mục cấp 2 -> cùng ngành hàng
     assert a["ten_hien_thi"].endswith(" 1") and a["anh"] == "/anh/1.svg"
     assert minh_hoa.dinh_dang_gia(479880.0) == "479.880 ₫" and minh_hoa.dinh_dang_gia(None) is None
     import xml.etree.ElementTree as ET
