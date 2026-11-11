@@ -53,7 +53,7 @@ cb.ax.tick_params(direction="in", width=0.5)
 fig.savefig("c01_tuning.png"); plt.close(fig)
 
 # ---------------------------------------------------------------- C2 phương pháp
-ten = ["Baseline 1", "Baseline 2", "ALS", "Re-rank\nβ 0.1", "Re-rank\nβ 0.3", "Served\nβ 1.0, 200"]
+ten = ["Global\nbest-sellers", "Category\nbest-sellers", "ALS", "Re-rank\nβ 0.1", "Re-rank\nβ 0.3", "Served\nβ 1.0, 200"]
 nd = [0.0051, 0.0475, 0.0680, 0.0702, 0.0746, 0.0865]
 cov = [0.01, 5.28, 3.44, 3.65, 4.14, 6.47]
 fig, (a1, a2) = plt.subplots(1, 2, figsize=(7.2, 2.7))
@@ -72,8 +72,8 @@ fig.tight_layout(); fig.savefig("c02_phuong_phap.png"); plt.close(fig)
 
 # ---------------------------------------------------------------- C3 phân phối độ phổ biến
 nhom = ["N1 (top 10 %)", "N2", "N3", "N4", "N5–N10"]
-dl = {"Baseline 1": [100, 0, 0, 0, 0], "Baseline 2": [86.5, 8.1, 2.6, 1.3, 1.4], "ALS": [99.2, 0.6, 0.1, 0.0, 0.1],
-      "ALS + re-rank β = 0.3": [98.3, 1.3, 0.2, 0.1, 0.1], "Served (β = 1.0, 200)": [80.8, 11.2, 4.3, 2.0, 1.9]}
+dl = {"Global best-sellers": [100, 0, 0, 0, 0], "Category best-sellers": [86.5, 8.1, 2.6, 1.3, 1.4], "ALS": [99.2, 0.6, 0.1, 0.0, 0.1],
+      "ALS + re-rank β = 0.3": [98.3, 1.3, 0.2, 0.1, 0.1], "Served (β = 1.0, 200 cand.)": [80.8, 11.2, 4.3, 2.0, 1.9]}
 mau_n = ["#2B4466", "#5B7FA6", "#B3C6DB", "#E6C9A8", "#B07A45"]
 fig, ax = plt.subplots(figsize=(7.2, 2.4))
 y = np.arange(len(dl))[::-1]
@@ -82,10 +82,13 @@ for k, n in enumerate(nhom):
     v = np.array([dl[m][k] for m in dl])
     ax.barh(y, v, left=trai, color=mau_n[k], label=n, height=0.58, **VIEN)
     trai += v
-ax.set_yticks(y, list(dl.keys())); ax.set_xlim(0, 100); ax.set_xlabel("share of recommendation slots (%)")
-ax.set_xlim(60, 100); ax.grid(True, axis="x"); ax.grid(axis="y", visible=False)
+for yi, m in zip(y, dl):
+    ax.text(2, yi, "N1 %.1f %%" % dl[m][0], ha="left", va="center", fontsize=6.6, color="white")
+ax.set_yticks(y, list(dl.keys())); ax.set_xlim(0, 100); ax.set_xticks(range(0, 101, 10))
+ax.set_xlabel("Share of recommendation slots (%), test month, 9,467 users × 10 slots")
+ax.grid(True, axis="x"); ax.grid(axis="y", visible=False)
 ax.legend(ncol=5, fontsize=6.8, loc="upper center", bbox_to_anchor=(0.5, 1.2), frameon=False,
-          title="popularity decile of the recommended item (train)", title_fontsize=6.8)
+          title="Popularity decile of the recommended item (training interactions)", title_fontsize=6.8)
 fig.savefig("c03_pho_bien.png"); plt.close(fig)
 
 # ---------------------------------------------------------------- C4 xếp lại
@@ -98,7 +101,7 @@ for b, c, n in d50:
     ax.annotate(r"$\beta$=%s" % b, (c, n), textcoords="offset points", xytext=(-4, 7), fontsize=6.6, color=XANH)
 for b, c, n in d200:
     ax.annotate(r"$\beta$=%s" % b, (c, n), textcoords="offset points", xytext=(5, -10), fontsize=6.6, color=CAM)
-ax.scatter([5.28], [0.0475], marker="^", color=XAM, edgecolor="#1F1F1F", linewidth=0.5, zorder=3); ax.annotate("Baseline 2", (5.28, 0.0475), xytext=(6, -3), textcoords="offset points", fontsize=6.6, color="#555555")
+ax.scatter([5.28], [0.0475], marker="^", color=XAM, edgecolor="#1F1F1F", linewidth=0.5, zorder=3); ax.annotate("Category best-sellers", (5.28, 0.0475), xytext=(6, -3), textcoords="offset points", fontsize=6.6, color="#555555")
 ax.axvline(10, color=DO, ls="--", lw=0.8)
 ax.annotate("served configuration", (6.47, 0.0865), xytext=(7.4, 0.090), fontsize=6.8, arrowprops=dict(arrowstyle="->", color="#333333", lw=0.6))
 ax.grid(True, axis="both")
@@ -116,8 +119,8 @@ ax.bar(x - 0.18, med, 0.36, color=XANH, label="median", **VIEN); ax.bar(x + 0.18
 for i in range(3):
     ax.text(x[i] - 0.18, med[i] + 250, "{:,}".format(med[i]), ha="center", fontsize=6.6)
     ax.text(x[i], max(med[i], p95[i]) + 1300, "files read / query: %s" % doc[i], ha="center", fontsize=6.8, color=DO, fontstyle="italic")
-ax.set_xticks(x, gd, fontsize=7); ax.set_ylabel("latency of WHERE ma_nguoi_dung = ? (ms)"); ax.set_ylim(0, 16500)
-ax.legend(frameon=False, fontsize=7)
+ax.set_xticks(x, gd, fontsize=7); ax.set_ylabel("Per-user lookup latency (ms)"); ax.set_ylim(0, 16500)
+ax.legend(frameon=False, fontsize=7, title="30 lookups per phase", title_fontsize=6.8)
 fig.savefig("c05_zorder.png"); plt.close(fig)
 
 # ---------------------------------------------------------------- C6 A/B

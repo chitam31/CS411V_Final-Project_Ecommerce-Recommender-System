@@ -225,7 +225,7 @@ Reproducing an experiment requires the same data, the same code and the same par
 
 **Reproducing an A/B result.** The reproduction screen and `tai_lap_ab` read the impression log at the recorded version, re-run the aggregation function and compare each figure. Because the computation uses integers and deterministic formulas, the tolerance is zero.
 
-![Reproduction of an experiment with Delta time travel](hinh/f09_tai_lap.png){#fig:repro w=15.8}
+![Reproduction of an experiment with Delta time travel: first run on feature version 0 (10 November) and second run on version 3, the deployed model (11 November)](hinh/f09_tai_lap.png){#fig:repro w=15.8}
 
 ## Testing and Quality Assurance {#sec:impl-test}
 

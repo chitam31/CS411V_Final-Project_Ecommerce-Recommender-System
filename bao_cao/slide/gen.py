@@ -10,23 +10,26 @@ os.makedirs(SL, exist_ok=True)
 NAVY, BG, BG2, CARD = "#14213D", "#F5F6F1", "#ECEEE6", "#FFFFFF"
 TEXT, MUTED, RULE = "#3D4A5C", "#5F6B7A", "#D5D9CF"
 BLUE, ORANGE, LIGHT_ACC = "#2459B8", "#A84F17", "#F2B66D"
-H = "'Space Grotesk', Arial, sans-serif"
-B = "'Inter', Arial, sans-serif"
-M = "'JetBrains Mono', 'Courier New', monospace"
+# Toàn bộ chữ: Times New Roman (máy Windows/macOS có sẵn); Tinos là bản Google Fonts cùng số đo
+# với Times New Roman, dùng khi máy xem không có phông này (Linux, Android, máy xuất PDF).
+TNR = "'Times New Roman', Tinos, 'Liberation Serif', Times, serif"
+H = TNR
+B = TNR
+M = TNR
 
 IMG = {
     "f01": ("/_blob/5807210ab9c71362f7d43d5e8dd511be", 1628, 1925),
     "f02": ("/_blob/ff6573d391bfb069f723415b18362184", 1628, 1441),
     "f05": ("/_blob/120ea4c480587c322c3dcfc213e0f453", 1483, 2008),
-    "f07": ("/_blob/f28a1230c770a0309e9c061f5291c72c", 1628, 1236),
+    "f07": ("/_blob/c64fe601fb2a36297d353738487a95d0", 1628, 1236),
     "f08": ("/_blob/d17892dd9199bb8f763ec85dfc96cf0f", 1628, 1093),
-    "f09": ("/_blob/ef2c090e073d9141da70253e6a935b5c", 1628, 825),
+    "f09": ("/_blob/114cc39769643df28317170ea46747f0", 1628, 869),
     "f11": ("/_blob/e33199683bf89ad3ed4f8732d2a60661", 1628, 627),
     "c01": ("/_blob/6266735f8573dfcd064d95ee07eea21e", 1245, 416),
-    "c02": ("/_blob/d8af71f0c1354d4d089b744886186a23", 1544, 554),
-    "c03": ("/_blob/96cb971f6b7a92dc76b5e7e42e46fe07", 1473, 556),
-    "c04": ("/_blob/66015142357b19e4b684e7336447b0f5", 1155, 587),
-    "c05": ("/_blob/e52851c509d2c261899e1de36eae5fa7", 1173, 510),
+    "c02": ("/_blob/1a258cce1bb3e59bf36cbfc51b468be9", 1544, 554),
+    "c03": ("/_blob/325d1f7b04c970b2a81b724420adbe30", 1518, 556),
+    "c04": ("/_blob/1886afdf8cd02a584da0da51f0fa37e5", 1155, 587),
+    "c05": ("/_blob/47e311cafa7c3bad8c762db91cbc7d80", 1172, 509),
     "s01": ("/_blob/d74fa9afdacef1c40c17f19df041f67c", 1350, 1034),
     "s03": ("/_blob/47ac9f5a98784585209076b04e959092", 1350, 870),
     "eq_als": ("/_blob/4576264a7d76e2eb4a8cf05a603503e4", 975, 113),
@@ -37,18 +40,27 @@ THU_TU = []
 TONG = 26
 
 
+SO_HINH = [0]
+
+
 def hinh(khoa, alt, rong=None, cao=None, dem=16):
-    """Ảnh trong thẻ trắng; cho rong HOẶC cao, cạnh kia theo tỉ lệ."""
+    """Ảnh trong thẻ trắng kèm chú thích đánh số kiểu bài báo ("Figure n. ...") ngay dưới ảnh.
+
+    Cho rong HOẶC cao, cạnh kia theo tỉ lệ. Phần chú thích chiếm thêm khoảng 34 px chiều cao.
+    """
     src, w, h = IMG[khoa]
     if rong is not None:
         cao = round(rong * h / w)
     else:
         rong = round(cao * w / h)
+    SO_HINH[0] += 1
     return (
-        '<div style="background:{c};border:1px solid {r};border-radius:16px;padding:{d}px;'
-        'display:flex;align-items:center;justify-content:center">'
-        '<img src="{s}" alt="{a}" style="width:{w}px;height:{h}px;object-fit:contain"></div>'
-    ).format(c=CARD, r=RULE, d=dem, s=src, a=alt, w=rong, h=cao)
+        '<div style="background:{c};border:1px solid {r};border-radius:6px;padding:{d}px {d}px 10px;'
+        'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">'
+        '<img src="{s}" alt="{a}" style="width:{w}px;height:{h}px;object-fit:contain">'
+        '<p style="font-family:{f};font-size:20px;line-height:1.25;color:{m};text-align:center;max-width:{w}px">'
+        '<b>Figure {n}.</b> <i>{a}</i></p></div>'
+    ).format(c=CARD, r=RULE, d=dem, s=src, a=alt, w=rong, h=cao, f=TNR, m=MUTED, n=SO_HINH[0])
 
 
 def tieu_de(eyebrow, tieu):
@@ -201,7 +213,7 @@ slide("architecture", tieu_de("Data and architecture", "Six layers, one directio
       '<div style="flex:1;display:flex;flex-direction:column;gap:14px">' +
       "".join(dong(a, b, 26, 250) for a, b in lop) +
       '<p style="font-size:26px;line-height:1.4;color:{m}">Everything runs in Docker containers started from one directory file, <span style="color:{b}">cau_hinh/cum.env</span>.</p>'.format(m=MUTED, b=BLUE) +
-      "</div>" + hinh("f01", "Layered architecture of the system", cao=600) + "</div>",
+      "</div>" + hinh("f01", "Layered architecture of the system", cao=566) + "</div>",
       "The architecture has six layers and data flows in one direction. Events come from the replay producer and from the web "
       "application, enter Kafka, are stored in the lakehouse, processed by Spark streaming and batch jobs, orchestrated by "
       "Airflow, and served by the web application. Everything is containerised, and every script reads the same directory "
@@ -220,7 +232,7 @@ slide("cluster", tieu_de("Data and architecture", "Deployed on six laboratory ma
       '<div style="flex:1;display:flex;flex-direction:column;gap:14px">' +
       "".join(dong(a, b, 28, 170) for a, b in cum) +
       '<p style="font-size:26px;line-height:1.4;color:{m}">Each machine: 12 cores, 7 GB of RAM, shared with other groups — memory, not CPU, is the binding constraint.</p>'.format(m=MUTED) +
-      "</div>" + hinh("f02", "Physical deployment on the cluster", cao=600) + "</div>",
+      "</div>" + hinh("f02", "Physical deployment on the cluster", cao=566) + "</div>",
       "The cluster has six laboratory machines on a ZeroTier network. The master runs the NameNode, the Spark Master, all "
       "drivers and Airflow. Five workers give 34 cores and 13 gigabytes of executor memory. Each machine has only 7 gigabytes "
       "of RAM and is shared with other groups, so every memory setting was sized from measurements.")
@@ -265,7 +277,7 @@ slide("streaming", tieu_de("Data and architecture", "Three Structured Streaming 
           '<p style="font-family:{mo};font-size:28px;font-weight:600;color:{b}">{a}</p>'
           '<p style="font-size:28px;line-height:1.35;color:{t}">{m}</p></div>'.format(r=RULE, mo=M, b=BLUE, a=a, t=TEXT, m=m) for a, m in luong) +
       '<p style="font-size:26px;line-height:1.4;color:{m}">Windows use the Kafka timestamp, so replayed 2015 events and live 2026 clicks share one clock.</p>'.format(m=MUTED) +
-      "</div>" + hinh("f07", "The three streaming jobs and the latency budget", cao=600) + "</div>",
+      "</div>" + hinh("f07", "The three streaming jobs and the latency budget", cao=566) + "</div>",
       "Three streaming jobs run continuously. The first lands every event in bronze. The second computes the trending table: a "
       "fifteen-minute window sliding every minute, merged into gold every twenty seconds. The third writes the impression log "
       "used by the A/B test. One design point: windows are keyed on the Kafka timestamp, not the original event time, because "
@@ -283,7 +295,7 @@ slide("airflow", tieu_de("Data and architecture", "Five Airflow DAGs") +
           ["<b>kn_tai_lap</b>", "manual", "Re-runs training on a recorded Delta version and compares"],
       ], [38, 14, 48], 24) +
       '<p style="font-size:26px;line-height:1.4;color:{m}">Every job is idempotent, so retries and reruns are always safe.</p>'.format(m=MUTED) +
-      "</div>" + hinh("f05", "DAG 1, the daily pipeline", cao=600) + "</div>",
+      "</div>" + hinh("f05", "DAG 1, the daily pipeline", cao=566) + "</div>",
       "Five DAGs implement the workflows of the specification. DAG 1, on the right, is the nightly pipeline: it waits for new "
       "data, rebuilds silver and the matrix, tunes ALS, evaluates it and branches — new recommendations only if NDCG is not "
       "worse than the served model. The other four monitor the stream, compute the A/B test hourly, maintain the Delta tables "
@@ -310,7 +322,7 @@ slide("als", tieu_de("Model and evaluation", "ALS for implicit feedback") +
 # ------------------------------------------------------------------ 11. Tuning
 slide("tuning", tieu_de("Model and evaluation", "Tuning: bigger rank, higher alpha") +
       '<p style="font-size:32px;line-height:1.35;color:{n}">Best of 27: <b>rank 50 · regParam 1.0 · alpha 40 → NDCG@10 = 0.0680</b> <span style="color:{m}">(78 minutes on 34 cores)</span></p>'.format(n=NAVY, m=MUTED) +
-      '<div style="display:flex;justify-content:center">' + hinh("c01", "NDCG@10 over the tuning grid, one heat map per rank", rong=1300) + "</div>" +
+      '<div style="display:flex;justify-content:center">' + hinh("c01", "NDCG@10 over the tuning grid, one heat map per rank", rong=1250) + "</div>" +
       '<p style="font-size:26px;color:{m}">Check on 11 Nov: chosen on 19 Aug – 2 Sep, reported on 3–18 Sep → the same configuration (optimism 0.0002).</p>'.format(m=MUTED),
       "NDCG grows monotonically with rank and with alpha. With implicit feedback a large alpha gives observed pairs, especially "
       "purchases, much more weight than the empty cells, so the model extracts more signal from very sparse data. The optimum "
@@ -460,7 +472,7 @@ slide("loop", tieu_de("Live system and operations", "The closed loop, measured l
       so_lon("10.3 s", "from Kafka to bronze for three “Add to cart” clicks") +
       so_lon("51 s", "from the clicks to the updated trending table — target 90 s", ORANGE) +
       '<p style="font-size:26px;line-height:1.4;color:{m}">Clicks sent while a stream was down were counted after its restart: the checkpoint kept the planned batch.</p>'.format(m=MUTED) +
-      "</div>" + hinh("f08", "Closed loop between the web application and the lakehouse", rong=900) + "</div>",
+      "</div>" + hinh("f08", "Closed loop between the web application and the lakehouse", rong=860) + "</div>",
       "These two criteria were measured on 11 November through the web application’s API. Three add-to-cart clicks reached bronze "
       "about ten seconds after Kafka received them, and the trending table fifty-one seconds after the clicks: twenty seconds of "
       "trigger interval, the micro-batch and the polling. During the first attempt a stream had died; after the restart the "
@@ -605,9 +617,7 @@ deck = {
         "s6": {"description": "Results against the criteria, limitations and future work", "start": "results"},
     },
     "faces": {
-        "space-grotesk": {"family": "Space Grotesk", "href": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap"},
-        "inter": {"family": "Inter", "href": "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"},
-        "jetbrains-mono": {"family": "JetBrains Mono", "href": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap"},
+        "tinos": {"family": "Tinos", "href": "https://fonts.googleapis.com/css2?family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap"},
     },
     "designSystems": [],
 }
