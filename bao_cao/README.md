@@ -10,6 +10,9 @@ Bản nộp: `BD03_Recommender_System_Report.docx` (Word) và `BD03_Recommender_
 | `hinh/cong_thuc.py` | Công thức dưới dạng ảnh (matplotlib mathtext) |
 | `tao_bao_cao.js` | Dựng `.docx` bằng docx-js: đánh số chương/hình/bảng/công thức, tham chiếu chéo `@fig:` `@tab:` `@eq:` `@sec:` |
 | `cap_nhat_muc_luc.py` | Mở `.docx` bằng LibreOffice, cập nhật mục lục, danh mục hình/bảng và xuất PDF |
+| `slide/` | Mã dựng 25 slide thuyết trình (tiếng Anh, có lời ghi chú cho người nói) |
+| `hoi_dap/` | Bộ 49 câu hỏi – đáp dự kiến (tiếng Việt): `node tao_hoi_dap.js` |
+| `kich_ban/` | Kịch bản thuyết trình 20 phút: phân công, thời lượng, lời nói từng slide, lời dẫn demo, phương án rút gọn, danh sách kiểm tra: `node tao_kich_ban.js` |
 
 ## Dựng lại
 
@@ -27,6 +30,3 @@ python3 cap_nhat_muc_luc.py BD03_Recommender_System_Report.docx   # tạo PDF c�
 
 Khi mở `.docx` trong Word, chọn **Yes** ở hộp thoại cập nhật trường để Word điền mục lục,
 danh mục hình và danh mục bảng.
-
-Các ô vàng "To be completed" là phần chờ số liệu: kết quả mô hình v2 sau lượt chạy đêm
-11/11, độ trễ khối thịnh hành đo được, vòng khép kín và ảnh chụp 5 màn hình sau buổi tổng duyệt.
