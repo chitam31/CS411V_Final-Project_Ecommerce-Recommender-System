@@ -206,15 +206,19 @@ Compaction alone barely helps: each compacted file still contains users from the
 
 DAG 5 was triggered on 10 November at 23:13 with the configuration `{"phien_ban_delta": 0, "che_do": "mo_hinh_chon"}`. It read `features.ma_tran_tuong_tac` at version 0 — the version built for run `r20261110T075240` — retrained the selected model with the recorded hyper-parameters, re-evaluated it on the test set stored in the same version and compared the results with `gold.ket_qua_tuning` and `gold.lich_su_huan_luyen` (@tab:tai-lap).
 
-Table: Reproduction of run r20261110T075240 with time travel {#tab:tai-lap w=30,34,12,12,12}
+Table: Reproduction with time travel: run r20261110T075240 on 10 November and the deployed model r20261110T230924 on 11 November {#tab:tai-lap w=30,34,12,12,12}
 | Comparison | Key | Delta version | Max deviation | Match |
 |---|---|---|---|---|
 | Tuning row | r20261110T075240, rank 50, reg 1.0, alpha 40 | 0 | 0.000000 | yes |
 | Training and evaluation | r20261110T075240 | 0 | 0.000000 | yes |
+| Tuning row (11 Nov) | r20261110T230924, rank 50, reg 1.0, alpha 40 | 3 | 0.000000 | yes |
+| Training and evaluation, incl. v2 filter and both baselines (11 Nov) | r20261110T230924 | 3 | 0.000000 | yes |
 
 The deviation is zero to six decimal places (tolerance 10^{−6}). This is a meaningful test: while the reproduction ran, `silver.tuong_tac` had already moved to version 2 through schema evolution and bronze had received 857,000 additional replayed events. The result is identical because the job reads only version 0 of the feature table, which contains both the training data and the ground truth (@sec:impl-train), because ALS uses a fixed seed, and because the append-only indexers guarantee that indices mean the same users and items in every version.
 
-The reproduction screen of the web application reads the same table (@fig:tai-lap-web). It shows the maximum deviation without rounding: exactly 0 for the training row and 1.78 × 10^{−15} for the tuning row, a difference in the last bits of a floating-point sum that the 10^{−6} tolerance is designed to absorb.
+On 11 November, after the additional experiments, DAG 5 was triggered a second time — from the *Trigger kn_tai_lap* button of the web application, which calls the Airflow REST API — for the model that is actually deployed, `als_v2_r20261110T230924` on feature version 3. The run took about 20 minutes. Both comparisons matched with a deviation of exactly 0, also without rounding, and this time the comparison includes NDCG@10 of model version 2 (price filter) and of the two baselines. The time-travel guarantee therefore holds for the served model as well as for the first experiment.
+
+The reproduction screen of the web application reads the same table (@fig:tai-lap-web; the screenshot predates the second run). It shows the maximum deviation without rounding: exactly 0 for the training row and 1.78 × 10^{−15} for the tuning row, a difference in the last bits of a floating-point sum that the 10^{−6} tolerance is designed to absorb.
 
 ![Reproduction screen of the web application: A/B results that can be recomputed at their recorded data version (top) and the two comparisons of DAG 5 on feature version 0 (bottom)](hinh/s02_tai_lap_web.png){#fig:tai-lap-web w=14.5}
 
@@ -341,7 +345,7 @@ Table: Status of the acceptance criteria {#tab:ket-qua-nghiem-thu w=5,28,24,43}
 | 4 | Trending updated ≤ 90 s after a click | Met | 51 s from three clicks to the updated table (@tab:do-tre) |
 | 5 | Closed loop web → Kafka → bronze → trending | Met | Web events in bronze 10.3 s after Kafka, in the trending table after 51 s (@tab:do-tre, @fig:loop) |
 | 6 | A/B result with p-value and conclusion | Met | CTR p = 0.015 (B lower), conversion p = 0.75 (@tab:ab, @fig:ab-web); user-level bootstrap p = 0.029 (@tab:ab-user) |
-| 7 | Reproduction with `VERSION AS OF` | Met | Deviation 0.000000 on version 0 (@tab:tai-lap) |
+| 7 | Reproduction with `VERSION AS OF` | Met | Deviation 0.000000 on version 0, and 0 for the deployed model on version 3, triggered from the web (@tab:tai-lap) |
 | 8 | OPTIMIZE/Z-ORDER figures for the per-user lookup | Met | Files read 67 → 1.07, median 8.4× faster than compaction only (@tab:zorder) |
 
 **Personalised lists on the live system.** @fig:trang-chu-a and @fig:trang-chu-b show the home pages of two active users after the deployment of model version 2, taken on 11 November with the producer replaying events so that the trending windows were full. Both pages name the model that produced the list (`als_v2_r20261110T230924`) and log ten impressions. Product names, departments and pictures come from the illustrative display layer of @sec:impl-web; the product and category ids under each card are the real ones. The group A user receives eight re-ranked, price-filtered ALS items followed by two items from the new-item source of the user's main category. The group B user receives five ALS items, the same two new items, and trending items at positions 3, 6 and 8; these three slots were stored at night but are replaced at request time by the three newest trending products, which are exactly positions 1 to 3 of the trending block below the list. The template of @fig:mau-khoi is therefore visible on the page itself.

@@ -74,7 +74,7 @@ ND.push(bang(["Hạng mục", "Số liệu"], [
   ["Xếp lại novelty", "β = 1,0, 200 ứng viên: NDCG@10 0,0865 (+27 %), coverage 6,47 % (+88 %); đang phục vụ"],
   ["A/B", "350.160 impression mô phỏng; CTR A 2,094 % – B 1,978 %, z = −2,43, p = 0,015; chuyển đổi p = 0,75; cần 76.972/nhóm. Theo user: p = 0,037 (cụm), 0,029 (bootstrap), KTC 95 % [−10,5 % ; −0,7 %], design effect 1,36"],
   ["Z-ORDER", "Tệp đọc mỗi truy vấn 67 → 1,07; trung vị 8.280 → 980 ms (nhanh 8,4 lần so với chỉ OPTIMIZE)"],
-  ["Tái lập", "Độ lệch 0,000000 trên features phiên bản 0 (1,78·10⁻¹⁵ khi không làm tròn)"],
+  ["Tái lập", "Độ lệch 0,000000 trên features phiên bản 0 (1,78·10⁻¹⁵ khi không làm tròn); 11/11 tái lập lại **mô hình đang phục vụ** trên phiên bản 3 từ nút trên web: lệch đúng 0, kể cả NDCG v2 và 2 baseline"],
   ["Vòng khép kín", "Kafka → bronze 10,3 giây; bấm → bảng thịnh hành 51 giây (ngưỡng 90 giây)"],
   ["Nguồn ứng viên", "Offline 11/11: 7 ô ALS + 3 ô đồng xuất hiện → coverage 6,47 % → **14,5 %** (ngưỡng 10 %), NDCG@10 0,0865 → 0,0892 (kỳ kiểm tra 0,0742 → 0,0764); chưa triển khai"],
   ["Kỳ validation", "Chọn trên 19/8–2/9, báo cáo trên 3–18/9: chọn đúng rank 50, reg 1,0, alpha 40 và β = 1,0; kỳ kiểm tra: ALS 0,0579 (+1.086 % / +40 %), xếp lại 0,0742 (+80 % so với danh mục); lạc quan 0,0002"],
@@ -210,6 +210,7 @@ ND.push(cau("Tái lập thí nghiệm bằng time travel hoạt động thế n�
 ND.push(y("Mỗi lần huấn luyện ghi **phiên bản Delta** của bảng features; DAG 5 đọc `VERSION AS OF` phiên bản đó, huấn luyện lại, so với số liệu đã ghi."));
 ND.push(y("Kết quả trùng khớp nhờ: seed cố định, **indexer chỉ thêm** (chỉ số luôn chỉ đúng user/item), tập test lưu cùng phiên bản."));
 ND.push(y("Độ lệch 0,000000 dù silver đã tiến hóa lược đồ và đã nhận thêm 857.072 sự kiện."));
+ND.push(y("Đã chạy **hai lần**: 10/11 trên features phiên bản 0 (lần chạy đầu tiên), và 11/11 cho **mô hình đang phục vụ** trên phiên bản 3, kích hoạt từ nút trên web; cả hai đều trùng khớp, lần sau lệch đúng 0 kể cả NDCG của v2 và hai baseline. Mỗi lần khoảng 15–20 phút."));
 ND.push(cau("Schema evolution đã làm gì?"));
 ND.push(y("`ALTER TABLE ADD COLUMNS (gia_san_pham, xep_hang_sao)` chỉ ghi metadata; MERGE điền giá trị từ danh mục; dòng mới tự có hai cột."));
 ND.push(y("Mô hình v2 lọc ứng viên trong tầm giá của user [0,5·P10, 1,5·P90]; xếp hạng sao là đại lượng ước lượng (proxy) vì dữ liệu không có sao."));

@@ -416,7 +416,7 @@ slide("zorder", tieu_de("Experiment and lakehouse", "Z-ORDER: one file per user 
 slide("reproduce", tieu_de("Experiment and lakehouse", "Reproducing an experiment with time travel") +
       '<div style="display:flex;gap:48px;flex:1">'
       '<div style="flex:1;display:flex;flex-direction:column;gap:20px">' +
-      so_lon("0.000000", "maximum deviation, re-training on features VERSION AS OF 0", BLUE, 72) +
+      so_lon("0.000000", "maximum deviation, re-training on features VERSION AS OF 0; the deployed model on version 3 also matched exactly (11 Nov)", BLUE, 72) +
       dong("Meanwhile", "Silver evolved to version 2 and 857,072 events were replayed", 26, 170) +
       dong("Why", "Fixed seed, append-only indexers, test set stored in the same version", 26, 170) +
       dong("Where", "DAG 5 and the web’s reproduction screen (1.78×10<span style=\"color:{}\">⁻¹⁵</span> unrounded)".format(BLUE), 26, 170) +
@@ -424,7 +424,8 @@ slide("reproduce", tieu_de("Experiment and lakehouse", "Reproducing an experimen
       "DAG 5 re-ran the selected experiment on version zero of the feature table and compared the result with the recorded "
       "metrics: the deviation is zero to six decimals. This is a meaningful test, because during the run the source tables had "
       "already evolved. It works because the job reads only that version, ALS has a fixed seed, and the indexers are append-only, "
-      "so an index means the same user or item in every version.")
+      "so an index means the same user or item in every version. On 11 November we repeated it from the web button for the deployed model on "
+      "version three: again an exact match.")
 
 # ------------------------------------------------------------------ 20. v2
 slide("v2", tieu_de("Experiment and lakehouse", "Schema evolution and model version 2") +

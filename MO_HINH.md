@@ -390,6 +390,8 @@ Kích hoạt với `{"phien_ban_delta": 0, "che_do": "mo_hinh_chon"}`: đọc `f
 |---|---|---|---|---|
 | tuning | r20261110T075240, rank=50, reg=1.0, alpha=40.0 | 0 | 0,000000 | có |
 | huấn luyện + đánh giá | r20261110T075240 | 0 | 0,000000 | có |
+| tuning (11/11, nút trên web) | r20261110T230924, rank=50, reg=1.0, alpha=40.0 | 3 | 0 | có |
+| huấn luyện + đánh giá, gồm NDCG v2 và 2 baseline (11/11) | r20261110T230924 | 3 | 0 | có |
 
 Độ lệch bằng 0 tới 6 chữ số thập phân (ngưỡng < 10⁻⁶). Trong lúc chạy lại, `silver.tuong_tac` đã sang phiên bản 2 (tiến hóa lược đồ) và bronze đã có thêm 857 nghìn sự kiện phát lại; kết quả vẫn trùng vì job chỉ đọc features ở phiên bản 0, nơi chứa đủ cả train lẫn ground truth (mục 3), cùng hạt giống ALS cố định (`seed = 42`) và chỉ mục user/item không đổi giữa các phiên bản (mục 3).
 
