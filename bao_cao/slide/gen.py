@@ -114,7 +114,7 @@ slide("cover", (
     '<div style="display:flex;flex-direction:column;gap:6px"><p style="font-size:32px;font-weight:600;color:{bg}">Le Chi Tam</p><p style="font-size:24px;color:#C9D4E5">Student code 2302220</p></div>'
     '<div style="display:flex;flex-direction:column;gap:6px"><p style="font-size:32px;font-weight:600;color:{bg}">Le Nguyen Quoc Anh</p><p style="font-size:24px;color:#C9D4E5">Student code 2302283</p></div>'
     '</div>'
-    '<p style="font-size:24px;color:#C9D4E5">Tan Tao University · Defence 18 November 2026 · Lecturer: [lecturer’s name]</p>'
+    '<p style="font-size:24px;color:#C9D4E5">Tan Tao University · Defence 18 November 2026 · Supervisor: Cao Tien Dung, PhD</p>'
 ).format(la=LIGHT_ACC, h=H, bg=BG),
     "Good morning. We are Le Chi Tam and Le Nguyen Quoc Anh. Our project is Topic 3 of CS411V: a product recommender "
     "for a simulated e-commerce marketplace. In the next twenty minutes we show how the system is built, what the model "
