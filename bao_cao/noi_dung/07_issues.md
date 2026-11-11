@@ -22,7 +22,7 @@ Table: Configuration errors found in the inherited cluster {#tab:ra-soat w=4,26,
 
 ## Issues Found During Development and Operation
 
-@tab:loi lists the issues found while developing and running the project, in the order they appeared. Issues 1–12 were found by tests or code review before deployment; issues 13–28 appeared on the cluster.
+@tab:loi lists the issues found while developing and running the project, in the order they appeared. Issues 1–12 were found by tests or code review before deployment; issues 13–29 appeared on the cluster.
 
 Table: Issues found during development and operation {#tab:loi w=4,46,50}
 | # | Issue | Fix |
@@ -55,6 +55,7 @@ Table: Issues found during development and operation {#tab:loi w=4,46,50}
 | 26 | The first web host (Ubuntu in WSL2 on the laptop, 3.8 GB) crashed twice while building and starting the web container because Windows ran short of memory; one crash corrupted the cached base image | The web role moved to labsoe-18 inside the laboratory LAN; `--chi=<role>` starts one role without recreating the other services of a machine |
 | 27 | Restarting a stream left a zombie driver: cancelling the application through the Spark Master did not stop the client-mode driver, which later collided with the new stream on the same checkpoint and stopped both streams | `luong.sh dung` also stops the driver process; `khoi_dong` removes a leftover driver first; `trang_thai` warns |
 | 28 | The maintenance DAG deleted recommendations older than *today* minus 7 days, so seven days without a new deployment would have emptied the served table (on the morning of the defence) | The cut-off is now the latest deployment minus 7 days; only rows of users missing from recent deployments are removed |
+| 29 | The deployment of 11 November blended the lists while the producer was stopped: the newest trending window held only one test product, so all 265,043 stored lists carried a single trending product and the other trending slots fell back to category best sellers, which also inflated the measured coverage of the served table | When the newest window holds fewer than 30 products, the trending list is topped up with the most viewed products of the last 24 hours; the job reports which source it used |
 
 ## Key Incidents
 
@@ -80,7 +81,7 @@ Measurements before enabling Airflow showed only 3.2 GB available on the master,
 
 ### A nightly pipeline that never deploys
 
-The first scheduled run of DAG 1 on the real data (night of 10 November) trained model version 2 on the evolved silver table and then kept the old model. The reason was a design flaw, not the data. The nightly run uses the minimal grid, in which alpha is fixed at 10 to save time, while the served model had been selected from the full grid with alpha = 40. The best nightly combination (rank 50, regParam 1.0, alpha 10) reached NDCG@10 = 0.0574 against 0.0680 for the served model, so the branch `giu_mo_hinh_cu` was taken — and it would have been taken every night, whatever the data, because the nightly grid could not contain the served configuration. The run nevertheless gave two useful results: the nine alpha = 10 combinations reproduced the earlier values to four decimals after the schema evolution and the second replay of 857,072 events, confirming that content deduplication (issue 20) kept silver intact; and at equal hyperparameters the price filter of model version 2 improved NDCG@10 from 0.0574 to 0.0587 (+2.3 %) and coverage from 2.49 % to 2.70 %. The fix (issue 23) appends the served model's hyperparameters to any grid that lacks them, so a new model is always compared with the old one under the same configuration as well as under new ones.
+The first scheduled run of DAG 1 on the real data (night of 10 November) trained model version 2 on the evolved silver table and then kept the old model. The reason was a design flaw, not the data. The nightly run uses the minimal grid, in which alpha is fixed at 10 to save time, while the served model had been selected from the full grid with alpha = 40. The best nightly combination (rank 50, regParam 1.0, alpha 10) reached NDCG@10 = 0.0574 against 0.0680 for the served model, so the branch `giu_mo_hinh_cu` was taken — and it would have been taken every night, whatever the data, because the nightly grid could not contain the served configuration. The run nevertheless gave two useful results: the nine alpha = 10 combinations reproduced the earlier values to four decimals after the schema evolution and the second replay of 857,072 events, confirming that content deduplication (issue 20) kept silver intact; and at equal hyperparameters the price filter of model version 2 improved NDCG@10 from 0.0574 to 0.0587 (+2.3 %) and coverage from 2.49 % to 2.70 %. The fix (issue 23) appends the served model's hyperparameters to any grid that lacks them, so a new model is always compared with the old one under the same configuration as well as under new ones. A manual run on the morning of 11 November confirmed the fix: the appended configuration was the best of ten, matched the serving model and was deployed as model version 2 (@sec:res-v2).
 
 ## Lessons Learned
 

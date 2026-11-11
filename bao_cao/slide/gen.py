@@ -431,18 +431,20 @@ slide("v2", tieu_de("Experiment and lakehouse", "Schema evolution and model vers
       dong("4", "Nightly gate: deploy only if NDCG@10 is not worse than the served model", 28, 40) +
       "</div>"
       '<div style="width:720px;display:flex;flex-direction:column;gap:20px">'
-      '<p style="font-size:28px;font-weight:600;color:{n}">Same hyper-parameters (rank 50, reg 1.0, alpha 10)</p>'.format(n=NAVY) +
+      '<p style="font-size:28px;font-weight:600;color:{n}">Deployed model (rank 50, reg 1.0, alpha 40)</p>'.format(n=NAVY) +
       bang(["Metric", "v1", "v2"], [
-          ["NDCG@10", "0.0574", "<b>0.0587</b> (+2.3 %)"],
-          ["Coverage", "2.49 %", "<b>2.70 %</b>"],
-          ["Distinct items", "3,137", "<b>3,412</b>"],
+          ["NDCG@10", "0.0680", "<b>0.0694</b> (+2.1 %)"],
+          ["Coverage", "3.44 %", "<b>3.72 %</b>"],
+          ["Distinct items", "4,346", "<b>4,699</b>"],
       ], [40, 25, 35], 28) +
-      '<p style="font-size:26px;line-height:1.4;color:{m}">Deployed v2 (alpha 40): NDCG@10 [__], coverage [__] — manual DAG 1 run, 11 November.</p>'.format(m=MUTED) +
+      '<p style="font-size:26px;line-height:1.4;color:{m}">Manual DAG 1 run, 11 November 06:09–06:52: the gate passed and '
+      'als_v2_r20261110T230924 was deployed. At alpha 10 the gain was the same (+2.3 %).</p>'.format(m=MUTED) +
       "</div></div>",
       "Week five of the specification asks for a schema change. We added price and star rating to silver with ALTER TABLE, filled "
       "them with MERGE, and built model version 2, which keeps recommendations inside the user’s usual price range. At equal "
-      "hyper-parameters version 2 is better on every metric. The first nightly run kept the old model for a design reason we "
-      "explain on the operations slide; after the fix the gate compares like with like.")
+      "hyper-parameters version 2 is better on every metric, by about two percent — small next to re-ranking. The first nightly "
+      "run kept the old model for a design reason we explain on the operations slide; after the fix the gate compares like with "
+      "like, and the manual run on 11 November deployed version 2.")
 
 # ------------------------------------------------------------------ 21. Vòng khép kín
 slide("loop", tieu_de("Live system and operations", "The closed loop, measured live") +
@@ -476,7 +478,7 @@ the = "".join(
         c=CARD, r=RULE, h=H, n=NAVY, t=t, tx=TEXT, m=m, b=BLUE, f=f) for t, m, f in van_de)
 slide("operations", tieu_de("Live system and operations", "Lessons from a shared, constrained cluster") +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 28px">' + the + "</div>" +
-      '<p style="font-size:26px;color:{m}">28 issues found and fixed, each with a regression test — 90 automated tests in total.</p>'.format(m=MUTED),
+      '<p style="font-size:26px;color:{m}">29 issues found and fixed, each with a regression test — 91 automated tests in total.</p>'.format(m=MUTED),
       "A large part of the work was operations. Four examples. A path-MTU black hole on the home network silently dropped large "
       "packets. Cancelling a Spark application through the Master did not stop its client-mode driver, and the zombie collided "
       "with the new stream on the checkpoint. Our nightly deployment gate could never open, because the nightly grid did not "

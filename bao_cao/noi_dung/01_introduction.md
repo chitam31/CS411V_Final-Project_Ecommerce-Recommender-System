@@ -47,7 +47,7 @@ Table: Acceptance checklist of the assignment (section 3.11) {#tab:nghiem-thu w=
 
 ## Scope {#sec:scope}
 
-**In scope.** The project covers the full path from raw events to recommendations shown on a web page: the Kafka producer, three streaming jobs, the batch pipeline (cleaning, statistics, related products, matrix preparation, tuning, evaluation, serving lists, blending, publishing), the A/B pipeline (impression logging, simulated traffic, aggregation and testing), Delta Lake maintenance, the five Airflow DAGs, the web application, the deployment scripts for the cluster, and an automated test suite of 90 tests that run on a local Spark session.
+**In scope.** The project covers the full path from raw events to recommendations shown on a web page: the Kafka producer, three streaming jobs, the batch pipeline (cleaning, statistics, related products, matrix preparation, tuning, evaluation, serving lists, blending, publishing), the A/B pipeline (impression logging, simulated traffic, aggregation and testing), Delta Lake maintenance, the five Airflow DAGs, the web application, the deployment scripts for the cluster, and an automated test suite of 91 tests that run on a local Spark session.
 
 **Out of scope.** The project does not handle user accounts, payments or a product catalogue editor; the web application only simulates the shopping pages needed to generate realistic events and impressions. Deep-learning recommenders and online (incremental) model updates are not attempted: ALS is retrained in batch every night, as the specification requires. No cloud service is used; the whole system runs on the laboratory machines.
 

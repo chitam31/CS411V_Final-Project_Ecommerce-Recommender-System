@@ -227,7 +227,7 @@ Reproducing an experiment requires the same data, the same code and the same par
 
 ## Testing and Quality Assurance {#sec:impl-test}
 
-The repository contains 90 automated tests (88 run in the standard environment, two are skipped when Airflow is not installed). They run with `pytest` on a real local Spark session, so they exercise the same DataFrame code as the cluster (@tab:tests). Infrastructure scripts are tested by putting fake `ssh`, `docker`, `curl`, `getent` or `ping` commands first on the `PATH` and checking what the scripts do with them.
+The repository contains 91 automated tests (89 run in the standard environment, two are skipped when Airflow is not installed). They run with `pytest` on a real local Spark session, so they exercise the same DataFrame code as the cluster (@tab:tests). Infrastructure scripts are tested by putting fake `ssh`, `docker`, `curl`, `getent` or `ping` commands first on the `PATH` and checking what the scripts do with them.
 
 Table: Automated tests by area {#tab:tests w=27,8,65}
 | Test file | Tests | What is checked |
@@ -235,7 +235,7 @@ Table: Automated tests by area {#tab:tests w=27,8,65}
 | `test_bronze_to_silver.py` | 7 | Bot filter threshold, 5-second debounce, weights, full cleaning, replay deduplication, one file per date |
 | `test_ml.py` | 12 | Time split, decay, append-only indexers, ALS beats the baselines on structured data, two trainings give identical metrics, v2 price filter, served configuration added to the grid |
 | `test_chi_so.py` | 4 | Ranking metrics against Spark's `RankingMetrics`, coverage and novelty |
-| `test_tron.py` | 10 | A/B templates, stable group assignment, cold-start strategies, new-item placement, re-ranking |
+| `test_tron.py` | 11 | A/B templates, stable group assignment, cold-start strategies, new-item placement, re-ranking, trending top-up |
 | `test_ab_va_tron.py`, `test_thong_ke.py` | 9 | A/B aggregation, z-test and sample size against reference values |
 | `test_streaming.py` | 8 | Event normalisation, windows and watermark, trending score, impression aggregation, one-shot progress summary |
 | `test_web.py` | 8 | Every screen and API in simulated mode, Kafka client stub |

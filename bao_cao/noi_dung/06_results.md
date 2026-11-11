@@ -131,7 +131,19 @@ Table: Distinct products in the served recommendation table, by source {#tab:phu
 
 The schema evolution ran on 10 November at 23:12–23:18: `silver.tuong_tac` moved from version 0 to version 2 (version 1 adds the two columns, version 2 fills them), while version 0 remains readable with the original seven columns. The daily DAG started at 23:21 rebuilt the features from the evolved silver table, which switches the evaluation to model version 2 with the nine-combination grid.
 
-> [!TODO] Insert the row "Model v2: ALS + price-range filter" (P@10, R@10, NDCG@10, MAP@10, coverage, novelty) from `xuat_ket_qua.py` after the nightly run of 11 November, compare it with v1 on the same feature version, and state whether DAG 1 deployed it (`cai_thien`) or kept the previous model.
+That night's run kept the previous lists because its grid could not contain the served configuration (issue 23, @sec:issues). After the fix, DAG 1 was triggered manually on 11 November with `bo_qua_cho_du_lieu` (run `r20261110T230924`, 06:09–06:52). It rebuilt the features from silver version 10 (features version 3), tuned ten combinations in 20.7 minutes — the nine of the minimal grid plus the served configuration — and evaluated the best one, rank 50, regParam 1.0, alpha 40, with model version 2. The branch condition compared NDCG@10 = 0.0680 with 0.0680 for the serving model, so `cai_thien` was true and `ghi_gold` published the lists as `als_v2_r20261110T230924` (@tab:v2).
+
+Table: Model version 2 against plain ALS on the same model and feature version (run r20261110T230924, 9,467 test users) {#tab:v2 w=31,9,9,10,9,10,9,13}
+| Method | P@10 | R@10 | NDCG@10 | MAP@10 | Coverage | Novelty | Distinct items |
+|---|---|---|---|---|---|---|---|
+| ALS (version 1 ranking) | 0.0161 | 0.0921 | 0.0680 | 0.0531 | 3.44 % | 10.86 | 4,346 |
+| **Model v2: ALS + price-range filter** | **0.0165** | **0.0943** | **0.0694** | **0.0541** | **3.72 %** | **10.91** | **4,699** |
+| Relative change | +2.5 % | +2.4 % | +2.1 % | +1.9 % | +8.1 % | +0.4 % | +8.1 % |
+
+- **The deployment gate works.** With the served configuration in the grid, the new model is compared with the old one under the same hyperparameters, and the nightly pipeline can publish again. The appended combination was the best of the ten; the nine alpha = 10 combinations reproduced the values of the night before to four decimals (best 0.0574).
+- **Same data, same model.** Features version 3 was built the next morning, about 22 hours after version 0, from a silver table that had gone through schema evolution and a second replay of 857,072 events, yet plain ALS gives exactly the figures of run `r20261110T075240` (@tab:phuong-phap): 179,999 training users, 9,467 test users and NDCG@10 = 0.0680. Replayed events are removed by content deduplication and web events are excluded from the matrix, so the matrix and the split are unchanged and the seeded ALS fits the same model — an independent confirmation of reproducibility across table versions, in addition to the time-travel test of @sec:res-repro.
+- **The price filter helps a little.** Removing candidates outside the user's price range and moving the next in-range items up raises every accuracy metric by about 2 % and coverage by 8 %, the same gain as on the alpha = 10 model the night before (+2.3 %). The effect is an order of magnitude smaller than that of novelty re-ranking (+27 %), it was not tested for significance, and it leaves popularity bias unchanged (99.1 % of the slots in N1 against 99.2 %).
+- **What is served.** In production, model version 2 is the re-ranked list (200 candidates, β = 1.0, forty items kept) followed by the price filter in `tron_goi_y`. The evaluation measures the filter on plain ALS lists, and the deployment rule keeps comparing plain ALS so that successive versions remain comparable; the combination of re-ranking and price filter was not measured separately.
 
 ## A/B Test {#sec:res-ab}
 

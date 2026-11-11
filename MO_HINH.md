@@ -309,9 +309,10 @@ Số liệu xuất bằng `jobs/kiem_tra/xuat_ket_qua.py` từ `gold.lich_su_hua
 | ALS + re-ranking β = 0,1 | 0,0166 | 0,0952 | 0,0702 | 0,0549 | 3,65% | 1,10% | 10,93 | 4.607 |
 | ALS + re-ranking β = 0,3 | 0,0173 | 0,1001 | 0,0746 | 0,0589 | 4,14% | 1,25% | 11,09 | 5.221 |
 | **Phục vụ: ALS + xếp lại β = 1,0, 200 ứng viên** (mục 6) | **0,0182** | **0,1089** | **0,0865** | **0,0716** | **6,47%** | 1,96% | 12,17 | 8.162 |
-| Mô hình v2: ALS + lọc tầm giá | chưa chạy (cần lần schema evolution) | | | | | | | |
+| Mô hình v2: ALS + lọc tầm giá (lần `r20261110T230924`, features v3, xem dưới) | 0,0165 | 0,0943 | 0,0694 | 0,0541 | 3,72% | 1,13% | 10,91 | 4.699 |
 
 - Uplift NDCG@10 so với baseline 1: **+1.237%** (ngưỡng ≥ 30%: đạt); so với baseline 2 (mạnh hơn nhiều): +43%. Coverage 3,44% < 10% → `dat_nguong` = false. Lần huấn luyện đầu nên `cai_thien` = true, mô hình vẫn được triển khai; `dat_nguong` chỉ ghi lại để báo cáo.
+- **Mô hình v2 (11/11/2026)**: chạy tay DAG 1 06:09–06:52 (bỏ qua sensor), `ma_chay` = `r20261110T230924`, features v3 từ silver v10. Lưới 10 tổ hợp (9 tổ hợp tối thiểu + cấu hình đang phục vụ, lỗi 23) trong 20,7 phút; tốt nhất vẫn rank 50, reg 1,0, alpha 40 với NDCG@10 0,0680 = mô hình đang phục vụ → `cai_thien` = true, triển khai `als_v2_r20261110T230924`. ALS thuần cho đúng từng số của lần `r20261110T075240` (features v0): sự kiện phát lại bị khử trùng lặp, sự kiện web bị loại khỏi ma trận, seed cố định. Lọc tầm giá: NDCG@10 +2,1%, coverage 3,44% → 3,72%, N1 99,1% (gần như không đổi); ở alpha 10 đêm trước cũng +2,3%.
 - Cấu hình phục vụ (ALS + xếp lại, mục 6) đo trên cùng tập test: NDCG@10 0,0865 (+1.601% so với baseline 1, +27% so với ALS thuần), coverage 6,47%, vẫn dưới 10%. Số đo khớp đúng lần quét ở mục 12.2, tức job đánh giá và job quét cho cùng kết quả.
 
 ### 12.1 Nhận xét về tuning

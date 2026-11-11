@@ -76,8 +76,8 @@ ND.push(bang(["Hạng mục", "Số liệu"], [
   ["Z-ORDER", "Tệp đọc mỗi truy vấn 67 → 1,07; trung vị 8.280 → 980 ms (nhanh 8,4 lần so với chỉ OPTIMIZE)"],
   ["Tái lập", "Độ lệch 0,000000 trên features phiên bản 0 (1,78·10⁻¹⁵ khi không làm tròn)"],
   ["Vòng khép kín", "Kafka → bronze 10,3 giây; bấm → bảng thịnh hành 51 giây (ngưỡng 90 giây)"],
-  ["Mô hình v2", "Cùng siêu tham số (alpha 10): NDCG@10 0,0574 → 0,0587 (+2,3 %), coverage 2,49 % → 2,70 %; [số liệu triển khai v2 điền sau]"],
-  ["Cụm", "6 máy lab, mỗi máy 12 lõi, 7 GB RAM; 5 worker: 34 lõi, 13 GB executor; HDFS sao chép 2; 28 lỗi đã sửa, 90 kiểm thử"],
+  ["Mô hình v2", "Đã triển khai 11/11 (als_v2_r20261110T230924, alpha 40): NDCG@10 0,0680 → 0,0694 (+2,1 %), coverage 3,44 % → 3,72 %, 4.346 → 4.699 item; ở alpha 10: +2,3 %"],
+  ["Cụm", "6 máy lab, mỗi máy 12 lõi, 7 GB RAM; 5 worker: 34 lõi, 13 GB executor; HDFS sao chép 2; 29 lỗi đã sửa, 91 kiểm thử"],
 ], [24, 76]));
 
 ND.push(muc("2. Tổng quan và kiến trúc"));
@@ -232,8 +232,17 @@ ND.push(y("RAM driver trên master (chạy mọi driver) → chuyển sang clust
 ND.push(y("Một broker Kafka → nhiều broker, nhiều partition; ALS: tăng `numBlocks`, bộ nhớ executor."));
 ND.push(y("Phục vụ: bảng gợi ý đã Z-ORDER; với tải cao hơn, đưa gold sang kho truy vấn khóa–giá trị."));
 ND.push(cau("Mô hình v2 đã được triển khai chưa? Kết quả?"));
-ND.push(y("[Điền sau lượt chạy tay ngày 11/11: NDCG@10, coverage của v2 ở alpha 40 và nhánh DAG đã chạy.]"));
-ND.push(y("Ở cùng siêu tham số, v2 tốt hơn v1 mọi chỉ số: NDCG@10 +2,3 %, coverage 2,49 % → 2,70 %."));
+ND.push(y("Đã triển khai: chạy tay DAG 1 sáng 11/11 (06:09–06:52, bỏ qua sensor), mã chạy r20261110T230924."));
+ND.push(y("Lưới 10 tổ hợp = 9 tổ hợp tối thiểu + cấu hình đang phục vụ (sửa lỗi 23); tốt nhất rank 50, reg 1,0, alpha 40."));
+ND.push(y("NDCG@10 0,0680 = mô hình đang phục vụ → cai_thien = true → ghi_gold MERGE, phiên bản als_v2_r20261110T230924."));
+ND.push(y("v2 so với ALS thuần, cùng mô hình: NDCG@10 0,0680 → 0,0694 (+2,1 %), coverage 3,44 % → 3,72 % (+8 %); ở alpha 10 cũng +2,3 %."));
+ND.push(y("Mức tăng nhỏ, chưa kiểm định ý nghĩa, không giảm popularity bias (N1 99,1 %); nhỏ hơn nhiều so với xếp lại novelty (+27 %)."));
+ND.push(cau("Features phiên bản 3 cho đúng số liệu của phiên bản 0 — có phải trùng hợp?"));
+ND.push(y("Không: sự kiện phát lại bị khử trùng lặp theo nội dung, sự kiện web bị loại khỏi ma trận → ma trận và mốc cắt không đổi."));
+ND.push(y("ALS có seed cố định nên cho đúng mô hình cũ: thêm một bằng chứng tái lập độc lập với time travel."));
+ND.push(cau("Sau khi triển khai v2 nhóm phát hiện lỗi gì?"));
+ND.push(y("Lỗi 29: lúc trộn, producer đang dừng nên cửa sổ thịnh hành mới nhất chỉ có 1 sản phẩm → mọi danh sách lưu cùng 1 món thịnh hành."));
+ND.push(y("Sửa: cửa sổ dưới 30 món thì bù bằng top xem 24 giờ; chạy lại tron_goi_y + ghi_gold, không phải huấn luyện lại."));
 
 const doc = new Document({
   creator: "Le Chi Tam",
