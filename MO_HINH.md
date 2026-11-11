@@ -393,13 +393,39 @@ Kích hoạt với `{"phien_ban_delta": 0, "che_do": "mo_hinh_chon"}`: đọc `f
 
 Độ lệch bằng 0 tới 6 chữ số thập phân (ngưỡng < 10⁻⁶). Trong lúc chạy lại, `silver.tuong_tac` đã sang phiên bản 2 (tiến hóa lược đồ) và bronze đã có thêm 857 nghìn sự kiện phát lại; kết quả vẫn trùng vì job chỉ đọc features ở phiên bản 0, nơi chứa đủ cả train lẫn ground truth (mục 3), cùng hạt giống ALS cố định (`seed = 42`) và chỉ mục user/item không đổi giữa các phiên bản (mục 3).
 
+### 12.6 Thí nghiệm bổ sung 11/11/2026 (chỉ đọc, không đổi hệ thống đang phục vụ)
+
+**A/B lấy user làm đơn vị** ([jobs/kiem_tra/bootstrap_ab.py](jobs/kiem_tra/bootstrap_ab.py)), impression log phiên bản 51, chỉ traffic mô phỏng của chiến lược ALS: 8.592 user (A 4.310, B 4.282), khoảng 41 impression/user.
+
+| CTR B so với A (−5,54 %) | p |
+|---|---|
+| z-test theo impression (phân tích chính) | 0,0151 |
+| z-test sai số chuẩn theo cụm user (delta method, hiệu chỉnh m/(m−1)) | 0,0372 |
+| Bootstrap lấy mẫu lại user, 2.000 lần, hạt giống 42 | 0,029 |
+
+Khoảng tin cậy 95 % của mức chênh tương đối [−10,46 % ; −0,74 %]; design effect 1,36 (CTR), 1,05 (chuyển đổi, p = 0,75–0,76). Kết luận ở mức 5 % không đổi.
+
+**Kỳ validation riêng** ([jobs/kiem_tra/tuning_validation.py](jobs/kiem_tra/tuning_validation.py)), features v3 (silver v10): chọn trên 19/8–2/9 (6.505 user), báo cáo trên 3–18/9 (4.215 user); 1.253 user có mặt ở cả hai kỳ. Lần 1 đo 14 tổ hợp (đủ rank 10, 5 tổ hợp rank 30) rồi dừng vì chậm 5–6 lần (lỗi 31); lần 2 đo rank 50 × alpha 40. Tổng 17/27 tổ hợp; cột "cả tháng" khớp bảng tuning gốc đến 4 chữ số.
+
+| Trên kỳ kiểm tra (3–18/9) | NDCG@10 | so với toàn sàn | so với danh mục |
+|---|---|---|---|
+| Bán chạy toàn sàn | 0,0049 | — | — |
+| Bán chạy theo danh mục | 0,0413 | — | — |
+| ALS chọn trên validation (rank 50, reg 1,0, alpha 40 = cấu hình đang phục vụ) | 0,0579 | +1.086 % | +40 % |
+| ALS tốt nhất nếu chọn trên chính kỳ kiểm tra (rank 50, reg 0,01, alpha 40) | 0,0581 | +1.091 % | +41 % |
+| Xếp lại β = 1,0 (β chọn trên validation, cũng tốt nhất trên kỳ kiểm tra) | 0,0742 | +1.420 % | +80 % |
+
+β trên validation / kiểm tra: 0 → 0,0789 / 0,0579; 0,25 → 0,0855 / 0,0630; 0,5 → 0,0919 / 0,0674; **1,0 → 0,1012 / 0,0742** (coverage kỳ kiểm tra 5,27 %); 1,5 → 0,0819 / 0,0576; 2,0 → 0,0630 / 0,0439. Thứ hạng cấu hình ở hai kỳ gần như trùng (Spearman 0,995 trên 17 tổ hợp); NDCG kỳ kiểm tra thấp hơn kỳ validation 17–29 % ở mọi tổ hợp. Kết luận: mức lạc quan do chọn trên tháng test chỉ 0,0002.
+
+**Thêm nguồn ứng viên ngoài ALS** ([jobs/kiem_tra/thu_nguon_ung_vien.py](jobs/kiem_tra/thu_nguon_ung_vien.py)): giữ 10 − q_c − q_d ô đầu của danh sách đang phục vụ, thêm q_c món đồng xuất hiện (chỉ từ train) và q_d món bán chạy theo danh mục; chọn cấu hình trên validation theo luật đặt trước (coverage cao nhất trong các cấu hình có NDCG validation ≥ 95 % cấu hình gốc). Chưa chạy trên cụm.
+
 ---
 
 ## 13. Giới hạn đã biết
 
 - Giá và "sao" là đại lượng gián tiếp (mục 2.1, mục 9).
-- Tuning trên tập test (mục 4.3).
-- z-test theo impression bỏ qua tương quan trong cùng user (mục 8.3).
+- Lưới tuning chính chọn trên tập test (mục 4.3); kỳ validation riêng cho cùng lựa chọn, lạc quan 0,0002 (mục 12.6).
+- z-test theo impression bỏ qua tương quan trong cùng user (mục 8.3); kiểm định theo user cho p = 0,029–0,037, kết luận không đổi (mục 12.6).
 - Traffic A/B chủ yếu là mô phỏng; kết luận A/B chỉ có giá trị minh họa quy trình, không phải bằng chứng về hành vi người dùng thật.
 - Trộn thịnh hành ở job batch dùng cửa sổ mới nhất tại thời điểm chạy; web thay bằng thịnh hành mới nhất lúc hiển thị.
 - Sự kiện do web tạo bị loại khỏi tập train/test (`_nguon = web`) để thí nghiệm không tự ảnh hưởng lên đánh giá mô hình; chúng vẫn vào bronze, silver và luồng thịnh hành.

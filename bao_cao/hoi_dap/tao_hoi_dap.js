@@ -72,12 +72,13 @@ ND.push(bang(["Hạng mục", "Số liệu"], [
   ["So với baseline", "+1.237 % so với bán chạy toàn sàn (0,0051); +43 % so với bán chạy theo danh mục (0,0475)"],
   ["Coverage", "ALS 3,44 % (ngưỡng 10 %); 99,2 % ô gợi ý thuộc 10 % item phổ biến nhất; trần cấu trúc 75 %"],
   ["Xếp lại novelty", "β = 1,0, 200 ứng viên: NDCG@10 0,0865 (+27 %), coverage 6,47 % (+88 %); đang phục vụ"],
-  ["A/B", "350.160 impression mô phỏng; CTR A 2,094 % – B 1,978 %, z = −2,43, p = 0,015; chuyển đổi p = 0,75; cần 76.972/nhóm"],
+  ["A/B", "350.160 impression mô phỏng; CTR A 2,094 % – B 1,978 %, z = −2,43, p = 0,015; chuyển đổi p = 0,75; cần 76.972/nhóm. Theo user: p = 0,037 (cụm), 0,029 (bootstrap), KTC 95 % [−10,5 % ; −0,7 %], design effect 1,36"],
   ["Z-ORDER", "Tệp đọc mỗi truy vấn 67 → 1,07; trung vị 8.280 → 980 ms (nhanh 8,4 lần so với chỉ OPTIMIZE)"],
   ["Tái lập", "Độ lệch 0,000000 trên features phiên bản 0 (1,78·10⁻¹⁵ khi không làm tròn)"],
   ["Vòng khép kín", "Kafka → bronze 10,3 giây; bấm → bảng thịnh hành 51 giây (ngưỡng 90 giây)"],
+  ["Kỳ validation", "Chọn trên 19/8–2/9, báo cáo trên 3–18/9: chọn đúng rank 50, reg 1,0, alpha 40 và β = 1,0; kỳ kiểm tra: ALS 0,0579 (+1.086 % / +40 %), xếp lại 0,0742 (+80 % so với danh mục); lạc quan 0,0002"],
   ["Mô hình v2", "Đã triển khai 11/11 (als_v2_r20261110T230924, alpha 40): NDCG@10 0,0680 → 0,0694 (+2,1 %), coverage 3,44 % → 3,72 %, 4.346 → 4.699 item; ở alpha 10: +2,3 %"],
-  ["Cụm", "6 máy lab, mỗi máy 12 lõi, 7 GB RAM; 5 worker: 34 lõi, 13 GB executor; HDFS sao chép 2; 30 lỗi đã sửa, 95 kiểm thử"],
+  ["Cụm", "6 máy lab, mỗi máy 12 lõi, 7 GB RAM; 5 worker: 34 lõi, 13 GB executor; HDFS sao chép 2; 31 lỗi đã sửa, 109 kiểm thử"],
 ], [24, 76]));
 
 ND.push(muc("2. Tổng quan và kiến trúc"));
@@ -125,8 +126,14 @@ ND.push(y("rank: số nhân tố ẩn (sức chứa); regParam: phạt độ l�
 ND.push(y("NDCG **tăng đơn điệu** theo rank và alpha: một lượt mua (trọng số 5) với alpha 40 có confidence 201 so với 1 của ô trống → mô hình học được nhiều từ dữ liệu rất thưa."));
 ND.push(y("Tối ưu nằm ở **biên lưới** → bước tiếp theo là thử rank 100, alpha 80."));
 ND.push(cau("Chọn siêu tham số trên tập test có phải là gian lận không?"));
-ND.push(y("Thừa nhận: chọn trên tháng test làm số liệu **hơi lạc quan**; báo cáo đã ghi rõ (mục 1.3, 6.2)."));
-ND.push(y("Mã đã có tùy chọn tách tháng cuối thành nửa validation và nửa test; cách so sánh với baseline vẫn công bằng vì baseline không có siêu tham số."));
+ND.push(y("Thừa nhận: bảng tuning chính chọn trên tháng test nên về nguyên tắc **hơi lạc quan**; báo cáo ghi rõ (mục 1.3, 6.2)."));
+ND.push(y("Ngày 11/11 nhóm **kiểm tra lại bằng kỳ validation riêng** (`kiem_tra/tuning_validation.py`): 15 ngày đầu tháng test (19/8–2/9) chỉ để chọn, 16 ngày sau (3–18/9) chỉ để báo cáo; train, seed, maxIter giữ nguyên."));
+ND.push(y("Kết quả: chọn trên validation ra **đúng cấu hình đang phục vụ** (rank 50, reg 1,0, alpha 40) và **đúng β = 1,0**. Trên kỳ kiểm tra: ALS **+1.086 %** so với bán chạy toàn sàn, **+40 %** so với theo danh mục; bản xếp lại **0,0742** (+80 %)."));
+ND.push(y("Mức lạc quan đo được: nếu nhìn chính kỳ kiểm tra để chọn thì chỉ hơn **0,0002** (0,0581 so với 0,0579), dưới 0,5 % tương đối → gần như bằng 0. Thứ hạng các cấu hình ở hai kỳ gần như trùng (Spearman 0,995)."));
+ND.push(y("Lưu ý nếu bị hỏi: lần kiểm tra đo 17/27 tổ hợp (cả 9 tổ hợp rank 10, 5 tổ hợp rank 30, 3 tổ hợp rank 50 alpha 40); 10 tổ hợp bỏ lại có NDCG cả tháng 0,023–0,057, thấp xa nhóm dẫn đầu 0,066–0,068, nên không thể đổi kết quả chọn."));
+ND.push(cau("Vì sao NDCG trên kỳ kiểm tra (0,058) thấp hơn trên cả tháng (0,068)?"));
+ND.push(y("Mọi phương pháp đều thấp hơn ở kỳ sau, kể cả baseline: user ở kỳ này xa thời điểm train hơn, sở thích đã trôi; NDCG thấp hơn kỳ validation 17–29 % ở mọi tổ hợp."));
+ND.push(y("Vì vậy chỉ so sánh **trên cùng một kỳ**: trên kỳ kiểm tra ALS vẫn hơn hai baseline +1.086 % và +40 % (cả tháng: +1.237 % và +43 %), xếp lại vẫn thêm 28 % (cả tháng 27 %)."));
 ND.push(cau("Vì sao mô hình phục vụ phải huấn luyện lại trên cả train và test?"));
 ND.push(y("Mô hình đánh giá chỉ thấy 4 tháng đầu; danh sách cho người dùng phải phản ánh **cả tháng gần nhất**."));
 ND.push(y("Fit lại với đúng siêu tham số đã chọn, rồi mới sinh gợi ý cho toàn bộ user."));
@@ -179,11 +186,15 @@ ND.push(y("Mô hình click phụ thuộc **vị trí** và **độ liên quan**;
 ND.push(cau("Dùng kiểm định gì? Kết luận ra sao?"));
 ND.push(y("z-test hai tỷ lệ, hai phía, độ lệch chuẩn gộp; cỡ mẫu cần 76.972 impression/nhóm để phát hiện mức tăng 10 % (α 5 %, power 80 %) — đã đủ."));
 ND.push(y("CTR: B thấp hơn A 5,5 % (tương đối), **p = 0,015** → khác biệt có ý nghĩa; chuyển đổi p = 0,75 → không kết luận được."));
+ND.push(cau("Impression của cùng một user không độc lập. p = 0,015 có còn tin được không?"));
+ND.push(y("Đúng là không độc lập: trong mô phỏng, user có món “đúng” trong danh sách thì click ở mọi phiên. **Design effect = 1,36**, tức z-test theo impression đánh giá thấp sai số chuẩn khoảng 17 %."));
+ND.push(y("Ngày 11/11 nhóm kiểm định lại **lấy user làm đơn vị** (`kiem_tra/bootstrap_ab.py`, 8.592 user, khoảng 41 impression/user): sai số chuẩn theo cụm cho **p = 0,037**; bootstrap lấy mẫu lại user 2.000 lần cho **p = 0,029**, khoảng tin cậy 95 % của mức chênh tương đối **[−10,5 % ; −0,7 %]** không chứa 0."));
+ND.push(y("Kết luận giữ nguyên ở mức 5 %; chuyển đổi vẫn không khác (p = 0,75–0,76). Báo cáo giữ z-test làm phân tích chính vì đề bài yêu cầu, kết quả theo user ở mục Additional Experiments."));
 ND.push(cau("Vì sao từng ngày đều không có ý nghĩa mà gộp lại thì có?"));
 ND.push(y("Mỗi ngày chỉ khoảng 25.000 impression/nhóm, thấp hơn nhiều cỡ mẫu cần; phân tích chính được **định trước** là gộp 7 ngày."));
 ND.push(y("Kết luận theo từng ngày là “peeking” và kiểm định bội; dù vậy B thấp hơn A cả 7/7 ngày, nhất quán với kết quả gộp."));
 ND.push(cau("Hạn chế của thí nghiệm?"));
-ND.push(y("Impression của cùng user tương quan → p-value có thể bị đánh giá thấp; nên bootstrap theo user."));
+ND.push(y("Impression của cùng user tương quan (design effect 1,36) → p theo impression hơi lạc quan; **đã kiểm tra lại theo user**: p = 0,029–0,037, kết luận không đổi."));
 ND.push(y("Kết luận chỉ đúng với giả định mô phỏng (thịnh hành không được cộng điểm hấp dẫn); cần phân tích độ nhạy."));
 ND.push(cau("Change Data Feed được dùng ở đâu?"));
 ND.push(y("DAG `kn_tinh_ab` đọc `table_changes` của nhật ký hiển thị từ phiên bản đã xử lý → chỉ tính lại những ngày bị ảnh hưởng."));
@@ -233,7 +244,7 @@ ND.push(y("Bảng điều khiển gộp 8 ngày; phân tích chính trong báo c
 ND.push(muc("10. Câu hỏi mở"));
 ND.push(cau("Nếu có thêm thời gian, nhóm sẽ cải thiện gì đầu tiên?"));
 ND.push(y("Thêm nguồn ứng viên ngoài ALS (item-to-item, danh mục) trước khi xếp lại → mục tiêu coverage 10 %."));
-ND.push(y("Quy trình đánh giá chặt hơn: kỳ validation riêng, bootstrap theo user cho A/B."));
+ND.push(y("Hoàn thiện quy trình đánh giá: chạy đủ 27 tổ hợp (thêm rank 100, alpha 80) trên kỳ validation, nhiều lần chia trượt thay vì một lần. Phần kỳ validation và bootstrap theo user **đã làm ngày 11/11**, kết luận không đổi."));
 ND.push(y("Cập nhật mô hình gần thời gian thực; HA cho NameNode và Kafka."));
 ND.push(cau("Hệ thống này mở rộng lên dữ liệu lớn hơn 100 lần thì nghẽn ở đâu?"));
 ND.push(y("RAM driver trên master (chạy mọi driver) → chuyển sang cluster mode hoặc YARN/Kubernetes."));

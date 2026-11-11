@@ -1,6 +1,6 @@
 # Implementation {#sec:impl}
 
-The code base contains about 10,400 lines: 35 PySpark job and library files (4,100 lines), 5 Airflow DAGs with a shared module, a web application of 18 files, the Kafka producers, 19 operational scripts, 14 Docker and Hadoop configuration files and 12 test files (Appendix A). This chapter follows the outline of the pipeline: infrastructure, Spark jobs, orchestration, the web application, the A/B pipeline, reproducibility and testing.
+The code base contains about 11,500 lines: 38 PySpark job and library files (5,000 lines), 5 Airflow DAGs with a shared module, a web application of 18 files, the Kafka producers, 19 operational scripts, 14 Docker and Hadoop configuration files and 13 test files (Appendix A). This chapter follows the outline of the pipeline: infrastructure, Spark jobs, orchestration, the web application, the A/B pipeline, reproducibility and testing.
 
 ## Infrastructure Setup (Docker) {#sec:impl-infra}
 
@@ -229,7 +229,7 @@ Reproducing an experiment requires the same data, the same code and the same par
 
 ## Testing and Quality Assurance {#sec:impl-test}
 
-The repository contains 95 automated tests (93 run in the standard environment, two are skipped when Airflow is not installed). They run with `pytest` on a real local Spark session, so they exercise the same DataFrame code as the cluster (@tab:tests). Infrastructure scripts are tested by putting fake `ssh`, `docker`, `curl`, `getent` or `ping` commands first on the `PATH` and checking what the scripts do with them.
+The repository contains 109 automated tests (107 run in the standard environment; two are skipped when Airflow or SciPy is not installed). They run with `pytest` on a real local Spark session, so they exercise the same DataFrame code as the cluster (@tab:tests). Infrastructure scripts are tested by putting fake `ssh`, `docker`, `curl`, `getent` or `ping` commands first on the `PATH` and checking what the scripts do with them.
 
 Table: Automated tests by area {#tab:tests w=27,8,65}
 | Test file | Tests | What is checked |
@@ -238,10 +238,11 @@ Table: Automated tests by area {#tab:tests w=27,8,65}
 | `test_ml.py` | 12 | Time split, decay, append-only indexers, ALS beats the baselines on structured data, two trainings give identical metrics, v2 price filter, served configuration added to the grid |
 | `test_chi_so.py` | 4 | Ranking metrics against Spark's `RankingMetrics`, coverage and novelty |
 | `test_tron.py` | 11 | A/B templates, stable group assignment, cold-start strategies, new-item placement, re-ranking, trending top-up |
-| `test_ab_va_tron.py`, `test_thong_ke.py` | 9 | A/B aggregation, z-test and sample size against reference values |
+| `test_ab_va_tron.py`, `test_thong_ke.py` | 12 | A/B aggregation, z-test and sample size against reference values, cluster-robust test, user bootstrap and design effect |
 | `test_streaming.py` | 8 | Event normalisation, windows and watermark, trending score, impression aggregation, one-shot progress summary |
 | `test_web.py` | 12 | Every screen and API in simulated mode, Kafka client stub, illustrative pictures always matching the department on the card, cold-start users shown outside the experiment |
 | `test_xuat_ket_qua.py`, `test_xung_dot_delta.py` | 9 | Result export, pooled A/B, retry on Delta conflicts only, maintenance keeps the latest deployment |
+| `test_thi_nghiem_bo_sung.py` | 11 | Additional experiments: validation split by date, ground truth limited to training users and items, saved indexers read without writing, one-pass metrics for several periods, user-level A/B job, candidate-source merge and the pre-declared selection rule, co-occurrence from training data only |
 | `test_ha_tang.py` | 23 | Table schemas, startup script roles, single-role start and image build, ZeroTier MTU, stream stop that also stops the driver, sensor bypass for manual runs, SSH control and code distribution (including retries), network measurement, resumable first run, data copy and cleanup scripts, Airflow configuration, status script, DAG structure |
 
 Every bug found during development or on the cluster received a regression test before it was fixed; @sec:issues lists them.

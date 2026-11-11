@@ -34,7 +34,7 @@ IMG = {
 }
 
 THU_TU = []
-TONG = 25
+TONG = 26
 
 
 def hinh(khoa, alt, rong=None, cao=None, dem=16):
@@ -310,11 +310,12 @@ slide("als", tieu_de("Model and evaluation", "ALS for implicit feedback") +
 # ------------------------------------------------------------------ 11. Tuning
 slide("tuning", tieu_de("Model and evaluation", "Tuning: bigger rank, higher alpha") +
       '<p style="font-size:32px;line-height:1.35;color:{n}">Best of 27: <b>rank 50 · regParam 1.0 · alpha 40 → NDCG@10 = 0.0680</b> <span style="color:{m}">(78 minutes on 34 cores)</span></p>'.format(n=NAVY, m=MUTED) +
-      '<div style="display:flex;justify-content:center">' + hinh("c01", "NDCG@10 over the tuning grid, one heat map per rank", rong=1300) + "</div>",
+      '<div style="display:flex;justify-content:center">' + hinh("c01", "NDCG@10 over the tuning grid, one heat map per rank", rong=1300) + "</div>" +
+      '<p style="font-size:26px;color:{m}">Check on 11 Nov: chosen on 19 Aug – 2 Sep, reported on 3–18 Sep → the same configuration (optimism 0.0002).</p>'.format(m=MUTED),
       "NDCG grows monotonically with rank and with alpha. With implicit feedback a large alpha gives observed pairs, especially "
       "purchases, much more weight than the empty cells, so the model extracts more signal from very sparse data. The optimum "
-      "lies on the edge of the grid, so the natural next step is rank 100 and alpha 80. One honest caveat: hyper-parameters were "
-      "selected on the test month, so absolute values are slightly optimistic.")
+      "lies on the edge of the grid, so the natural next step is rank 100 and alpha 80. We also checked the obvious objection, that the grid was chosen on the test month: choosing on the first "
+      "fifteen days and reporting on the last sixteen selects exactly the same configuration, with an optimism of 0.0002.")
 
 # ------------------------------------------------------------------ 12. Baselines
 slide("baselines", tieu_de("Model and evaluation", "ALS beats both baselines") +
@@ -372,11 +373,12 @@ slide("abtest", tieu_de("Experiment and lakehouse", "A/B test: blending trending
       dong("Traffic", "350,160 simulated impressions over 7 days, position-dependent click model", 26, 150) +
       so_lon("p = 0.015", "CTR 2.094 % (A) vs 1.978 % (B), z = −2.43: B is 5.5 % worse", ORANGE, 64) +
       dong("Conversion", "0.234 % vs 0.239 %, p = 0.75: no difference", 26, 150) +
-      dong("Power", "76,972 impressions per group needed — reached; B below A on all 7 days", 26, 150) +
+      dong("Robustness", "Sample reached (76,972/group); user-level bootstrap p = 0.029, B below A on all 7 days", 26, 150) +
       "</div>" + hinh("s03", "A/B dashboard of the web application", rong=820) + "</div>",
       "Group A sees ALS only, group B ALS with thirty percent trending items. Real visitors are too few, so impressions are "
       "simulated with a position-dependent click model and labelled as simulated. Over 350 thousand impressions, B has a "
-      "significantly lower click-through rate, p equals 0.015, and no difference in conversion. The conclusion holds only under the "
+      "significantly lower click-through rate, p equals 0.015, and no difference in conversion. Treating the user as the unit, a "
+      "bootstrap over users still gives p equals 0.029. The conclusion holds only under the "
       "assumptions of the simulation, which gives trending items no bonus. The dashboard on the right also counts the 230 real web "
       "impressions logged on 11 November, which is why it reads p equals 0.0135 over eight days.")
 
@@ -481,8 +483,8 @@ the = "".join(
         c=CARD, r=RULE, h=H, n=NAVY, t=t, tx=TEXT, m=m, b=BLUE, f=f) for t, m, f in van_de)
 slide("operations", tieu_de("Live system and operations", "Lessons from a shared, constrained cluster") +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 28px">' + the + "</div>" +
-      '<p style="font-size:26px;color:{m}">30 issues found and fixed, each with a regression test — 95 automated tests in total.</p>'.format(m=MUTED),
-      "A large part of the work was operations. Four examples. A path-MTU black hole on the home network silently dropped large "
+      '<p style="font-size:26px;color:{m}">31 issues found and fixed, each with a regression test — 109 automated tests in total.</p>'.format(m=MUTED),
+      "A large part of the work was operations: thirty-one issues, each with a regression test. Four examples. A path-MTU black hole on the home network silently dropped large "
       "packets. Cancelling a Spark application through the Master did not stop its client-mode driver, and the zombie collided "
       "with the new stream on the checkpoint. Our nightly deployment gate could never open, because the nightly grid did not "
       "contain the served hyper-parameters. And small files and small memory forced repartitioning and careful scheduling.")
@@ -513,14 +515,14 @@ slide("limits", tieu_de("Conclusion", "Limitations and future work") +
       '<div style="display:flex;gap:32px;flex:1">' +
       cot("Limitations", [
           "Coverage below 10 % even with re-ranking",
-          "Hyper-parameters chosen on the test month",
-          "Simulated A/B traffic; impression-level z-test",
+          "Main grid chosen on the test month (validation check: same choice)",
+          "Simulated A/B traffic (result holds at user level)",
           "Single NameNode, Spark Master and Kafka broker",
           "Personal lists change once per night",
       ], ORANGE) +
       cot("Future work", [
           "Item-to-item and category candidates before re-ranking",
-          "A validation period and user-level bootstrap",
+          "Full validation grid and rolling splits",
           "Sensitivity of the A/B result to trending attractiveness",
           "High availability for HDFS and Kafka",
           "Incremental (online) model updates",
@@ -547,6 +549,36 @@ p = os.path.join(SL, "thanks.html")
 s = open(p, encoding="utf-8").read().replace("color:{}\">BD03".format(MUTED), "color:#9FB0C8\">BD03").replace(
     "text-align:right;font-size:24px;color:{}".format(MUTED), "text-align:right;font-size:24px;color:#9FB0C8")
 open(p, "w", encoding="utf-8").write(s)
+
+# ------------------------------------------------------------------ 26. Dự phòng (hỏi đáp)
+slide("backup", tieu_de("Backup for questions", "Two checks of the evaluation protocol (11 November)") +
+      '<div style="display:flex;gap:56px;flex:1">'
+      '<div style="flex:1.25;display:flex;flex-direction:column;gap:20px">'
+      '<p style="font-family:{h};font-size:34px;font-weight:600;color:{n}">Choices made on a validation period</p>'.format(h=H, n=NAVY) +
+      '<p style="font-size:24px;color:{m}">Select on 19 Aug – 2 Sep (6,505 users), report on 3–18 Sep (4,215 users); train, seed and grid unchanged</p>'.format(m=MUTED) +
+      bang(["Held-out days", "NDCG@10", "vs category"], [
+          ["Category best-sellers", "0.0413", "—"],
+          ["ALS selected on validation = <b>deployed</b> (rank 50, reg 1.0, alpha 40)", "0.0579", "+40 %"],
+          ["ALS best on the held-out days themselves", "0.0581", "+41 %"],
+          ["+ re-ranking, β = 1.0 selected on validation", "<b>0.0742</b>", "<b>+80 %</b>"],
+      ], [62, 19, 19], 24) +
+      '<p style="font-size:24px;color:{t}">17 of 27 combinations; same ordering in both periods (Spearman 0.995)</p>'.format(t=TEXT) +
+      "</div>"
+      '<div style="flex:1;display:flex;flex-direction:column;gap:20px">'
+      '<p style="font-family:{h};font-size:34px;font-weight:600;color:{n}">A/B with the user as the unit</p>'.format(h=H, n=NAVY) +
+      '<p style="font-size:24px;color:{m}">8,592 simulated users, about 41 impressions each</p>'.format(m=MUTED) +
+      bang(["CTR, B vs A (−5.5 %)", "p-value"], [
+          ["Impression-level z-test (report)", "0.015"],
+          ["Cluster-robust z-test", "<b>0.037</b>"],
+          ["User bootstrap, 2,000 resamples", "<b>0.029</b>"],
+      ], [72, 28], 24) +
+      '<p style="font-size:24px;color:{t}">95 % CI of the relative difference: −10.5 % to −0.7 %; design effect 1.36; conversion still p = 0.75</p>'.format(t=TEXT) +
+      "</div></div>",
+      "Backup slide for questions about the evaluation protocol. On the left: choosing the hyper-parameters and beta on the first "
+      "fifteen days of the test month and reporting on the last sixteen selects exactly the deployed configuration; on the held-out "
+      "days ALS is forty percent and the re-ranked list eighty percent better than the category baseline, and looking at the held-out "
+      "days themselves would only gain 0.0002. On the right: with the user as the unit, the A/B difference stays significant, p equals "
+      "0.037 with cluster-robust errors and 0.029 by bootstrap.")
 
 assert len(THU_TU) == TONG, len(THU_TU)
 deck = {

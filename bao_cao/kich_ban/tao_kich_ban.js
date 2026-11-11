@@ -110,8 +110,8 @@ const S = [
     y: ["Click không phải rating: tách **preference** (0/1) và **confidence** c = 1 + α·r.", "**Mọi ô** vào hàm mất mát, kể cả ô trống (p = 0, c = 1).", "Xen kẽ: cố định item giải user dạng đóng, rồi đổi vai; Spark song song theo khối.", "Lưới **27** tổ hợp: rank {10, 30, 50} × regParam {0,01; 0,1; 1,0} × alpha {1, 10, 40}."],
     chi: "Hai công thức, rồi dòng “Grid (27)”." },
   { id: "tuning", tieu: "Tuning: bigger rank, higher alpha", nguoi: QA, giay: 50,
-    loi: ["This heat map shows NDCG at ten over the whole grid, one panel per rank. NDCG grows monotonically with rank and with alpha. With implicit feedback a large alpha gives observed pairs, especially purchases, much more weight than the empty cells, so the model extracts more signal from very sparse data. The best configuration is rank 50, regParam 1.0, alpha 40, with NDCG at ten of 0.0680. The optimum lies on the edge of the grid, so the natural next step is rank 100 and alpha 80. One honest caveat: hyper-parameters were selected on the test month, so absolute values are slightly optimistic."],
-    y: ["NDCG **tăng đơn điệu** theo rank và alpha.", "Tốt nhất: rank 50, regParam 1,0, alpha 40 → NDCG@10 = **0,0680**.", "Tối ưu ở biên lưới → thử rank 100, alpha 80.", "Tự nói trước hạn chế: chọn trên tháng test nên hơi lạc quan."],
+    loi: ["This heat map shows NDCG at ten over the whole grid, one panel per rank. NDCG grows monotonically with rank and with alpha. With implicit feedback a large alpha gives observed pairs, especially purchases, much more weight than the empty cells, so the model extracts more signal from very sparse data. The best configuration is rank 50, regParam 1.0, alpha 40, with NDCG at ten of 0.0680. The optimum lies on the edge of the grid, so the natural next step is rank 100 and alpha 80. The grid was chosen on the test month, so we checked it: choosing on the first fifteen days and reporting on the last sixteen selects the same configuration."],
+    y: ["NDCG **tăng đơn điệu** theo rank và alpha.", "Tốt nhất: rank 50, regParam 1,0, alpha 40 → NDCG@10 = **0,0680**.", "Tối ưu ở biên lưới → thử rank 100, alpha 80.", "Tự nói trước hạn chế và cách đã kiểm tra: chọn trên 15 ngày đầu, báo cáo trên 16 ngày sau → **cùng cấu hình**, lạc quan chỉ 0,0002 (dòng chữ dưới hình; chi tiết ở slide dự phòng 26)."],
     chi: "Ô đậm nhất ở góc phải của bảng nhiệt rank 50." },
   { id: "baselines", tieu: "ALS beats both baselines", nguoi: QA, giay: 45,
     loi: ["Against the two mandatory baselines ALS wins by a wide margin. Compared with global best-sellers, NDCG at ten rises from 0.0051 to 0.0680: plus 1,237 percent, where the target was only plus thirty. Compared with best-sellers of the user's own category — a much stronger baseline, because RetailRocket visitors stay within one category — ALS is still forty-three percent better. ALS also wins on precision, recall and MAP. And the configuration we actually serve, ALS with novelty re-ranking, is better again: 0.0865."],
@@ -130,8 +130,8 @@ const S = [
     y: ["User mới: top thịnh hành cửa sổ mới nhất.", "User **< 5** tương tác: bán chạy theo danh mục đã xem, xen kẽ thịnh hành.", "Item mới: chen vào **ô 9–10**.", "Ảnh chụp: user tạo tại chỗ, ghi “ngoài thí nghiệm A/B”; tên/ảnh sản phẩm là **minh họa**."],
     chi: "Ba dòng chiến lược, rồi ảnh chụp trang chủ người dùng mới." },
   { id: "abtest", tieu: "A/B test: blending trending items lowers CTR", nguoi: QA, giay: 65,
-    loi: ["Next, the A/B test. Group A sees ALS only; group B sees ALS with thirty percent trending items. Users are assigned by a stable hash of their id. Real visitors are too few, so impressions are simulated with a position-dependent click model and labelled as simulated. Over 350 thousand impressions in seven days, group B has a significantly lower click-through rate: 1.978 against 2.094 percent, p equals 0.015. Conversion shows no difference, p equals 0.75. The required sample size was reached, and B is below A on all seven days. The conclusion holds only under the assumptions of the simulation. The dashboard reads p equals 0.0135 because it also counts 230 real web impressions logged on 11 November."],
-    y: ["A: chỉ ALS; B: ALS + **30 %** thịnh hành (ô 3, 6, 8); chia nhóm bằng băm mã user.", "**350.160** impression mô phỏng, 7 ngày; CTR A **2,094 %** – B **1,978 %**, z = −2,43, **p = 0,015**.", "Chuyển đổi p = 0,75: không khác; cỡ mẫu cần 76.972/nhóm — đã đủ.", "Bảng web ghi **p = 0,0135** vì gộp 8 ngày (thêm 230 impression thật ngày 11/11)."],
+    loi: ["Next, the A/B test. Group A sees ALS only; group B sees ALS with thirty percent trending items. Users are assigned by a stable hash of their id. Real visitors are too few, so impressions are simulated with a position-dependent click model and labelled as simulated. Over 350 thousand impressions in seven days, group B has a significantly lower click-through rate: 1.978 against 2.094 percent, p equals 0.015. Conversion shows no difference, p equals 0.75. Taking the user as the unit, a bootstrap over users still gives p equals 0.029. The conclusion holds only under the assumptions of the simulation. The dashboard reads p equals 0.0135 because it also counts 230 real web impressions logged on 11 November."],
+    y: ["A: chỉ ALS; B: ALS + **30 %** thịnh hành (ô 3, 6, 8); chia nhóm bằng băm mã user.", "**350.160** impression mô phỏng, 7 ngày; CTR A **2,094 %** – B **1,978 %**, z = −2,43, **p = 0,015**.", "Chuyển đổi p = 0,75: không khác; cỡ mẫu cần 76.972/nhóm — đã đủ. Tính theo user (bootstrap): **p = 0,029**, kết luận giữ nguyên.", "Bảng web ghi **p = 0,0135** vì gộp 8 ngày (thêm 230 impression thật ngày 11/11)."],
     chi: "Số p = 0.015 màu cam, rồi ảnh bảng điều khiển A/B." },
   { id: "delta", tieu: "Delta Lake features in use", nguoi: QA, giay: 45,
     loi: ["Every Delta Lake requirement of the specification is used for a real purpose. MERGE makes every writer idempotent. Time travel supports reproducibility: every training records its feature version. Schema evolution produced model version two. Change Data Feed lets the hourly A/B job read only new impressions. OPTIMIZE and Z-ORDER run every night. And because streams and maintenance write the same tables, optimistic concurrency had to be handled with an explicit retry."],
@@ -155,16 +155,16 @@ const S = [
     y: ["Kafka → bronze **10,3 giây**; bấm → bảng thịnh hành **51 giây** (ngưỡng 90).", "51 giây = trigger 20 giây + micro-batch + thời gian trang hỏi lại.", "Luồng từng chết rồi chạy lại vẫn tính đủ click cũ → phục hồi exactly-once từ checkpoint.", "Báo trước: sẽ bấm lại trong demo."],
     chi: "Hai con số, rồi vòng khép kín trên hình f08." },
   { id: "operations", tieu: "Lessons from a shared, constrained cluster", nguoi: T, giay: 50,
-    loi: ["A large part of the work was operations: we logged thirty issues and wrote ninety-five automated tests. Four examples. A path-MTU black hole on the home network silently dropped large packets, so SSH hung. Cancelling a Spark application did not stop its client-mode driver, and the zombie collided with the new stream on the checkpoint. Our nightly deployment gate could never open, because the nightly grid did not contain the served hyper-parameters. And small files and small memory forced one file per date and careful scheduling."],
-    y: ["**30 lỗi** đã ghi nhận và sửa, **95 kiểm thử** tự động.", "MTU: gói lớn bị rơi → jump host, MTU ZeroTier 1.280.", "Driver “ma” tranh checkpoint → dừng = hủy app + giết driver.", "Cổng triển khai không bao giờ mở → luôn thử lại cấu hình đang phục vụ; tệp nhỏ, RAM nhỏ → 1 tệp/ngày, pool 1 chỗ ban đêm."],
+    loi: ["A large part of the work was operations: we logged thirty-one issues and wrote a hundred and nine automated tests. Four examples. A path-MTU black hole on the home network silently dropped large packets, so SSH hung. Cancelling a Spark application did not stop its client-mode driver, and the zombie collided with the new stream on the checkpoint. Our nightly deployment gate could never open, because the nightly grid did not contain the served hyper-parameters. And small files and small memory forced one file per date and careful scheduling."],
+    y: ["**31 lỗi** đã ghi nhận và sửa, **109 kiểm thử** tự động.", "MTU: gói lớn bị rơi → jump host, MTU ZeroTier 1.280.", "Driver “ma” tranh checkpoint → dừng = hủy app + giết driver.", "Cổng triển khai không bao giờ mở → luôn thử lại cấu hình đang phục vụ; tệp nhỏ, RAM nhỏ → 1 tệp/ngày, pool 1 chỗ ban đêm."],
     chi: "Bốn thẻ, mỗi thẻ một câu." },
   { id: "results", tieu: "All eight criteria demonstrated", nguoi: T, giay: 45,
     loi: ["To close the loop on the list from the beginning, here are the eight criteria with their evidence: 27 tuning combinations; plus 1,237 and plus 43 percent over the baselines; cold start shown live; trending in 51 seconds; 10.3 seconds to bronze; an A/B p-value of 0.015; a reproduction deviation of zero; and files read cut from 67 to about one. All eight were demonstrated on the cluster with the real data. The only threshold not met, catalogue coverage, is analysed as the specification requires, and the deployed re-ranking almost doubles it."],
     y: ["Đọc cột Evidence từ trên xuống; tất cả **Met**.", "Coverage là ngưỡng duy nhất chưa đạt — đã phân tích, xếp lại gần như gấp đôi (3,44 → 6,47 %)."],
     chi: "Cột Evidence, dừng ở dòng 2 (coverage)." },
   { id: "limits", tieu: "Limitations and future work", nguoi: T, giay: 35,
-    loi: ["We are also clear about the limits. Coverage stays below ten percent; hyper-parameters were chosen on the test month; the A/B traffic is simulated; and the master, NameNode and broker are single points of failure. The most valuable next steps are more candidate sources before re-ranking, a proper validation protocol, and a sensitivity analysis of the A/B simulation."],
-    y: ["Hạn chế: coverage < 10 %, chọn siêu tham số trên test, A/B mô phỏng, điểm lỗi đơn.", "Hướng phát triển: thêm nguồn ứng viên, tập validation, phân tích độ nhạy A/B, HA cho HDFS/Kafka."],
+    loi: ["We are also clear about the limits. Coverage stays below ten percent; the main grid was chosen on the test month, although a validation check gives the same choice; the A/B traffic is simulated; and the master, NameNode and broker are single points of failure. The most valuable next steps are more candidate sources before re-ranking, a full validation protocol, and a sensitivity analysis of the A/B simulation."],
+    y: ["Hạn chế: coverage < 10 %, lưới chính chọn trên tháng test (kiểm tra validation: cùng lựa chọn), A/B mô phỏng (theo user vẫn đúng), điểm lỗi đơn.", "Hướng phát triển: thêm nguồn ứng viên, đủ lưới validation và chia trượt, phân tích độ nhạy A/B, HA cho HDFS/Kafka."],
     chi: "Cột cam (Limitations) rồi cột xanh (Future work)." },
   { id: "thanks", tieu: "Thank you", nguoi: T, giay: 30,
     loi: ["Thank you for your attention. We are happy to take your questions. After that, or now if the committee prefers, we will run a short live demonstration: model quality, cold start with a new user, the closed loop with its latency, the A/B dashboard and the reproduction screen."],
@@ -191,7 +191,7 @@ ND.push(giua("KỊCH BẢN THUYẾT TRÌNH BẢO VỆ ĐỒ ÁN", { size: 32, bo
 ND.push(giua("Đề tài 3 – Hệ thống gợi ý sản phẩm thương mại điện tử (bd03_khuyen_nghi)", { italics: true }));
 ND.push(giua("Lê Chí Tâm (2302220) · Lê Nguyễn Quốc Anh (2302283)", {}));
 ND.push(giua("Giảng viên hướng dẫn: TS. Cao Tiến Dũng", {}));
-ND.push(giua("Bảo vệ ngày 18/11/2026 · 25 slide · 20 phút trình bày + hỏi đáp + demo khoảng 5 phút", {}, { after: 240 }));
+ND.push(giua("Bảo vệ ngày 18/11/2026 · 25 slide (+1 slide dự phòng) · 20 phút trình bày + hỏi đáp + demo khoảng 5 phút", {}, { after: 240 }));
 
 ND.push(muc("Cách dùng kịch bản"));
 ND.push(y("Phần trình bày nói bằng **tiếng Anh** vì slide bằng tiếng Anh. Khung xanh là lời nói gợi ý, viết sẵn ở tốc độ khoảng **110–120 từ/phút**; đọc to với đồng hồ bấm giờ để chỉnh nhịp."));
@@ -280,7 +280,7 @@ ND.push(bang(["Slide", "Thời lượng mới", "Cách rút"], [
   ["18 – Z-ORDER", "30 giây (từ 45)", "Chỉ nói 67 → 1,07 tệp và 8,4 lần."],
   ["20 – v2", "40 giây (từ 50)", "Bỏ câu “small next to re-ranking”."],
   ["21 – Vòng khép kín", "40 giây (từ 50)", "Bỏ câu về luồng chết rồi chạy lại."],
-  ["22 – Vận hành", "20 giây (từ 50)", "Chỉ nói 30 lỗi, 95 kiểm thử và một ví dụ (cổng triển khai)."],
+  ["22 – Vận hành", "20 giây (từ 50)", "Chỉ nói 31 lỗi, 109 kiểm thử và một ví dụ (cổng triển khai)."],
   ["23 – Kết quả", "25 giây (từ 45)", "Không đọc từng dòng; nói “all eight met, coverage analysed”."],
   ["24 – Hạn chế", "25 giây (từ 35)", "Nói 3 hạn chế đầu và 1 hướng phát triển."],
 ], [18, 22, 60]));
@@ -289,6 +289,7 @@ ND.push(doan("Làm **Bước 2** (người dùng mới) và **Bước 4** (bản
 ND.push(muc2("Nếu bị hỏi giữa chừng"));
 ND.push(y("Câu hỏi ngắn, đúng slide đang nói: trả lời một câu rồi tiếp tục."));
 ND.push(y("Câu hỏi dài hoặc thuộc phần sau: “Thank you, we cover that on slide …; may we answer it there?” rồi nhớ quay lại."));
+ND.push(y("Câu hỏi về **chọn siêu tham số trên tháng test** hoặc **p-value khi impression không độc lập**: mở **slide 26 (dự phòng)**, có đủ số của hai lần kiểm tra ngày 11/11."));
 ND.push(y("Người trình bày phần nào trả lời phần đó: Tâm (dữ liệu, kiến trúc, streaming, Airflow, vận hành), Quốc Anh (ALS, đánh giá, coverage, A/B, Delta, Z-ORDER, tái lập, v2). Người kia bổ sung khi cần."));
 
 // ---- 5. cách đọc số
@@ -337,7 +338,7 @@ ND.push(bang(["Ngày", "Việc"], [
   ["13/11", "Mỗi người đọc to phần mình 3 lần với đồng hồ; đánh dấu câu khó đọc, sửa lời cho tự nhiên."],
   ["14/11", "Tập chung trọn 20 phút, ghi âm; nghe lại, kiểm tra các mốc 7:10 – 16:25 – 20:00 và hai câu chuyển lượt."],
   ["15/11", "Nộp báo cáo. Tập demo 5 bước trên cụm thật (bật bộ phát trước)."],
-  ["16/11", "Hỏi – đáp thử: người này hỏi, người kia trả lời theo bộ 49 câu; đổi vai."],
+  ["16/11", "Hỏi – đáp thử: người này hỏi, người kia trả lời theo bộ 51 câu; đổi vai."],
   ["17/11", "Tập lần cuối, nhẹ nhàng; làm phần “Trước 1 ngày” ở mục 6."],
 ], [16, 84]));
 

@@ -23,7 +23,7 @@ bd03_khuyen_nghi/
 ├── airflow/dags/          5 DAGs + shared module bd03_chung
 ├── ha_tang/               Docker Compose and images per service
 ├── scripts/               cluster control, first run, streams, experiments
-├── tests/                 84 pytest tests on local Spark
+├── tests/                 109 pytest tests on local Spark
 ├── docs/                  architecture, deployment, demo, requirement mapping
 └── bao_cao/               this report: content, figures, generator
 ```
@@ -31,10 +31,10 @@ bd03_khuyen_nghi/
 Table: Size of the code base by component {#tab:loc w=30,15,15,40}
 | Component | Files | Lines | Content |
 |---|---|---|---|
-| `jobs/` | 35 | 4,132 | Streaming, batch, ML, maintenance and verification jobs, shared library |
+| `jobs/` | 38 | 4,975 | Streaming, batch, ML, maintenance and verification jobs, shared library |
 | `web/` | 18 | 1,893 | Application, services, illustrative display layer, templates, static files |
 | `scripts/` | 19 | 1,535 | Cluster control and pipelines |
-| `tests/` | 12 | 1,691 | 95 tests |
+| `tests/` | 13 | 1,907 | 109 tests |
 | `ha_tang/` | 14 | 561 | Compose files, Dockerfiles, Hadoop XML |
 | `airflow/` | 6 | 359 | DAGs |
 | `producer/` | 2 | 241 | Kafka replay and virtual users |

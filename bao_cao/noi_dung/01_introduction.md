@@ -47,7 +47,7 @@ Table: Acceptance checklist of the assignment (section 3.11) {#tab:nghiem-thu w=
 
 ## Scope {#sec:scope}
 
-**In scope.** The project covers the full path from raw events to recommendations shown on a web page: the Kafka producer, three streaming jobs, the batch pipeline (cleaning, statistics, related products, matrix preparation, tuning, evaluation, serving lists, blending, publishing), the A/B pipeline (impression logging, simulated traffic, aggregation and testing), Delta Lake maintenance, the five Airflow DAGs, the web application, the deployment scripts for the cluster, and an automated test suite of 95 tests that run on a local Spark session.
+**In scope.** The project covers the full path from raw events to recommendations shown on a web page: the Kafka producer, three streaming jobs, the batch pipeline (cleaning, statistics, related products, matrix preparation, tuning, evaluation, serving lists, blending, publishing), the A/B pipeline (impression logging, simulated traffic, aggregation and testing), Delta Lake maintenance, the five Airflow DAGs, the web application, the deployment scripts for the cluster, and an automated test suite of 109 tests that run on a local Spark session.
 
 **Out of scope.** The project does not handle user accounts, payments or a product catalogue editor; the web application only simulates the shopping pages needed to generate realistic events and impressions. Deep-learning recommenders and online (incremental) model updates are not attempted: ALS is retrained in batch every night, as the specification requires. No cloud service is used; the whole system runs on the laboratory machines.
 
@@ -56,7 +56,7 @@ Table: Acceptance checklist of the assignment (section 3.11) {#tab:nghiem-thu w=
 - *Data.* RetailRocket item properties are anonymised. Property `790`, commonly used as the price, is a transformed number and is meaningful only for relative comparisons; the dataset has no star ratings, so the `xep_hang_sao` column added by schema evolution is a proxy computed from the purchase-to-view ratio (@sec:impl-v2).
 - *Traffic.* There are not enough real visitors to give an A/B test statistical power, so most impressions are simulated with a position-dependent click model, as the specification allows (section 3.10). Every simulated row is labelled and the dashboard displays the simulated share.
 - *Hardware.* Six shared laboratory machines with 12 logical cores and 7 GB of RAM each, one of which also hosted software of other groups; a Wi-Fi network between them; no administrator rights beyond what the laboratory allows. All memory settings are sized from measurements on these machines (@sec:infra).
-- *Evaluation protocol.* Hyper-parameters are chosen on the test month itself, without a separate validation period. This is common in coursework but makes the reported metrics slightly optimistic; the report states it wherever it matters (@sec:res-tuning).
+- *Evaluation protocol.* Hyper-parameters are chosen on the test month itself, without a separate validation period. This is common in coursework but makes the reported metrics slightly optimistic; the report states it wherever it matters (@sec:res-tuning), and @sec:res-val repeats the selection on a separate validation period: it picks the same configuration, with negligible optimism.
 
 ## Report Organization
 

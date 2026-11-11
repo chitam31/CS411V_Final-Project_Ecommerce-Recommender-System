@@ -63,7 +63,7 @@ Three observations follow from the grid.
 - **regParam matters little when alpha is large, but hurts when alpha is small.** At rank 50 and alpha 40 the three values give 0.0668, 0.0662 and 0.0680. At alpha = 1, regParam = 1.0 gives the lowest NDCG at every rank together with an abnormally high novelty (12.2–12.6): the factors are shrunk towards zero and the recommendations become close to random rare items.
 - **The optimum lies on the edge of the grid** for rank and alpha. The true optimum may lie outside the grid; the natural next step is to add rank 100 and alpha 80. Cost grows roughly linearly with rank.
 
-The hyper-parameters were selected on the test month itself, without a separate validation period (@sec:scope), so the reported values are slightly optimistic. A stricter protocol, supported by an option of `chuan_bi_ma_tran`, splits the last month into a validation half for selection and a test half for reporting.
+The hyper-parameters were selected on the test month itself, without a separate validation period (@sec:scope), so the reported values are slightly optimistic. @sec:res-val repeats the selection with a separate validation period — the first 15 days of the test month — and reports on the remaining days.
 
 ## ALS Versus the Baselines {#sec:res-baselines}
 
@@ -115,7 +115,7 @@ Table: Novelty re-ranking sweep (same model and features) {#tab:xep-lai w=10,10,
 - **Beyond that, the usual trade-off appears.** At β = 2.0 the lists are much more diverse (N1 47.5 %, coverage 7.21 %) but NDCG drops 24 % below pure ALS — still above both baselines.
 - **A larger pool helps only with a strong enough β.** With small β, items outside the top 50 never move up; from β = 1.0, the 200-candidate pool gives clearly better results.
 - **No configuration reaches 10 % coverage** (maximum 7.21 %). Most of the 126,230 training items have only one or two interactions; their vectors are close to zero and they never enter the top 200 of any user. Exceeding 10 % requires candidate sources other than ALS — category-based candidates (the category baseline alone reaches 5.28 %), new items (already given 20 % of the visible slots by the blending step), or a larger grid (coverage increases with rank and alpha).
-- β and the pool size were selected on the test month, so the figures of the best configuration are optimistic; a validation period should be used to choose them in a stricter protocol.
+- β and the pool size were selected on the test month. @sec:res-val chooses β again on a separate validation period and obtains the same value, β = 1.0; the pool size was not re-examined.
 
 **Coverage of the lists actually served.** The coverage above concerns the top-10 ALS lists of the 9,467 test users. Measured on the whole of `gold.goi_y_nguoi_dung` after deployment of the re-ranked configuration — every user, all twenty positions, every source — the system shows 15,582 distinct products (@tab:phu-phuc-vu), that is **12.3 %** of the training items (3.7 % of the catalogue). This exceeds 10 % but measures something different: the coverage of the whole system including non-personalised blocks, not the coverage of the model to which the threshold of the specification refers. The report therefore states both and does not claim that the model threshold is met. At the time of this measurement the trending stream had not yet been started, so the trending slots used the fallback list of 19 items most viewed in the last 24 hours; with live trending windows that block changes every few minutes.
 
@@ -180,7 +180,7 @@ Table: Pooled A/B result over seven days (simulated traffic, no bonus for trendi
 - **Conversion:** p = 0.75; no difference can be claimed.
 - **Daily tests are all non-significant** (p from 0.07 to 0.85): each day has about 25,000 impressions per group, whereas detecting a 5.5 % difference needs about 250,000. The daily chart on the dashboard is for monitoring only; drawing conclusions from it would be "peeking" and multiple testing.
 - **Interpretation.** In the simulation, the click probability depends on whether the item belongs to the items the user actually interacted with in the test month, and trending items receive no bonus. Replacing 30 % of personalised ALS slots with generic trending items (in this run, the fallback list, because the trending stream had not been started) therefore reduces the number of relevant slots, and B loses to A. The conclusion holds only under the assumptions of the simulation — 100 % of the traffic is simulated and labelled as such — and is not evidence about real shoppers. A sensitivity analysis that gives trending items an attractiveness bonus (`--tang-thinh-hanh`) would find the level at which B ties A.
-- **Limitation.** Impressions of the same user are correlated, so an impression-level z-test may understate the p-value; aggregating by user or a user-level bootstrap would be stricter. The project keeps the z-test because the specification requires it.
+- **Unit of analysis.** Impressions of the same user are correlated, so an impression-level z-test may understate the p-value. The z-test is kept as the primary analysis because the specification requires it, and @sec:res-ab-user repeats the test with the user as the unit: the conclusion holds (p = 0.037 with cluster-robust standard errors, p = 0.029 by user bootstrap).
 - These figures were measured on the lists before re-ranking was deployed (version 1 of the recommendation table).
 
 The A/B dashboard of the web application reads `gold.ket_qua_ab` and shows the pooled result, conclusion and required sample size, together with the share of simulated traffic for each group and the daily CTR curves (@fig:ab-web). The screenshot was taken on 11 November, after the screenshots of the live system had logged 230 real impressions of ALS users (180 in group A with 7 clicks, 50 in group B with 1 click). The dashboard therefore pools eight days — 176,140 against 174,250 impressions, p = 0.0135 — while the primary analysis of @tab:ab keeps the seven simulated days up to data version 2 (p = 0.015); the jump of group A on 11 November is noise from 180 impressions. On the seven simulated days group B lies below group A every day (by 0.02 to 0.22 percentage points), which is consistent with the pooled test even though no single day is significant on its own.
@@ -218,6 +218,76 @@ The reproduction screen of the web application reads the same table (@fig:tai-la
 
 ![Reproduction screen of the web application: A/B results that can be recomputed at their recorded data version (top) and the two comparisons of DAG 5 on feature version 0 (bottom)](hinh/s02_tai_lap_web.png){#fig:tai-lap-web w=14.5}
 
+## Additional Experiments {#sec:res-extra}
+
+Three limitations of the evaluation protocol were raised while preparing the defence: the A/B test treats impressions as independent, the hyper-parameters and the re-ranking weight were chosen on the test month, and every candidate of the served list comes from ALS. On 11 November two read-only jobs addressed the first two; the third is discussed with the future work (@sec:conclusion). Neither job writes a table or changes the served system, and both read the same Delta versions as the main results (feature version 3, silver version 10, impression log version 51).
+
+### User-level test of the A/B result {#sec:res-ab-user}
+
+`kiem_tra/bootstrap_ab.py` aggregates the impression log by user — the same filter as the dashboard: ALS strategy only, simulated traffic only — and repeats the test with the user as the unit, in two ways: a z-test with cluster-robust standard errors (delta method for the ratio of sums, with an m/(m − 1) correction), and a bootstrap that resamples users with replacement within each group 2,000 times with a fixed seed. The design effect is the ratio of the cluster-robust variance to the binomial variance of the impression-level test.
+
+Table: The A/B result with the user as the unit (8,592 simulated users, 350,160 impressions) {#tab:ab-user w=20,16,16,16,32}
+| Metric | Impression-level p | Cluster-robust p | User bootstrap p | Bootstrap 95 % CI of the relative difference B vs A; design effect |
+|---|---|---|---|---|
+| CTR (A 2.094 %, B 1.978 %, −5.5 %) | 0.015 | **0.037** | **0.029** | [−10.5 % ; −0.7 %]; 1.36 |
+| Conversion (A 0.234 %, B 0.239 %) | 0.75 | 0.76 | 0.75 | [−10.6 % ; +17.4 %]; 1.05 |
+
+Each group has about 4,300 users with about 41 impressions each. The design effect of 1.36 for CTR means that the impression-level test understates the standard error by about 17 % (√1.36 ≈ 1.17): in the simulation a user whose list contains items from their own test month clicks in every session, so the clicks of one user are correlated. The correction raises the p-value from 0.015 to 0.03–0.04, but the conclusion at the 5 % level is unchanged, and the bootstrap interval for the relative difference excludes zero. Conversion shows no correlation worth mentioning (design effect 1.05) and no difference under any of the three tests. The answer to the question "does B lower CTR?" is therefore the same with the stricter unit of analysis — still under the assumptions of the simulation.
+
+### Hyper-parameters selected on a validation period {#sec:res-val}
+
+`kiem_tra/tuning_validation.py` repeats the selection with a clean protocol. Training data, seed and maxIter are those of the deployed model (feature version 3, built from silver version 10). The test month (19 August – 18 September 2015) is split by date: the first 15 days (19 August – 2 September) form a **validation period** used only to choose, and the remaining 16 days (3–18 September) a **held-out period** used only to report. Of the 9,467 test users, 6,505 are active in the validation period, 4,215 in the held-out period and 1,253 in both; as in the main evaluation, only users and items seen in training are scored. The job also recomputes NDCG@10 on the whole test month, which reproduces @tab:tuning to four decimals and confirms that the models are identical.
+
+The first run, over all 27 combinations, measured the nine rank-10 and five rank-30 combinations before it was stopped because it ran five to six times slower than the original tuning (issue 31). A second run measured the three rank-50, alpha-40 combinations, which lead in every period. The ten combinations left out score between 0.023 and 0.057 on the full month, well below the rank-50, alpha-40 group (0.066–0.068), and the ordering of configurations is almost the same in the two periods (Spearman correlation 0.995 over the 17 measured combinations), so they could not change the selection.
+
+Table: NDCG@10 of 17 of the 27 combinations on the validation period, the held-out period and the whole test month; the combination selected on validation in bold {#tab:val w=12,15,12,21,20,20}
+| rank | regParam | alpha | Validation (19 Aug – 2 Sep) | Held-out (3–18 Sep) | Whole month (@tab:tuning) |
+|---|---|---|---|---|---|
+| 10 | 0.01 | 1 | 0.0177 | 0.0135 | 0.0158 |
+| 10 | 0.01 | 10 | 0.0241 | 0.0179 | 0.0213 |
+| 10 | 0.01 | 40 | 0.0256 | 0.0188 | 0.0228 |
+| 10 | 0.1 | 1 | 0.0172 | 0.0125 | 0.0148 |
+| 10 | 0.1 | 10 | 0.0249 | 0.0188 | 0.0221 |
+| 10 | 0.1 | 40 | 0.0264 | 0.0193 | 0.0233 |
+| 10 | 1.0 | 1 | 0.0150 | 0.0124 | 0.0121 |
+| 10 | 1.0 | 10 | 0.0264 | 0.0211 | 0.0234 |
+| 10 | 1.0 | 40 | 0.0275 | 0.0196 | 0.0241 |
+| 30 | 0.01 | 1 | 0.0284 | 0.0226 | 0.0252 |
+| 30 | 0.01 | 10 | 0.0459 | 0.0348 | 0.0396 |
+| 30 | 0.01 | 40 | 0.0568 | 0.0422 | 0.0493 |
+| 30 | 0.1 | 1 | 0.0285 | 0.0227 | 0.0250 |
+| 30 | 0.1 | 10 | 0.0476 | 0.0360 | 0.0409 |
+| 50 | 0.01 | 40 | 0.0771 | 0.0581 | 0.0668 |
+| 50 | 0.1 | 40 | 0.0763 | 0.0574 | 0.0662 |
+| **50** | **1.0** | **40** | **0.0789** | **0.0579** | **0.0680** |
+
+The re-ranking weight β was then chosen on the validation period as well, with the model selected above and the same 200 candidates as in production (@tab:val-beta), and every method was scored on the held-out period, which played no part in either choice (@tab:val-kt).
+
+Table: Novelty re-ranking weight chosen on the validation period (200 ALS candidates) {#tab:val-beta w=16,24,24,18,18}
+| β | NDCG@10 validation | NDCG@10 held-out | Coverage held-out | Items |
+|---|---|---|---|---|
+| 0 (ALS only) | 0.0789 | 0.0579 | 2.83 % | 3,568 |
+| 0.25 | 0.0855 | 0.0630 | 3.24 % | 4,091 |
+| 0.5 | 0.0919 | 0.0674 | 3.85 % | 4,856 |
+| **1.0** | **0.1012** | **0.0742** | **5.27 %** | **6,649** |
+| 1.5 | 0.0819 | 0.0576 | 5.97 % | 7,536 |
+| 2.0 | 0.0630 | 0.0439 | 5.81 % | 7,336 |
+
+Table: Methods on the held-out period (3–18 September, 4,215 users), all choices made on the validation period {#tab:val-kt w=44,14,21,21}
+| Method | NDCG@10 | Over best-seller baseline | Over category baseline |
+|---|---|---|---|
+| Baseline 1: global best-sellers | 0.0049 | — | — |
+| Baseline 2: category best-sellers | 0.0413 | — | — |
+| ALS selected on validation (rank 50, regParam 1.0, alpha 40) | 0.0579 | +1,086 % | +40 % |
+| ALS that would be selected on the held-out period itself (rank 50, regParam 0.01, alpha 40) | 0.0581 | +1,091 % | +41 % |
+| ALS + novelty re-ranking, β = 1.0 selected on validation | **0.0742** | +1,420 % | +80 % |
+
+- **The clean protocol selects the deployed configuration.** Both the ALS hyper-parameters (rank 50, regParam 1.0, alpha 40) and the re-ranking weight β = 1.0 come out on top of the validation period, exactly as they did on the whole month; β = 1.0 is also the best value on the held-out period.
+- **The optimism of the main protocol is negligible.** The combination that would have been chosen by looking at the held-out period is better by 0.0002 (0.0581 against 0.0579), less than 0.5 % relative. Selecting on the test month therefore did not inflate the reported metrics in any way that matters.
+- **Absolute values differ between periods, comparisons do not.** Every method, the baselines included, scores lower on the held-out period, whose users are further from the training period; NDCG is 17–29 % lower than on the validation period for every combination. Compared on the same period, ALS keeps +1,086 % and +40 % over the two baselines (+1,237 % and +43 % on the whole month), and re-ranking adds 28 % to ALS (27 % on the whole month). Held-out coverage (5.27 %) is lower than the whole-month figure (6.47 %) only because 4,215 users receive fewer slots than 9,467.
+
+The results of @sec:res-tuning, @sec:res-baselines and @sec:res-coverage are therefore not an artefact of choosing on the test month.
+
 ## Streaming and Operations {#sec:res-streaming}
 
 On 10 November the three streaming jobs were started on the cluster and the producer replayed the last 48 days of data (1 August to 18 September 2015) a second time: 857,072 events in about 24 minutes. Thanks to content deduplication (@tab:lam-sach), these duplicates do not change silver. The check used by the stream monitor reported the trending table as live, with 2,203,504 (window, item) rows whose window ended within the last 15 minutes. With Airflow, the three streaming drivers and a reproduction job running together, the master host still had 1.8 GB of memory available (@fig:ram).
@@ -242,12 +312,12 @@ Table: Closed-loop and latency measurements on the cluster (11 November 2026) {#
 Table: Status of the acceptance criteria {#tab:ket-qua-nghiem-thu w=5,28,24,43}
 | # | Criterion | Status | Evidence |
 |---|---|---|---|
-| 1 | Tuning table, ≥ 9 combinations | Met | 27 combinations with NDCG@10 (@tab:tuning) |
+| 1 | Tuning table, ≥ 9 combinations | Met | 27 combinations with NDCG@10 (@tab:tuning); the same selection on a separate validation period (@tab:val) |
 | 2 | ALS vs 2 baselines, 4 metrics + coverage + novelty | Met; coverage threshold not met, analysed | NDCG@10 +1,237 % over baseline 1; coverage 3.44 % (6.47 % served), analysis and re-ranking in @sec:res-coverage |
 | 3 | Three cold-start strategies | Met: brand-new user shown live; the other two strategies unit-tested and shown at the defence | @tab:cold-start, @fig:cold-start-web |
 | 4 | Trending updated ≤ 90 s after a click | Met | 51 s from three clicks to the updated table (@tab:do-tre) |
 | 5 | Closed loop web → Kafka → bronze → trending | Met | Web events in bronze 10.3 s after Kafka, in the trending table after 51 s (@tab:do-tre, @fig:loop) |
-| 6 | A/B result with p-value and conclusion | Met | CTR p = 0.015 (B lower), conversion p = 0.75 (@tab:ab, @fig:ab-web) |
+| 6 | A/B result with p-value and conclusion | Met | CTR p = 0.015 (B lower), conversion p = 0.75 (@tab:ab, @fig:ab-web); user-level bootstrap p = 0.029 (@tab:ab-user) |
 | 7 | Reproduction with `VERSION AS OF` | Met | Deviation 0.000000 on version 0 (@tab:tai-lap) |
 | 8 | OPTIMIZE/Z-ORDER figures for the per-user lookup | Met | Files read 67 → 1.07, median 8.4× faster than compaction only (@tab:zorder) |
 

@@ -86,7 +86,7 @@ bd03_khuyen_nghi/
 ├── airflow/dags/           5 DAG theo mục 3.9
 ├── ha_tang/                Docker compose cho Hadoop, Spark, Kafka, Airflow, Web
 ├── scripts/                Khởi động từng máy, điều khiển cụm qua SSH, kiểm tra cụm, chạy lần đầu, demo
-├── tests/                  62 kiểm thử pytest, chạy trên Spark local thật
+├── tests/                  109 kiểm thử pytest, chạy trên Spark local thật
 ├── docs/                   KIEN_TRUC, TRIEN_KHAI_CUM, HUONG_DAN_DEMO, DOI_CHIEU_YEU_CAU
 └── models/                 Ghi chú về mô hình (mô hình thật nằm trên HDFS /lake/models)
 ```

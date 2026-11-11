@@ -3,7 +3,7 @@
 Tài liệu dùng trong tuần cuối và ngày bảo vệ **18/11/2026**. Đọc kèm:
 
 - `bao_cao/kich_ban/BD03_Kich_ban_thuyet_trinh.docx`: lời nói từng slide, phân công, thời lượng.
-- `bao_cao/hoi_dap/BD03_Hoi_dap_bao_ve.docx`: 49 câu hỏi – đáp dự kiến.
+- `bao_cao/hoi_dap/BD03_Hoi_dap_bao_ve.docx`: 51 câu hỏi – đáp dự kiến.
 - `docs/HUONG_DAN_DEMO.md`: bản demo đầy đủ 15 phút theo 8 tiêu chí, kèm lệnh dự phòng cho từng tiêu chí.
 - `docs/TRIEN_KHAI_CUM.md`: cách bật, dừng và sửa cụm.
 
@@ -21,7 +21,7 @@ Quy ước trong tài liệu này:
 | Mục | Giá trị |
 |---|---|
 | Ngày bảo vệ | 18/11/2026. Nộp báo cáo trước 15/11/2026 |
-| Thời lượng | 20 phút trình bày (25 slide), sau đó hỏi – đáp, rồi demo khoảng 5 phút. Hội đồng có thể muốn xem demo trước |
+| Thời lượng | 20 phút trình bày (25 slide, thêm slide 26 dự phòng cho hỏi – đáp), sau đó hỏi – đáp, rồi demo khoảng 5 phút. Hội đồng có thể muốn xem demo trước |
 | Thành viên | Lê Chí Tâm (2302220) nói slide 1–9 và 21–25, đồng thời bấm máy khi demo. Lê Nguyễn Quốc Anh (2302283) nói slide 10–20 và nói lời dẫn khi demo |
 | Giảng viên hướng dẫn | TS. Cao Tiến Dũng |
 | Web | `http://10.68.71.149:8000`. Từ ngoài mạng lab: đường hầm SSH (mục 3.3), rồi mở `http://localhost:8001` |
@@ -58,7 +58,7 @@ Quy ước trong tài liệu này:
 | 13/11 | Mỗi người đọc to phần mình 3 lần với đồng hồ, theo kịch bản | ☐ |
 | 14/11 | Tập chung trọn 20 phút và ghi âm. Kiểm tra các mốc 7:15, 16:30, 20:00 | ☐ |
 | 15/11 | **Nộp báo cáo** (Word và PDF). Tập 5 bước demo trên cụm thật | ☐ |
-| 16/11 | Hỏi – đáp thử theo bộ 49 câu, hai người đổi vai hỏi và trả lời | ☐ |
+| 16/11 | Hỏi – đáp thử theo bộ 51 câu, hai người đổi vai hỏi và trả lời | ☐ |
 | 17/11 sáng | Làm toàn bộ **mục 2** (kiểm tra cụm, chọn sản phẩm, quay video dự phòng) | ☐ |
 | 17/11 tối | Tập lần cuối. **Tạm dừng DAG `kn_pipeline_hang_ngay`** (mục 2.5). Sạc đầy pin laptop, chuẩn bị đồ ở mục 3 | ☐ |
 | 18/11 | Làm theo **mục 4** (T−60 đến T), demo theo **mục 5**, dọn dẹp theo **mục 11** | ☐ |
@@ -377,13 +377,14 @@ Ghi chú:
 | Baseline | Toàn sàn 0,0051 (ALS +1.237 %), theo danh mục 0,0475 (ALS +43 %) |
 | Coverage | ALS 3,44 % (ngưỡng 10 %); 99,2 % ô thuộc 10 % item phổ biến nhất; trần ≈ 75 % |
 | Xếp lại novelty | β = 1,0, 200 ứng viên: NDCG 0,0865 (+27 %), coverage 6,47 % (+88 %) |
-| A/B | 350.160 impression, 7 ngày; CTR A 2,094 %, B 1,978 %; z = −2,43; p = 0,015; chuyển đổi p = 0,75; cần 76.972/nhóm |
+| A/B | 350.160 impression, 7 ngày; CTR A 2,094 %, B 1,978 %; z = −2,43; p = 0,015; chuyển đổi p = 0,75; cần 76.972/nhóm; theo user: p = 0,037 (cụm), 0,029 (bootstrap) |
 | Z-ORDER | Tệp đọc 67 → 1,07; trung vị 8.280 → 980 ms; nhanh hơn 8,4 lần so với chỉ OPTIMIZE |
 | Tái lập | Độ lệch 0,000000 (1,78·10⁻¹⁵) trên features phiên bản 0 |
+| Kỳ validation | Chọn trên 19/8–2/9, báo cáo trên 3–18/9: chọn đúng cấu hình đang phục vụ và β = 1,0; kỳ kiểm tra ALS 0,0579 (+40 % so với danh mục), xếp lại 0,0742 (+80 %); lạc quan 0,0002 |
 | Vòng khép kín | Kafka → bronze 10,3 giây; bấm → bảng thịnh hành 51 giây |
 | Mô hình v2 | NDCG 0,0680 → 0,0694 (+2,1 %); coverage 3,44 → 3,72 %; 4.346 → 4.699 item; tự triển khai ngày 11/11 |
 | Cụm | 6 máy lab, mỗi máy 7 GB RAM; 5 worker, 34 lõi, 13 GB executor; HDFS sao chép 2 |
-| Kỹ thuật | 30 lỗi đã ghi và sửa, 95 kiểm thử, khoảng 10.400 dòng mã, báo cáo 100 trang |
+| Kỹ thuật | 31 lỗi đã ghi và sửa, 109 kiểm thử, khoảng 11.500 dòng mã, báo cáo khoảng 100 trang |
 
 ---
 
@@ -405,6 +406,8 @@ Trả lời ngắn, rồi quay lại demo. Câu dài hơn xem bộ hỏi – đ�
   - Web vẫn gợi ý được, vì danh sách đọc từ gold.
   - Khi Kafka sống lại, luồng đọc tiếp từ offset trong checkpoint, không mất và không trùng sự kiện.
 - **Vì sao DAG 1 đang tạm dừng?** Xem câu trả lời ở mục 2.5.
+- **Chọn siêu tham số trên tháng test có gian lận không?** / **Impression không độc lập thì p còn đúng không?**
+  - Mở slide 26 (dự phòng): chọn trên kỳ validation ra đúng cấu hình đang phục vụ; theo user p = 0,029–0,037.
 - **Danh sách cá nhân có đổi ngay sau click không?**
   - Phần ALS đổi mỗi đêm (DAG 1).
   - Phần thịnh hành đổi trong khoảng 1 phút. User mới đổi chiến lược ngay trong phiên.
