@@ -344,11 +344,12 @@ slide("rerank", tieu_de("Model and evaluation", "Novelty re-ranking: accuracy an
       '<div style="flex:1;display:flex;flex-direction:column;gap:28px">' +
       so_lon("+27 %", "NDCG@10 at β = 1.0 over 200 candidates (0.0680 → 0.0865)", ORANGE, 64) +
       so_lon("+88 %", "coverage (3.44 % → 6.47 %); slots in the top 10 % fall from 99.2 % to 80.8 %", ORANGE, 64) +
-      '<p style="font-size:26px;line-height:1.4;color:{m}">Deployed for serving. Beyond β = 1 the usual trade-off returns; no β reaches 10 %.</p>'.format(m=MUTED) +
+      '<p style="font-size:26px;line-height:1.4;color:{m}">Deployed for serving; no β alone reaches 10 %. Offline, 3 co-occurrence slots give <b style="color:{o}">14.5 %</b> coverage and NDCG@10 0.0892.</p>'.format(m=MUTED, o=ORANGE) +
       "</div>" + hinh("c04", "Accuracy–coverage trade-off of novelty re-ranking", cao=560) + "</div>",
       "As a de-biasing method we re-rank 200 ALS candidates by normalised ALS score plus beta times normalised novelty. Up to beta "
       "equal one, accuracy and diversity improve together, because the test month contains many items that are rare in training. "
-      "We deployed that configuration. Reaching ten percent needs candidate sources other than ALS, which is our main future work.")
+      "We deployed that configuration. Reaching ten percent needs candidate sources other than ALS, and we tested that offline: giving the "
+      "last three slots to items co-viewed with the user's own items raises coverage to 14.5 percent and NDCG as well. It is not deployed yet.")
 
 # ------------------------------------------------------------------ 15. Cold start
 slide("coldstart", tieu_de("Model and evaluation", "Cold start and the blended “For you” block") +
@@ -493,7 +494,7 @@ slide("operations", tieu_de("Live system and operations", "Lessons from a shared
 slide("results", tieu_de("Conclusion", "All eight criteria demonstrated on the cluster") +
       bang(["#", "Criterion", "Evidence", "Status"], [
           ["1", "Tuning table, ≥ 9 combinations", "27 combinations; best NDCG@10 = 0.0680", "Met"],
-          ["2", "ALS vs 2 baselines", "+1,237 % / +43 %; coverage 3.44 % analysed, 6.47 % served", "Met, coverage analysed"],
+          ["2", "ALS vs 2 baselines", "+1,237 % / +43 %; coverage 3.44 %, 6.47 % served, 14.5 % offline", "Met, coverage analysed"],
           ["3", "Three cold-start strategies", "New user shown live; all three unit-tested", "Met"],
           ["4", "Trending ≤ 90 s after a click", "51 s", "Met"],
           ["5", "Closed loop web → bronze → trending", "10.3 s to bronze", "Met"],
@@ -502,8 +503,8 @@ slide("results", tieu_de("Conclusion", "All eight criteria demonstrated on the c
           ["8", "OPTIMIZE / Z-ORDER", "Files read 67 → 1.07, 8.4× faster", "Met"],
       ], [5, 33, 42, 20], 24),
       "To close the loop on the list from the beginning: all eight acceptance criteria were demonstrated on the cluster with the "
-      "real data. The only threshold not met, catalogue coverage, is analysed as the specification requires, and the deployed "
-      "re-ranking almost doubles it.")
+      "real data. The only threshold not met in production, catalogue coverage, is analysed as the specification requires; the deployed "
+      "re-ranking almost doubles it, and an offline mix with co-occurrence candidates passes it.")
 
 # ------------------------------------------------------------------ 24. Hạn chế
 cot = lambda tieu, ds, mau: (
@@ -514,14 +515,14 @@ cot = lambda tieu, ds, mau: (
 slide("limits", tieu_de("Conclusion", "Limitations and future work") +
       '<div style="display:flex;gap:32px;flex:1">' +
       cot("Limitations", [
-          "Coverage below 10 % even with re-ranking",
+          "Served coverage 6.5 %; 14.5 % only offline",
           "Main grid chosen on the test month (validation check: same choice)",
           "Simulated A/B traffic (result holds at user level)",
           "Single NameNode, Spark Master and Kafka broker",
           "Personal lists change once per night",
       ], ORANGE) +
       cot("Future work", [
-          "Item-to-item and category candidates before re-ranking",
+          "Deploy the co-occurrence slots, re-run the A/B test",
           "Full validation grid and rolling splits",
           "Sensitivity of the A/B result to trending attractiveness",
           "High availability for HDFS and Kafka",
@@ -551,7 +552,7 @@ s = open(p, encoding="utf-8").read().replace("color:{}\">BD03".format(MUTED), "c
 open(p, "w", encoding="utf-8").write(s)
 
 # ------------------------------------------------------------------ 26. Dự phòng (hỏi đáp)
-slide("backup", tieu_de("Backup for questions", "Two checks of the evaluation protocol (11 November)") +
+slide("backup", tieu_de("Backup for questions", "Additional experiments (11 November)") +
       '<div style="display:flex;gap:56px;flex:1">'
       '<div style="flex:1.25;display:flex;flex-direction:column;gap:20px">'
       '<p style="font-family:{h};font-size:34px;font-weight:600;color:{n}">Choices made on a validation period</p>'.format(h=H, n=NAVY) +
@@ -573,12 +574,18 @@ slide("backup", tieu_de("Backup for questions", "Two checks of the evaluation pr
           ["User bootstrap, 2,000 resamples", "<b>0.029</b>"],
       ], [72, 28], 24) +
       '<p style="font-size:24px;color:{t}">95 % CI of the relative difference: −10.5 % to −0.7 %; design effect 1.36; conversion still p = 0.75</p>'.format(t=TEXT) +
-      "</div></div>",
-      "Backup slide for questions about the evaluation protocol. On the left: choosing the hyper-parameters and beta on the first "
+      "</div></div>" +
+      '<div style="border-top:1px solid {r};padding-top:18px;display:flex;gap:40px;align-items:baseline">'
+      '<p style="font-family:{h};font-size:30px;font-weight:600;color:{n};min-width:max-content">Candidate sources (offline)</p>'
+      '<p style="font-size:24px;line-height:1.4;color:{t}">7 served slots + 3 <b>co-occurrence</b> slots (training data only): coverage 6.47 % → '
+      '<b style="color:{o}">14.5 %</b> (target 10 %), NDCG@10 0.0865 → 0.0892, held-out 0.0742 → 0.0764; category slots add nothing; not deployed</p></div>'.format(
+          r=RULE, h=H, n=NAVY, t=TEXT, o=ORANGE),
+      "Backup slide for questions about the evaluation protocol and coverage. On the left: choosing the hyper-parameters and beta on the first "
       "fifteen days of the test month and reporting on the last sixteen selects exactly the deployed configuration; on the held-out "
       "days ALS is forty percent and the re-ranked list eighty percent better than the category baseline, and looking at the held-out "
       "days themselves would only gain 0.0002. On the right: with the user as the unit, the A/B difference stays significant, p equals "
-      "0.037 with cluster-robust errors and 0.029 by bootstrap.")
+      "0.037 with cluster-robust errors and 0.029 by bootstrap. At the bottom: three co-occurrence slots raise coverage to 14.5 percent "
+      "offline, above the target, with higher NDCG; this is not deployed yet.")
 
 assert len(THU_TU) == TONG, len(THU_TU)
 deck = {

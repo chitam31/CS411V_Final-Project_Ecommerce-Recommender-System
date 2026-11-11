@@ -76,6 +76,7 @@ ND.push(bang(["Hạng mục", "Số liệu"], [
   ["Z-ORDER", "Tệp đọc mỗi truy vấn 67 → 1,07; trung vị 8.280 → 980 ms (nhanh 8,4 lần so với chỉ OPTIMIZE)"],
   ["Tái lập", "Độ lệch 0,000000 trên features phiên bản 0 (1,78·10⁻¹⁵ khi không làm tròn)"],
   ["Vòng khép kín", "Kafka → bronze 10,3 giây; bấm → bảng thịnh hành 51 giây (ngưỡng 90 giây)"],
+  ["Nguồn ứng viên", "Offline 11/11: 7 ô ALS + 3 ô đồng xuất hiện → coverage 6,47 % → **14,5 %** (ngưỡng 10 %), NDCG@10 0,0865 → 0,0892 (kỳ kiểm tra 0,0742 → 0,0764); chưa triển khai"],
   ["Kỳ validation", "Chọn trên 19/8–2/9, báo cáo trên 3–18/9: chọn đúng rank 50, reg 1,0, alpha 40 và β = 1,0; kỳ kiểm tra: ALS 0,0579 (+1.086 % / +40 %), xếp lại 0,0742 (+80 % so với danh mục); lạc quan 0,0002"],
   ["Mô hình v2", "Đã triển khai 11/11 (als_v2_r20261110T230924, alpha 40): NDCG@10 0,0680 → 0,0694 (+2,1 %), coverage 3,44 % → 3,72 %, 4.346 → 4.699 item; ở alpha 10: +2,3 %"],
   ["Cụm", "6 máy lab, mỗi máy 12 lõi, 7 GB RAM; 5 worker: 34 lõi, 13 GB executor; HDFS sao chép 2; 31 lỗi đã sửa, 109 kiểm thử"],
@@ -154,7 +155,12 @@ ND.push(cau("Coverage chỉ 3,44 % (< 10 %), giải thích thế nào?"));
 ND.push(y("Không phải giới hạn cấu trúc: 10 ô × 9.467 user = 94.670 ô cho 126.230 item → trần **75 %**."));
 ND.push(y("Nguyên nhân là **popularity bias**: 99,2 % ô của ALS thuộc 10 % item phổ biến nhất; item ít tương tác có vector yếu."));
 ND.push(y("Khắc phục đã làm: xếp lại novelty β = 1,0 → coverage 6,47 %, **đồng thời** NDCG tăng lên 0,0865; đã triển khai."));
-ND.push(y("Danh sách đang phục vụ (gồm thịnh hành, danh mục, ALS) phủ 15.582 sản phẩm = **12,3 %** item trong train."));
+ND.push(y("Danh sách đang phục vụ (gồm thịnh hành, danh mục, ALS) phủ 16.001 sản phẩm = **12,7 %** item trong train (gold phiên bản 14)."));
+ND.push(y("**Thí nghiệm offline 11/11** (`kiem_tra/thu_nguon_ung_vien.py`): giữ 7 ô đầu của danh sách ALS đã xếp lại, 3 ô cuối lấy món **hay được xem cùng ngày** với các món của chính user (chỉ tính từ train) → coverage **14,5 %** (vượt ngưỡng 10 %) và NDCG@10 còn **tăng** 0,0865 → 0,0892; kỳ kiểm tra +85 % so với bán chạy theo danh mục. Chưa triển khai vào hệ thống đang chạy."));
+ND.push(cau("Thí nghiệm nguồn ứng viên đạt coverage 14,5 %, sao không triển khai luôn?"));
+ND.push(y("Kết quả có vào tối 11/11, một tuần trước buổi bảo vệ. Triển khai sẽ đổi danh sách đang phục vụ, thí nghiệm A/B và toàn bộ ảnh chụp trong báo cáo, nên nhóm giữ hệ thống ổn định và ghi rõ: ngưỡng coverage **đạt offline**, cùng tập user và cùng định nghĩa, nhưng **chưa đạt trong production**."));
+ND.push(y("Cách triển khai đã rõ: thêm một bước ghép ô trong job trộn (`tron_goi_y`) trước khi áp mẫu A/B, rồi chạy lại A/B. Mã ghép (`ghep_danh_sach`) và luật chọn đã có kiểm thử."));
+ND.push(y("Vì sao ô bán chạy theo danh mục không giúp: vài món bán chạy của mỗi danh mục lặp lại ở rất nhiều user nên gần như không thêm item mới (coverage giữ 6,4–6,5 %), lại thay chỗ những món hay trúng hơn."));
 ND.push(cau("Vì sao xếp lại novelty lại làm tăng cả NDCG?"));
 ND.push(y("Tháng test có nhiều item hiếm trong train; đẩy bớt món quá phổ biến làm danh sách khớp hơn với hành vi thật."));
 ND.push(y("Vượt β = 1 thì đánh đổi quen thuộc quay lại (β = 2: coverage 7,21 % nhưng NDCG giảm 24 %)."));
@@ -243,7 +249,7 @@ ND.push(y("Ngày 11/11, lúc chụp màn hình, web ghi thêm 230 impression th�
 ND.push(y("Bảng điều khiển gộp 8 ngày; phân tích chính trong báo cáo cố định 7 ngày mô phỏng đến phiên bản dữ liệu 2 — định trước khi xem dữ liệu."));
 ND.push(muc("10. Câu hỏi mở"));
 ND.push(cau("Nếu có thêm thời gian, nhóm sẽ cải thiện gì đầu tiên?"));
-ND.push(y("Thêm nguồn ứng viên ngoài ALS (item-to-item, danh mục) trước khi xếp lại → mục tiêu coverage 10 %."));
+ND.push(y("**Triển khai** 3 ô đồng xuất hiện vào job trộn (offline đã đạt coverage 14,5 %, NDCG còn tăng), thử 4–5 ô, mở rộng lưới (rank 100, alpha 80), rồi chạy lại A/B."));
 ND.push(y("Hoàn thiện quy trình đánh giá: chạy đủ 27 tổ hợp (thêm rank 100, alpha 80) trên kỳ validation, nhiều lần chia trượt thay vì một lần. Phần kỳ validation và bootstrap theo user **đã làm ngày 11/11**, kết luận không đổi."));
 ND.push(y("Cập nhật mô hình gần thời gian thực; HA cho NameNode và Kafka."));
 ND.push(cau("Hệ thống này mở rộng lên dữ liệu lớn hơn 100 lần thì nghẽn ở đâu?"));

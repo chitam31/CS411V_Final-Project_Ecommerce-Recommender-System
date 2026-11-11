@@ -122,8 +122,8 @@ const S = [
     y: ["Coverage ALS **3,44 %** < ngưỡng 10 %: đề cho phép nếu có phân tích.", "Trần cấu trúc **≈ 75 %** (≈ 95 nghìn ô cho 126 nghìn item) → không phải do thiếu chỗ.", "Nguyên nhân: **thiên lệch phổ biến**, 99,2 % ô thuộc 10 % item phổ biến nhất."],
     chi: "Cột cao nhất (nhóm phổ biến nhất) trên biểu đồ c03." },
   { id: "rerank", tieu: "Novelty re-ranking", nguoi: QA, giay: 55,
-    loi: ["As a de-biasing method we re-rank two hundred ALS candidates by the normalised ALS score plus beta times normalised novelty. The chart shows the trade-off. Up to beta equal to one, accuracy and diversity improve together: NDCG rises twenty-seven percent to 0.0865, and coverage rises eighty-eight percent to 6.47 percent. That happens because the test month contains many items that are rare in training. We deployed this configuration. Reaching ten percent needs candidate sources other than ALS, which is our main future work."],
-    y: ["Xếp lại 200 ứng viên: điểm ALS chuẩn hóa + β × độ mới chuẩn hóa.", "β = 1,0: NDCG **+27 %** (0,0865), coverage **+88 %** (6,47 %); ô thuộc top 10 % giảm 99,2 % → 80,8 %.", "Đã triển khai; muốn đạt 10 % cần nguồn ứng viên ngoài ALS."],
+    loi: ["As a de-biasing method we re-rank two hundred ALS candidates by the normalised ALS score plus beta times normalised novelty. The chart shows the trade-off. Up to beta equal to one, accuracy and diversity improve together: NDCG rises twenty-seven percent to 0.0865, and coverage rises eighty-eight percent to 6.47 percent. That happens because the test month contains many items that are rare in training. We deployed this configuration. To reach ten percent we tested, offline, items co-viewed with the user's own items in the last three slots: coverage rises to 14.5 percent and NDCG rises too. That mix is not deployed yet."],
+    y: ["Xếp lại 200 ứng viên: điểm ALS chuẩn hóa + β × độ mới chuẩn hóa.", "β = 1,0: NDCG **+27 %** (0,0865), coverage **+88 %** (6,47 %); ô thuộc top 10 % giảm 99,2 % → 80,8 %.", "Đã triển khai. Thí nghiệm offline 11/11: 3 ô cuối lấy món **đồng xuất hiện** → coverage **14,5 %** (vượt 10 %), NDCG 0,0892; **chưa triển khai** (dòng chữ dưới hai số lớn)."],
     chi: "Điểm β = 1,0 trên đường cong c04." },
   { id: "coldstart", tieu: "Cold start and the blended “For you” block", nguoi: QA, giay: 50,
     loi: ["ALS has no vector for a new user or a new item, so we wrote three cold-start strategies as pure functions shared by the batch job and the web application. A brand-new user sees the newest trending items. A user with fewer than five interactions sees best-sellers of the categories they viewed, interleaved with trending. New items that ALS does not know enter through slots nine and ten. The screenshot is the live system: a user created with one click immediately gets the new-user strategy, and the page marks that user as outside the A/B experiment. Product names and pictures are illustrations, because RetailRocket is anonymised."],
@@ -159,12 +159,12 @@ const S = [
     y: ["**31 lỗi** đã ghi nhận và sửa, **109 kiểm thử** tự động.", "MTU: gói lớn bị rơi → jump host, MTU ZeroTier 1.280.", "Driver “ma” tranh checkpoint → dừng = hủy app + giết driver.", "Cổng triển khai không bao giờ mở → luôn thử lại cấu hình đang phục vụ; tệp nhỏ, RAM nhỏ → 1 tệp/ngày, pool 1 chỗ ban đêm."],
     chi: "Bốn thẻ, mỗi thẻ một câu." },
   { id: "results", tieu: "All eight criteria demonstrated", nguoi: T, giay: 45,
-    loi: ["To close the loop on the list from the beginning, here are the eight criteria with their evidence: 27 tuning combinations; plus 1,237 and plus 43 percent over the baselines; cold start shown live; trending in 51 seconds; 10.3 seconds to bronze; an A/B p-value of 0.015; a reproduction deviation of zero; and files read cut from 67 to about one. All eight were demonstrated on the cluster with the real data. The only threshold not met, catalogue coverage, is analysed as the specification requires, and the deployed re-ranking almost doubles it."],
-    y: ["Đọc cột Evidence từ trên xuống; tất cả **Met**.", "Coverage là ngưỡng duy nhất chưa đạt — đã phân tích, xếp lại gần như gấp đôi (3,44 → 6,47 %)."],
+    loi: ["To close the loop on the list from the beginning, here are the eight criteria with their evidence: 27 tuning combinations; plus 1,237 and plus 43 percent over the baselines; cold start shown live; trending in 51 seconds; 10.3 seconds to bronze; an A/B p-value of 0.015; a reproduction deviation of zero; and files read cut from 67 to about one. All eight were demonstrated on the cluster with the real data. The only threshold not met in production, catalogue coverage, is analysed as the specification requires; the deployed re-ranking almost doubles it, and an offline mix with co-occurrence candidates passes it."],
+    y: ["Đọc cột Evidence từ trên xuống; tất cả **Met**.", "Coverage là ngưỡng duy nhất chưa đạt trong hệ thống đang chạy — đã phân tích, xếp lại gần như gấp đôi (3,44 → 6,47 %), offline với ô đồng xuất hiện đạt **14,5 %**."],
     chi: "Cột Evidence, dừng ở dòng 2 (coverage)." },
   { id: "limits", tieu: "Limitations and future work", nguoi: T, giay: 35,
-    loi: ["We are also clear about the limits. Coverage stays below ten percent; the main grid was chosen on the test month, although a validation check gives the same choice; the A/B traffic is simulated; and the master, NameNode and broker are single points of failure. The most valuable next steps are more candidate sources before re-ranking, a full validation protocol, and a sensitivity analysis of the A/B simulation."],
-    y: ["Hạn chế: coverage < 10 %, lưới chính chọn trên tháng test (kiểm tra validation: cùng lựa chọn), A/B mô phỏng (theo user vẫn đúng), điểm lỗi đơn.", "Hướng phát triển: thêm nguồn ứng viên, đủ lưới validation và chia trượt, phân tích độ nhạy A/B, HA cho HDFS/Kafka."],
+    loi: ["We are also clear about the limits. Served coverage is 6.5 percent; 14.5 percent so far only offline. The main grid was chosen on the test month, although a validation check gives the same choice; the A/B traffic is simulated; and the master, NameNode and broker are single points of failure. The next steps are to deploy the co-occurrence slots and re-run the A/B test, a full validation protocol, and a sensitivity analysis of the A/B simulation."],
+    y: ["Hạn chế: coverage đang phục vụ 6,5 % (14,5 % mới ở offline), lưới chính chọn trên tháng test (kiểm tra validation: cùng lựa chọn), A/B mô phỏng (theo user vẫn đúng), điểm lỗi đơn.", "Hướng phát triển: triển khai 3 ô đồng xuất hiện rồi chạy lại A/B, đủ lưới validation và chia trượt, phân tích độ nhạy A/B, HA cho HDFS/Kafka."],
     chi: "Cột cam (Limitations) rồi cột xanh (Future work)." },
   { id: "thanks", tieu: "Thank you", nguoi: T, giay: 30,
     loi: ["Thank you for your attention. We are happy to take your questions. After that, or now if the committee prefers, we will run a short live demonstration: model quality, cold start with a new user, the closed loop with its latency, the A/B dashboard and the reproduction screen."],
@@ -289,7 +289,7 @@ ND.push(doan("Làm **Bước 2** (người dùng mới) và **Bước 4** (bản
 ND.push(muc2("Nếu bị hỏi giữa chừng"));
 ND.push(y("Câu hỏi ngắn, đúng slide đang nói: trả lời một câu rồi tiếp tục."));
 ND.push(y("Câu hỏi dài hoặc thuộc phần sau: “Thank you, we cover that on slide …; may we answer it there?” rồi nhớ quay lại."));
-ND.push(y("Câu hỏi về **chọn siêu tham số trên tháng test** hoặc **p-value khi impression không độc lập**: mở **slide 26 (dự phòng)**, có đủ số của hai lần kiểm tra ngày 11/11."));
+ND.push(y("Câu hỏi về **chọn siêu tham số trên tháng test**, **p-value khi impression không độc lập** hoặc **coverage < 10 %**: mở **slide 26 (dự phòng)**, có đủ số của ba thí nghiệm bổ sung ngày 11/11."));
 ND.push(y("Người trình bày phần nào trả lời phần đó: Tâm (dữ liệu, kiến trúc, streaming, Airflow, vận hành), Quốc Anh (ALS, đánh giá, coverage, A/B, Delta, Z-ORDER, tái lập, v2). Người kia bổ sung khi cần."));
 
 // ---- 5. cách đọc số
@@ -338,7 +338,7 @@ ND.push(bang(["Ngày", "Việc"], [
   ["13/11", "Mỗi người đọc to phần mình 3 lần với đồng hồ; đánh dấu câu khó đọc, sửa lời cho tự nhiên."],
   ["14/11", "Tập chung trọn 20 phút, ghi âm; nghe lại, kiểm tra các mốc 7:10 – 16:25 – 20:00 và hai câu chuyển lượt."],
   ["15/11", "Nộp báo cáo. Tập demo 5 bước trên cụm thật (bật bộ phát trước)."],
-  ["16/11", "Hỏi – đáp thử: người này hỏi, người kia trả lời theo bộ 51 câu; đổi vai."],
+  ["16/11", "Hỏi – đáp thử: người này hỏi, người kia trả lời theo bộ 52 câu; đổi vai."],
   ["17/11", "Tập lần cuối, nhẹ nhàng; làm phần “Trước 1 ngày” ở mục 6."],
 ], [16, 84]));
 

@@ -417,7 +417,22 @@ Khoảng tin cậy 95 % của mức chênh tương đối [−10,46 % ; −0,74 
 
 β trên validation / kiểm tra: 0 → 0,0789 / 0,0579; 0,25 → 0,0855 / 0,0630; 0,5 → 0,0919 / 0,0674; **1,0 → 0,1012 / 0,0742** (coverage kỳ kiểm tra 5,27 %); 1,5 → 0,0819 / 0,0576; 2,0 → 0,0630 / 0,0439. Thứ hạng cấu hình ở hai kỳ gần như trùng (Spearman 0,995 trên 17 tổ hợp); NDCG kỳ kiểm tra thấp hơn kỳ validation 17–29 % ở mọi tổ hợp. Kết luận: mức lạc quan do chọn trên tháng test chỉ 0,0002.
 
-**Thêm nguồn ứng viên ngoài ALS** ([jobs/kiem_tra/thu_nguon_ung_vien.py](jobs/kiem_tra/thu_nguon_ung_vien.py)): giữ 10 − q_c − q_d ô đầu của danh sách đang phục vụ, thêm q_c món đồng xuất hiện (chỉ từ train) và q_d món bán chạy theo danh mục; chọn cấu hình trên validation theo luật đặt trước (coverage cao nhất trong các cấu hình có NDCG validation ≥ 95 % cấu hình gốc). Chưa chạy trên cụm.
+**Thêm nguồn ứng viên ngoài ALS** ([jobs/kiem_tra/thu_nguon_ung_vien.py](jobs/kiem_tra/thu_nguon_ung_vien.py)): giữ 10 − q_c − q_d ô đầu của danh sách đang phục vụ, thêm q_c món đồng xuất hiện (chỉ từ train) và q_d món bán chạy theo danh mục; chọn cấu hình trên validation theo luật đặt trước (coverage cao nhất trong các cấu hình có NDCG validation ≥ 95 % cấu hình gốc). Chạy 18:57–19:08 ngày 11/11 (11 phút), mô hình `als_v2_r20261110T230924`; 8.673/9.467 user có ứng viên đồng xuất hiện.
+
+| Giữ / đồng xuất hiện / danh mục | NDCG validation | NDCG kiểm tra | NDCG cả tháng | Coverage | Số item | Suất vào N1 |
+|---|---|---|---|---|---|---|
+| 10 / 0 / 0 (đang phục vụ) | 0,1012 | 0,0742 | 0,0865 | 6,47 % | 8.162 | 80,8 % |
+| 9 / 1 / 0 | 0,1022 | 0,0753 | 0,0876 | 10,14 % | 12.805 | 78,2 % |
+| 8 / 2 / 0 | 0,1034 | 0,0760 | 0,0886 | 12,68 % | 16.011 | 75,9 % |
+| **7 / 3 / 0 (chọn)** | **0,1040** | **0,0764** | **0,0892** | **14,53 %** | **18.341** | **74,1 %** |
+| 9 / 0 / 1 | 0,1009 | 0,0740 | 0,0863 | 6,44 % | 8.124 | 82,2 % |
+| 8 / 0 / 2 | 0,1010 | 0,0737 | 0,0863 | 6,46 % | 8.151 | 83,3 % |
+| 8 / 1 / 1 | 0,1024 | 0,0751 | 0,0877 | 10,09 % | 12.737 | 79,5 % |
+| 7 / 2 / 1 | 0,1034 | 0,0762 | 0,0887 | 12,63 % | 15.939 | 77,4 % |
+| 6 / 3 / 1 | 0,1041 | 0,0763 | 0,0892 | 14,44 % | 18.231 | 75,6 % |
+| 6 / 2 / 2 | 0,1033 | 0,0756 | 0,0884 | 12,59 % | 15.891 | 78,6 % |
+
+Ô đồng xuất hiện tăng cả NDCG lẫn coverage; cấu hình chọn **vượt ngưỡng coverage 10 %** (14,5 %), kỳ kiểm tra +85 % so với bán chạy theo danh mục. Ô danh mục không giúp (coverage giữ 6,4–6,5 %). Tối ưu ở biên khoảng đã thử (3 ô). **Chưa triển khai**: hệ thống đang phục vụ vẫn 6,47 %.
 
 ---
 

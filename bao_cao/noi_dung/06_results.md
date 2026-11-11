@@ -114,7 +114,7 @@ Table: Novelty re-ranking sweep (same model and features) {#tab:xep-lai w=10,10,
 - **Up to β = 1.0, re-ranking improves accuracy and diversity together.** With 200 candidates and β = 1.0, NDCG@10 rises by 27 %, coverage by 88 %, and the share of slots in N1 falls from 99.2 % to 80.8 % (N2 11.2 %, N3 4.3 %, N4 2.0 %, N5–N10 1.9 %). The test month of RetailRocket contains many items that are rare in training, so promoting less popular candidates makes lists both more diverse and more accurate.
 - **Beyond that, the usual trade-off appears.** At β = 2.0 the lists are much more diverse (N1 47.5 %, coverage 7.21 %) but NDCG drops 24 % below pure ALS — still above both baselines.
 - **A larger pool helps only with a strong enough β.** With small β, items outside the top 50 never move up; from β = 1.0, the 200-candidate pool gives clearly better results.
-- **No configuration reaches 10 % coverage** (maximum 7.21 %). Most of the 126,230 training items have only one or two interactions; their vectors are close to zero and they never enter the top 200 of any user. Exceeding 10 % requires candidate sources other than ALS — category-based candidates (the category baseline alone reaches 5.28 %), new items (already given 20 % of the visible slots by the blending step), or a larger grid (coverage increases with rank and alpha).
+- **No configuration reaches 10 % coverage** (maximum 7.21 %). Most of the 126,230 training items have only one or two interactions; their vectors are close to zero and they never enter the top 200 of any user. Exceeding 10 % requires candidate sources other than ALS — category-based candidates (the category baseline alone reaches 5.28 %), new items (already given 20 % of the visible slots by the blending step), or a larger grid (coverage increases with rank and alpha). @sec:res-nguon tests the first idea offline: three co-occurrence slots reach 14.5 %.
 - β and the pool size were selected on the test month. @sec:res-val chooses β again on a separate validation period and obtains the same value, β = 1.0; the pool size was not re-examined.
 
 **Coverage of the lists actually served.** The coverage above concerns the top-10 ALS lists of the 9,467 test users. Measured on the whole of `gold.goi_y_nguoi_dung` after deployment of the re-ranked configuration — every user, all twenty positions, every source — the system shows 15,582 distinct products (@tab:phu-phuc-vu), that is **12.3 %** of the training items (3.7 % of the catalogue). This exceeds 10 % but measures something different: the coverage of the whole system including non-personalised blocks, not the coverage of the model to which the threshold of the specification refers. The report therefore states both and does not claim that the model threshold is met. At the time of this measurement the trending stream had not yet been started, so the trending slots used the fallback list of 19 items most viewed in the last 24 hours; with live trending windows that block changes every few minutes.
@@ -220,7 +220,7 @@ The reproduction screen of the web application reads the same table (@fig:tai-la
 
 ## Additional Experiments {#sec:res-extra}
 
-Three limitations of the evaluation protocol were raised while preparing the defence: the A/B test treats impressions as independent, the hyper-parameters and the re-ranking weight were chosen on the test month, and every candidate of the served list comes from ALS. On 11 November two read-only jobs addressed the first two; the third is discussed with the future work (@sec:conclusion). Neither job writes a table or changes the served system, and both read the same Delta versions as the main results (feature version 3, silver version 10, impression log version 51).
+Three limitations of the evaluation protocol were raised while preparing the defence: the A/B test treats impressions as independent, the hyper-parameters and the re-ranking weight were chosen on the test month, and every candidate of the served list comes from ALS. On 11 November three read-only jobs addressed them. None of them writes a table or changes the served system, and all read the same Delta versions as the main results (feature version 3, silver version 10, impression log version 51).
 
 ### User-level test of the A/B result {#sec:res-ab-user}
 
@@ -288,6 +288,29 @@ Table: Methods on the held-out period (3–18 September, 4,215 users), all choic
 
 The results of @sec:res-tuning, @sec:res-baselines and @sec:res-coverage are therefore not an artefact of choosing on the test month.
 
+### Candidate sources beyond ALS {#sec:res-nguon}
+
+Every item of the served list comes from ALS, which is why re-ranking stops at 6.47 % coverage (@sec:res-coverage). `kiem_tra/thu_nguon_ung_vien.py` starts from that served list — ALS with novelty re-ranking, β = 1.0 over 200 candidates — keeps its first 10 − *c* − *d* slots and gives the last ones to two sources that do not go through ALS, both computed from training data only: *c* **co-occurrence** items, those most often viewed on the same day as the user's ten highest-scoring training items, with the cosine similarity of the related-products block (@eq:cos), and *d* **category best-sellers** of the user's main category (baseline 2). An item already in the list is skipped, and a missing candidate is replaced by the next item of the served list. Ten mixes were scored with the deployed model on the periods of @sec:res-val. The selection rule was fixed before the run: the highest validation coverage among the mixes whose validation NDCG@10 is at least 95 % of the served list's. Coverage uses no ground truth, so it is reported on the lists of all 9,467 test users, exactly as the 3.44 % and 6.47 % of @sec:res-coverage; 8,673 of these users have at least one co-occurrence candidate. The run took 11 minutes.
+
+Table: Mixing co-occurrence and category candidates into the last slots of the served list (offline, deployed model, β = 1.0); the mix selected on validation in bold {#tab:nguon w=11,12,10,12,11,12,11,10,11}
+| Served slots kept | Co-occurrence slots | Category slots | NDCG@10 validation | NDCG@10 held-out | NDCG@10 whole month | Coverage | Items | Slots in N1 |
+|---|---|---|---|---|---|---|---|---|
+| 10 | 0 | 0 | 0.1012 | 0.0742 | 0.0865 | 6.47 % | 8,162 | 80.8 % |
+| 9 | 1 | 0 | 0.1022 | 0.0753 | 0.0876 | 10.14 % | 12,805 | 78.2 % |
+| 8 | 2 | 0 | 0.1034 | 0.0760 | 0.0886 | 12.68 % | 16,011 | 75.9 % |
+| **7** | **3** | **0** | **0.1040** | **0.0764** | **0.0892** | **14.53 %** | **18,341** | **74.1 %** |
+| 9 | 0 | 1 | 0.1009 | 0.0740 | 0.0863 | 6.44 % | 8,124 | 82.2 % |
+| 8 | 0 | 2 | 0.1010 | 0.0737 | 0.0863 | 6.46 % | 8,151 | 83.3 % |
+| 8 | 1 | 1 | 0.1024 | 0.0751 | 0.0877 | 10.09 % | 12,737 | 79.5 % |
+| 7 | 2 | 1 | 0.1034 | 0.0762 | 0.0887 | 12.63 % | 15,939 | 77.4 % |
+| 6 | 3 | 1 | 0.1041 | 0.0763 | 0.0892 | 14.44 % | 18,231 | 75.6 % |
+| 6 | 2 | 2 | 0.1033 | 0.0756 | 0.0884 | 12.59 % | 15,891 | 78.6 % |
+
+- **Co-occurrence slots raise accuracy and coverage together.** Each of the first three slots adds between 1.9 and 3.7 points of coverage (6.47 % → 10.14 % → 12.68 % → 14.53 %) and a little NDCG@10 (0.0865 → 0.0892 on the whole month, 0.0742 → 0.0764 on the held-out days). The selected mix — seven served slots and three co-occurrence slots — exceeds the 10 % coverage target for the first time, with 18,341 distinct items, while the share of slots among the 10 % most popular items falls from 80.8 % to 74.1 %. On the held-out days it is 85 % better than the category baseline (0.0764 against 0.0413) and 15.7 times better than the best-seller baseline.
+- **Category slots add nothing.** With category best-sellers only, coverage stays at 6.4–6.5 % and NDCG@10 drops slightly: a handful of best-sellers per category is repeated across many users, so they bring hardly any new items, and they replace items that were more often relevant.
+- **The optimum lies at the edge of the tried range.** Three co-occurrence slots is the largest value tried, so four or five may raise coverage further; the gain in NDCG flattens after two slots.
+- **The mix is not deployed.** The served system still fills its ALS slots from ALS alone (6.47 %). Deploying the mix means one more step in the blending job before the A/B template is applied; it was not done a week before the defence because it would change the served lists, the A/B experiment and the screenshots of this report. The coverage threshold of criterion 2 is therefore met offline, on the same users and the same definition, but not yet in production.
+
 ## Streaming and Operations {#sec:res-streaming}
 
 On 10 November the three streaming jobs were started on the cluster and the producer replayed the last 48 days of data (1 August to 18 September 2015) a second time: 857,072 events in about 24 minutes. Thanks to content deduplication (@tab:lam-sach), these duplicates do not change silver. The check used by the stream monitor reported the trending table as live, with 2,203,504 (window, item) rows whose window ended within the last 15 minutes. With Airflow, the three streaming drivers and a reproduction job running together, the master host still had 1.8 GB of memory available (@fig:ram).
@@ -313,7 +336,7 @@ Table: Status of the acceptance criteria {#tab:ket-qua-nghiem-thu w=5,28,24,43}
 | # | Criterion | Status | Evidence |
 |---|---|---|---|
 | 1 | Tuning table, ≥ 9 combinations | Met | 27 combinations with NDCG@10 (@tab:tuning); the same selection on a separate validation period (@tab:val) |
-| 2 | ALS vs 2 baselines, 4 metrics + coverage + novelty | Met; coverage threshold not met, analysed | NDCG@10 +1,237 % over baseline 1; coverage 3.44 % (6.47 % served), analysis and re-ranking in @sec:res-coverage |
+| 2 | ALS vs 2 baselines, 4 metrics + coverage + novelty | Met; coverage threshold met offline only, analysed | NDCG@10 +1,237 % over baseline 1; coverage 3.44 % (6.47 % served), analysis and re-ranking in @sec:res-coverage; 14.5 % with three co-occurrence slots, offline (@tab:nguon) |
 | 3 | Three cold-start strategies | Met: brand-new user shown live; the other two strategies unit-tested and shown at the defence | @tab:cold-start, @fig:cold-start-web |
 | 4 | Trending updated ≤ 90 s after a click | Met | 51 s from three clicks to the updated table (@tab:do-tre) |
 | 5 | Closed loop web → Kafka → bronze → trending | Met | Web events in bronze 10.3 s after Kafka, in the trending table after 51 s (@tab:do-tre, @fig:loop) |
