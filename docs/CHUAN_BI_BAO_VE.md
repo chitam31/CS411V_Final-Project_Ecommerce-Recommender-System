@@ -429,7 +429,7 @@ Trả lời ngắn, rồi quay lại demo. Câu dài hơn xem bộ hỏi – đ�
 - ☐ Laptop: bỏ khối `Host m11 … ProxyJump labsoe-18` trong `~/.ssh/config` nếu không dùng nữa.
 - ☐ Muốn dừng cụm hẳn: `[labsoe-11] bash scripts/luong.sh dung tat_ca`, rồi `bash scripts/cum/khoi_dong_may.sh --dung` trên từng máy. **Không** thêm `-v`.
 - ☐ Hỏi cán bộ phòng lab trước khi gỡ ZeroTier hay openssh khỏi máy lab.
-- ☐ Nếu hội đồng yêu cầu sửa: sửa, commit, gắn tag mới (`v1.5`), nộp lại.
+- ☐ Nếu hội đồng yêu cầu sửa: sửa, commit, gắn tag mới (`v1.6`), nộp lại.
 
 ---
 

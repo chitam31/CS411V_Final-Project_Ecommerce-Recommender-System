@@ -102,7 +102,7 @@ Because the trending job does not wait for bronze, the latency of the trending b
 
 The daily DAG (@fig:dag1) starts with a sensor that checks, through WebHDFS and without starting Spark, whether bronze has received a batch newer than the last silver commit. It then creates a run id, cleans bronze into silver, computes product statistics and related products, prepares the interaction matrix, tunes ALS, evaluates it and branches: if the new model is at least as good as the serving model (within a 1 % tolerance), it generates serving lists, blends them and publishes them with MERGE; otherwise it keeps the current lists and raises a warning. Each box in @fig:dag1 shows, in brackets, the Spark profile its task uses.
 
-![Daily pipeline DAG kn_pipeline_hang_ngay; the profile of each Spark task is shown in brackets](hinh/f05_dag1.png){#fig:dag1 w=12.5}
+![Daily pipeline DAG kn_pipeline_hang_ngay; the profile of each Spark task is shown in brackets](hinh/f05_dag1.png){#fig:dag1 w=10.6}
 
 ### Serving path and the closed loop
 

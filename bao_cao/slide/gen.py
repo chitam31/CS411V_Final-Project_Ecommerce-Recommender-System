@@ -17,23 +17,26 @@ H = TNR
 B = TNR
 M = TNR
 
+# Hình: (đường dẫn tài sản, rộng, cao theo tỉ lệ, tệp nguồn trong bao_cao/hinh). Sơ đồ và biểu đồ là SVG vector
+# (chữ đã đổi thành đường cong) nên chiếu lên màn hình lớn hay phóng to PDF vẫn nét; ảnh chụp màn hình giữ PNG.
 IMG = {
-    "f01": ("/_blob/5807210ab9c71362f7d43d5e8dd511be", 1628, 1925),
-    "f02": ("/_blob/ff6573d391bfb069f723415b18362184", 1628, 1441),
-    "f05": ("/_blob/120ea4c480587c322c3dcfc213e0f453", 1483, 2008),
-    "f07": ("/_blob/c64fe601fb2a36297d353738487a95d0", 1628, 1236),
-    "f08": ("/_blob/d17892dd9199bb8f763ec85dfc96cf0f", 1628, 1093),
-    "f09": ("/_blob/114cc39769643df28317170ea46747f0", 1628, 869),
-    "f11": ("/_blob/e33199683bf89ad3ed4f8732d2a60661", 1628, 627),
-    "c01": ("/_blob/6266735f8573dfcd064d95ee07eea21e", 1245, 416),
-    "c02": ("/_blob/1a258cce1bb3e59bf36cbfc51b468be9", 1544, 554),
-    "c03": ("/_blob/325d1f7b04c970b2a81b724420adbe30", 1518, 556),
-    "c04": ("/_blob/1886afdf8cd02a584da0da51f0fa37e5", 1155, 587),
-    "c05": ("/_blob/47e311cafa7c3bad8c762db91cbc7d80", 1172, 509),
-    "s01": ("/_blob/d74fa9afdacef1c40c17f19df041f67c", 1350, 1034),
-    "s03": ("/_blob/47ac9f5a98784585209076b04e959092", 1350, 870),
-    "eq_als": ("/_blob/4576264a7d76e2eb4a8cf05a603503e4", 975, 113),
-    "eq_pref": ("/_blob/9b09edcb48b80f018b0ea744ca353cbe", 671, 63),
+    "f01b": ("/_blob/3a772df7155058c87d6e7644cea45af0", 2220, 972, "f01b_kien_truc_ngang.svg"),
+    "f02": ("/_blob/66302d81121681065323d50f3b37dc50", 2220, 966, "f02_cum.svg"),
+    "f05b": ("/_blob/b9e878745e8b27b49925a59e9a8ef739", 2220, 798, "f05b_dag1_ngang.svg"),
+    "f07": ("/_blob/0a39b751c8359353a6959ec9ec922238", 2220, 1026, "f07_luong.svg"),
+    "f08": ("/_blob/d29bb1fa153ddc586d7834b395f1a889", 2220, 1050, "f08_vong_khep_kin.svg"),
+    "f09": ("/_blob/0cad98133f1ef2cba96a84f727d0e882", 2220, 930, "f09_tai_lap.svg"),
+    "f11": ("/_blob/7a8906490b0cee3486d9a68c21f2a606", 2220, 816, "f11_mau_khoi.svg"),
+    "c01": ("/_blob/ee75d3e0922604409cf7e79b99049973", 1245, 416, "c01_tuning.svg"),
+    "c02": ("/_blob/0e0553de6cf1b805fbabcb4c7e71a65f", 1544, 554, "c02_phuong_phap.svg"),
+    "c03": ("/_blob/77937eb8197783838d6e9e28b731654d", 1518, 556, "c03_pho_bien.svg"),
+    "c04": ("/_blob/88e24660e94d702e65d25d205dd48bef", 1155, 587, "c04_xep_lai.svg"),
+    "c05": ("/_blob/2d91d56be0f4fc937d653e12756904aa", 1172, 509, "c05_zorder.svg"),
+    "c06": ("/_blob/dcdd8358392a4e72022732ccf3a68035", 1925, 722, "c06_ab.svg"),
+    "s01": ("/_blob/d74fa9afdacef1c40c17f19df041f67c", 1350, 1034, "s01_cold_start_web.png"),
+    "s03": ("/_blob/47ac9f5a98784585209076b04e959092", 1350, 870, "s03_ab_web.png"),
+    "eq_als": ("/_blob/4576264a7d76e2eb4a8cf05a603503e4", 975, 113, "eq_als.png"),
+    "eq_pref": ("/_blob/9b09edcb48b80f018b0ea744ca353cbe", 671, 63, "eq_pref.png"),
 }
 
 THU_TU = []
@@ -43,17 +46,24 @@ TONG = 26
 SO_HINH = [0]
 
 
-def hinh(khoa, alt, rong=None, cao=None, dem=16):
+def hinh(khoa, alt, rong=None, cao=None, dem=16, the=True):
     """Ảnh trong thẻ trắng kèm chú thích đánh số kiểu bài báo ("Figure n. ...") ngay dưới ảnh.
 
     Cho rong HOẶC cao, cạnh kia theo tỉ lệ. Phần chú thích chiếm thêm khoảng 34 px chiều cao.
     """
-    src, w, h = IMG[khoa]
+    src, w, h = IMG[khoa][:3]
     if rong is not None:
         cao = round(rong * h / w)
     else:
         rong = round(cao * w / h)
     SO_HINH[0] += 1
+    if not the:  # sơ đồ đã có viền ngoài riêng: không bọc thẻ
+        return (
+            '<div style="display:flex;flex-direction:column;align-items:center;gap:8px">'
+            '<img src="{s}" alt="{a}" style="width:{w}px;height:{h}px;object-fit:contain">'
+            '<p style="font-family:{f};font-size:20px;line-height:1.25;color:{m};text-align:center;max-width:{w}px">'
+            '<b>Figure {n}.</b> <i>{a}</i></p></div>'
+        ).format(s=src, a=alt, w=rong, h=cao, f=TNR, m=MUTED, n=SO_HINH[0])
     return (
         '<div style="background:{c};border:1px solid {r};border-radius:6px;padding:{d}px {d}px 10px;'
         'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">'
@@ -187,7 +197,7 @@ slide("dataset", tieu_de("Data and architecture", "RetailRocket clickstream") +
       so_lon("2.89 M", "events over 139 days: views, add-to-cart, purchases") +
       so_lon("417,053", "items in the catalogue (126,230 seen in training)") +
       so_lon("179,999", "training users with at least 3 interactions") +
-      so_lon("1.8×10<span style=\"color:{}\">⁻⁵</span>".format(BLUE), "density of the user–item matrix") +
+      so_lon("1.8×10<sup style=\"font-size:0.6em;vertical-align:0.75em;line-height:0\">−5</sup>", "density of the user–item matrix") +
       "</div>" +
       '<div style="display:flex;flex-direction:column;gap:12px">' +
       dong("Replay", "A Kafka producer replays the log, compressing one day into 30 seconds; 4.8 % of users are synthetic newcomers for cold start", 28, 260) +
@@ -209,11 +219,7 @@ lop = [
     ("Serving", "FastAPI web app with a local Spark session, five screens"),
 ]
 slide("architecture", tieu_de("Data and architecture", "Six layers, one direction of flow") +
-      '<div style="display:flex;gap:48px;flex:1">'
-      '<div style="flex:1;display:flex;flex-direction:column;gap:14px">' +
-      "".join(dong(a, b, 26, 250) for a, b in lop) +
-      '<p style="font-size:26px;line-height:1.4;color:{m}">Everything runs in Docker containers started from one directory file, <span style="color:{b}">cau_hinh/cum.env</span>.</p>'.format(m=MUTED, b=BLUE) +
-      "</div>" + hinh("f01", "Layered architecture of the system", cao=566) + "</div>",
+      '<div style="display:flex;justify-content:center">' + hinh("f01b", "Layered architecture: sources, Kafka, streaming, lakehouse, batch, serving and orchestration", cao=606, the=False) + "</div>",
       "The architecture has six layers and data flows in one direction. Events come from the replay producer and from the web "
       "application, enter Kafka, are stored in the lakehouse, processed by Spark streaming and batch jobs, orchestrated by "
       "Airflow, and served by the web application. Everything is containerised, and every script reads the same directory "
@@ -228,11 +234,7 @@ cum = [
     ("Network", "ZeroTier overlay “ttunet” over the laboratory Wi-Fi"),
 ]
 slide("cluster", tieu_de("Data and architecture", "Deployed on six laboratory machines") +
-      '<div style="display:flex;gap:48px;flex:1">'
-      '<div style="flex:1;display:flex;flex-direction:column;gap:14px">' +
-      "".join(dong(a, b, 28, 170) for a, b in cum) +
-      '<p style="font-size:26px;line-height:1.4;color:{m}">Each machine: 12 cores, 7 GB of RAM, shared with other groups — memory, not CPU, is the binding constraint.</p>'.format(m=MUTED) +
-      "</div>" + hinh("f02", "Physical deployment on the cluster", cao=566) + "</div>",
+      '<div style="display:flex;justify-content:center">' + hinh("f02", "Physical deployment: machines, containers, ports and resources", cao=606, the=False) + "</div>",
       "The cluster has six laboratory machines on a ZeroTier network. The master runs the NameNode, the Spark Master, all "
       "drivers and Airflow. Five workers give 34 cores and 13 gigabytes of executor memory. Each machine has only 7 gigabytes "
       "of RAM and is shared with other groups, so every memory setting was sized from measurements.")
@@ -270,14 +272,7 @@ luong = [
     ("ghi_hien_thi", "Impressions and click feedback → impression log with Change Data Feed, trigger 30 s"),
 ]
 slide("streaming", tieu_de("Data and architecture", "Three Structured Streaming jobs") +
-      '<div style="display:flex;gap:48px;flex:1">'
-      '<div style="flex:1;display:flex;flex-direction:column;gap:16px">' +
-      "".join(
-          '<div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid {r};padding:14px 0px 0px 0px">'
-          '<p style="font-family:{mo};font-size:28px;font-weight:600;color:{b}">{a}</p>'
-          '<p style="font-size:28px;line-height:1.35;color:{t}">{m}</p></div>'.format(r=RULE, mo=M, b=BLUE, a=a, t=TEXT, m=m) for a, m in luong) +
-      '<p style="font-size:26px;line-height:1.4;color:{m}">Windows use the Kafka timestamp, so replayed 2015 events and live 2026 clicks share one clock.</p>'.format(m=MUTED) +
-      "</div>" + hinh("f07", "The three streaming jobs and the latency budget", cao=566) + "</div>",
+      '<div style="display:flex;justify-content:center">' + hinh("f07", "The three streaming jobs and the latency budget of the trending block", cao=606, the=False) + "</div>",
       "Three streaming jobs run continuously. The first lands every event in bronze. The second computes the trending table: a "
       "fifteen-minute window sliding every minute, merged into gold every twenty seconds. The third writes the impression log "
       "used by the A/B test. One design point: windows are keyed on the Kafka timestamp, not the original event time, because "
@@ -285,25 +280,16 @@ slide("streaming", tieu_de("Data and architecture", "Three Structured Streaming 
 
 # ------------------------------------------------------------------ 9. Airflow
 slide("airflow", tieu_de("Data and architecture", "Five Airflow DAGs") +
-      '<div style="display:flex;gap:48px;flex:1">'
-      '<div style="flex:1;display:flex;flex-direction:column;gap:20px">' +
-      bang(["DAG", "Schedule", "What it does"], [
-          ["<b>kn_pipeline_hang_ngay</b>", "02:00", "Silver → statistics → matrix → tuning → evaluation → deploy or keep the old model"],
-          ["<b>kn_giam_sat_streaming</b>", "15 min", "Restarts the trending stream when its table is stale"],
-          ["<b>kn_tinh_ab</b>", "hourly", "Reads the impression log’s Change Data Feed, recomputes the tests"],
-          ["<b>kn_bao_tri</b>", "04:00", "Retention, OPTIMIZE, Z-ORDER, VACUUM"],
-          ["<b>kn_tai_lap</b>", "manual", "Re-runs training on a recorded Delta version and compares"],
-      ], [38, 14, 48], 24) +
-      '<p style="font-size:26px;line-height:1.4;color:{m}">Every job is idempotent, so retries and reruns are always safe.</p>'.format(m=MUTED) +
-      "</div>" + hinh("f05", "DAG 1, the daily pipeline", cao=566) + "</div>",
-      "Five DAGs implement the workflows of the specification. DAG 1, on the right, is the nightly pipeline: it waits for new "
+      '<p style="font-size:26px;line-height:1.35;color:{t}"><b>DAG 2</b> stream monitor (every 15 min) · <b>DAG 3</b> A/B test (hourly) · <b>DAG 4</b> maintenance (04:00) · <b>DAG 5</b> reproduction (manual)</p>'.format(t=TEXT) +
+      '<div style="display:flex;justify-content:center">' + hinh("f05b", "DAG 1 kn_pipeline_hang_ngay, the nightly pipeline; every job is idempotent", rong=1488, the=False) + "</div>",
+      "Five DAGs implement the workflows of the specification. DAG 1, in the figure, is the nightly pipeline: it waits for new "
       "data, rebuilds silver and the matrix, tunes ALS, evaluates it and branches — new recommendations only if NDCG is not "
       "worse than the served model. The other four monitor the stream, compute the A/B test hourly, maintain the Delta tables "
       "and reproduce experiments.")
 
 # ------------------------------------------------------------------ 10. ALS
-src_p, wp, hp = IMG["eq_pref"]
-src_a, wa, ha = IMG["eq_als"]
+src_p, wp, hp = IMG["eq_pref"][:3]
+src_a, wa, ha = IMG["eq_als"][:3]
 slide("als", tieu_de("Model and evaluation", "ALS for implicit feedback") +
       '<div style="display:flex;gap:32px;align-items:center;background:{c};border:1px solid {r};border-radius:16px;padding:28px 40px">'
       '<img src="{sp}" alt="Preference and confidence of an observation" style="width:560px;height:{hp}px;object-fit:contain">'
@@ -322,7 +308,7 @@ slide("als", tieu_de("Model and evaluation", "ALS for implicit feedback") +
 # ------------------------------------------------------------------ 11. Tuning
 slide("tuning", tieu_de("Model and evaluation", "Tuning: bigger rank, higher alpha") +
       '<p style="font-size:32px;line-height:1.35;color:{n}">Best of 27: <b>rank 50 · regParam 1.0 · alpha 40 → NDCG@10 = 0.0680</b> <span style="color:{m}">(78 minutes on 34 cores)</span></p>'.format(n=NAVY, m=MUTED) +
-      '<div style="display:flex;justify-content:center">' + hinh("c01", "NDCG@10 over the tuning grid, one heat map per rank", rong=1250) + "</div>" +
+      '<div style="display:flex;justify-content:center">' + hinh("c01", "NDCG@10 over the tuning grid, one heat map per rank", rong=1290) + "</div>" +
       '<p style="font-size:26px;color:{m}">Check on 11 Nov: chosen on 19 Aug – 2 Sep, reported on 3–18 Sep → the same configuration (optimism 0.0002).</p>'.format(m=MUTED),
       "NDCG grows monotonically with rank and with alpha. With implicit feedback a large alpha gives observed pairs, especially "
       "purchases, much more weight than the empty cells, so the model extracts more signal from very sparse data. The optimum "
@@ -336,7 +322,7 @@ slide("baselines", tieu_de("Model and evaluation", "ALS beats both baselines") +
       so_lon("+43 %", "NDCG@10 over category best-sellers (0.0475)") +
       so_lon("0.0865", "NDCG@10 of the served configuration (ALS + re-ranking)", ORANGE) +
       "</div>" +
-      '<div style="display:flex;justify-content:center">' + hinh("c02", "NDCG@10 and coverage of the baselines, ALS and re-ranked variants", rong=1040) + "</div>",
+      '<div style="display:flex;justify-content:center">' + hinh("c02", "NDCG@10 and coverage of the baselines, ALS and re-ranked variants", rong=1070) + "</div>",
       "Against the two mandatory baselines ALS wins by a wide margin: thirteen times the global best-seller list, and 43 percent "
       "over best-sellers of the user’s category, which is a much stronger baseline because RetailRocket visitors stay within a "
       "category. ALS also wins on precision, recall and MAP. The served configuration, with novelty re-ranking, is better again.")
@@ -344,7 +330,7 @@ slide("baselines", tieu_de("Model and evaluation", "ALS beats both baselines") +
 # ------------------------------------------------------------------ 13. Popularity bias
 slide("bias", tieu_de("Model and evaluation", "Coverage is limited by popularity bias") +
       '<p style="font-size:32px;line-height:1.35;color:{n};width:1600px"><b>99.2 %</b> of ALS slots fall in the 10 % most popular items. Coverage is <b>3.44 %</b> against a structural ceiling of 75 % — the cause is bias, not the number of slots.</p>'.format(n=NAVY) +
-      '<div style="display:flex;justify-content:center">' + hinh("c03", "Distribution of recommendation slots over popularity groups", rong=1150) + "</div>",
+      '<div style="display:flex;justify-content:center">' + hinh("c03", "Distribution of recommendation slots over popularity groups", rong=1245) + "</div>",
       "Coverage is the one threshold we did not meet with pure ALS: 3.44 percent against a target of 10. The specification accepts "
       "this if it is analysed. Ten recommendations for 9,467 test users give almost 95 thousand slots for 126 thousand items, so "
       "the ceiling is 75 percent. The real cause is popularity bias: items with few interactions get weak latent vectors and "
@@ -365,13 +351,13 @@ slide("rerank", tieu_de("Model and evaluation", "Novelty re-ranking: accuracy an
 
 # ------------------------------------------------------------------ 15. Cold start
 slide("coldstart", tieu_de("Model and evaluation", "Cold start and the blended “For you” block") +
-      '<div style="display:flex;gap:48px;flex:1">'
-      '<div style="width:912px;display:flex;flex-direction:column;gap:20px">' +
-      hinh("f11", "Templates of the ten visible slots by user type and A/B group", rong=800) +
+      '<div style="display:flex;gap:44px;flex:1">'
+      '<div style="width:1040px;display:flex;flex-direction:column;gap:18px">' +
+      hinh("f11", "Templates of the ten visible slots by user type and A/B group", rong=1040, the=False) +
       dong("New user", "Top 10 of the newest trending window", 26, 210) +
       dong("&lt; 5 interactions", "Best-sellers of viewed categories + trending", 26, 210) +
       dong("New item", "Items unknown to ALS fill slots 9–10", 26, 210) +
-      "</div>" + hinh("s01", "Home page of a user created on the spot", rong=672) + "</div>",
+      "</div>" + hinh("s01", "Home page of a user created on the spot", rong=540) + "</div>",
       "Three cold-start strategies are pure functions shared by the batch job and the web application. A brand-new user sees the "
       "newest trending items; a user with fewer than five interactions sees best-sellers of the categories they viewed, "
       "interleaved with trending; and new items that ALS does not know enter through the last two slots. The screenshot is the live "
@@ -380,19 +366,16 @@ slide("coldstart", tieu_de("Model and evaluation", "Cold start and the blended �
 
 # ------------------------------------------------------------------ 16. A/B
 slide("abtest", tieu_de("Experiment and lakehouse", "A/B test: blending trending items lowers CTR") +
-      '<div style="display:flex;gap:48px;flex:1">'
-      '<div style="flex:1;display:flex;flex-direction:column;gap:20px">' +
-      dong("Design", "A: ALS only · B: ALS + 30 % trending; stable hash of the user id", 26, 150) +
-      dong("Traffic", "350,160 simulated impressions over 7 days, position-dependent click model", 26, 150) +
-      so_lon("p = 0.015", "CTR 2.094 % (A) vs 1.978 % (B), z = −2.43: B is 5.5 % worse", ORANGE, 64) +
-      dong("Conversion", "0.234 % vs 0.239 %, p = 0.75: no difference", 26, 150) +
-      dong("Robustness", "Sample reached (76,972/group); user-level bootstrap p = 0.029, B below A on all 7 days", 26, 150) +
-      "</div>" + hinh("s03", "A/B dashboard of the web application", rong=820) + "</div>",
+      '<div style="display:flex;gap:40px;align-items:center">'
+      '<p style="font-family:{h};font-size:64px;font-weight:700;line-height:1;color:{o}">p = 0.015</p>'
+      '<p style="flex:1;font-size:26px;line-height:1.35;color:{t}">CTR 2.094 % (A) vs 1.978 % (B), z = −2.43: B is 5.5 % worse; conversion p = 0.75. '
+      '350,160 simulated impressions over 7 days (76,972 per group needed); user-level bootstrap p = 0.029.</p></div>'.format(h=H, o=ORANGE, t=TEXT) +
+      '<div style="display:flex;justify-content:center">' + hinh("c06", "CTR and conversion by group with 95 % confidence intervals", rong=1250) + "</div>",
       "Group A sees ALS only, group B ALS with thirty percent trending items. Real visitors are too few, so impressions are "
       "simulated with a position-dependent click model and labelled as simulated. Over 350 thousand impressions, B has a "
       "significantly lower click-through rate, p equals 0.015, and no difference in conversion. Treating the user as the unit, a "
       "bootstrap over users still gives p equals 0.029. The conclusion holds only under the "
-      "assumptions of the simulation, which gives trending items no bonus. The dashboard on the right also counts the 230 real web "
+      "assumptions of the simulation, which gives trending items no bonus. The live dashboard, shown in the demo, also counts the 230 real web "
       "impressions logged on 11 November, which is why it reads p equals 0.0135 over eight days.")
 
 # ------------------------------------------------------------------ 17. Delta Lake
@@ -426,13 +409,10 @@ slide("zorder", tieu_de("Experiment and lakehouse", "Z-ORDER: one file per user 
 
 # ------------------------------------------------------------------ 19. Tái lập
 slide("reproduce", tieu_de("Experiment and lakehouse", "Reproducing an experiment with time travel") +
-      '<div style="display:flex;gap:48px;flex:1">'
-      '<div style="flex:1;display:flex;flex-direction:column;gap:20px">' +
-      so_lon("0.000000", "maximum deviation, re-training on features VERSION AS OF 0; the deployed model on version 3 also matched exactly (11 Nov)", BLUE, 72) +
-      dong("Meanwhile", "Silver evolved to version 2 and 857,072 events were replayed", 26, 170) +
-      dong("Why", "Fixed seed, append-only indexers, test set stored in the same version", 26, 170) +
-      dong("Where", "DAG 5 and the web’s reproduction screen (1.78×10<span style=\"color:{}\">⁻¹⁵</span> unrounded)".format(BLUE), 26, 170) +
-      "</div>" + hinh("f09", "Reproduction with Delta time travel", rong=1000) + "</div>",
+      '<div style="display:flex;gap:40px;align-items:center">'
+      '<p style="font-family:{h};font-size:64px;font-weight:700;line-height:1;color:{b}">0.000000</p>'
+      '<p style="flex:1;font-size:26px;line-height:1.35;color:{t}">maximum deviation, re-training on features VERSION AS OF 0 (10 Nov) and the deployed model on version 3 (11 Nov); fixed seed, append-only indexers, test set stored in the same version.</p></div>'.format(h=H, b=BLUE, t=TEXT) +
+      '<div style="display:flex;justify-content:center">' + hinh("f09", "Reproduction with Delta time travel (DAG 5); later table versions do not affect it", cao=498, the=False) + "</div>",
       "DAG 5 re-ran the selected experiment on version zero of the feature table and compared the result with the recorded "
       "metrics: the deviation is zero to six decimals. This is a meaningful test, because during the run the source tables had "
       "already evolved. It works because the job reads only that version, ALS has a fixed seed, and the indexers are append-only, "
@@ -467,12 +447,12 @@ slide("v2", tieu_de("Experiment and lakehouse", "Schema evolution and model vers
 
 # ------------------------------------------------------------------ 21. Vòng khép kín
 slide("loop", tieu_de("Live system and operations", "The closed loop, measured live") +
-      '<div style="display:flex;gap:48px;flex:1">'
-      '<div style="flex:1;display:flex;flex-direction:column;gap:32px">' +
-      so_lon("10.3 s", "from Kafka to bronze for three “Add to cart” clicks") +
-      so_lon("51 s", "from the clicks to the updated trending table — target 90 s", ORANGE) +
-      '<p style="font-size:26px;line-height:1.4;color:{m}">Clicks sent while a stream was down were counted after its restart: the checkpoint kept the planned batch.</p>'.format(m=MUTED) +
-      "</div>" + hinh("f08", "Closed loop between the web application and the lakehouse", rong=860) + "</div>",
+      '<div style="display:flex;gap:40px;flex:1">'
+      '<div style="width:270px;display:flex;flex-direction:column;gap:28px">' +
+      so_lon("10.3 s", "Kafka → bronze for three “Add to cart” clicks", BLUE, 56) +
+      so_lon("51 s", "clicks → updated trending table; target&nbsp;90&nbsp;s", ORANGE, 56) +
+      '<p style="font-size:24px;line-height:1.35;color:{m}">Clicks sent while a stream was down were counted after its restart.</p>'.format(m=MUTED) +
+      "</div>" + hinh("f08", "Closed loop between the web application, Kafka, the streams and the A/B pipeline", cao=606, the=False) + "</div>",
       "These two criteria were measured on 11 November through the web application’s API. Three add-to-cart clicks reached bronze "
       "about ten seconds after Kafka received them, and the trending table fifty-one seconds after the clicks: twenty seconds of "
       "trigger interval, the micro-batch and the polling. During the first attempt a stream had died; after the restart the "

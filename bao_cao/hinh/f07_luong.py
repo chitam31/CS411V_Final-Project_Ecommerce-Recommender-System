@@ -1,50 +1,55 @@
-"""Hình: ba luồng Structured Streaming và ngân sách độ trễ của khối thịnh hành."""
-from ve import MAU, So
+"""Hình: ba luồng Structured Streaming và ngân sách độ trễ của khối thịnh hành (thanh tỉ lệ theo giây)."""
+from matplotlib.patches import Rectangle
+from ve import BANG, So
 
-s = So(7.4, 5.62)
+s = So(7.4, 3.42)
 lanes = [
-    ("1  nap_su_kien  (profile nap: 1 core, driver 512 MB, trigger 15 s, startingOffsets earliest)",
-     "retailrocket-events", [
-         "from_json, drop rows\nwithout user / item / event",
-         "map to the Vietnamese\nschema; sha256 event id;\n30-min session id",
-         "left join\nsilver.san_pham\n(category)",
-     ], "bronze/su_kien_v2\nParquet file sink\npartitionBy(ngay)", MAU["bronze"], "checkpoint: /lake/checkpoints/nap_su_kien_v2"),
-    ("2  tinh_thinh_hanh  (profile thinh_hanh: 2 cores, RocksDB state store, trigger 20 s, startingOffsets latest)",
-     "retailrocket-events", [
-         "keep view and\nadd-to-cart;\nevent time = kafka_ts",
-         "withWatermark 2 min\nwindow 15 min / 1 min\ncount per item",
-         "foreachBatch: join mean\nper 15 min (24 h), score,\nMERGE on (window, item)",
-     ], "gold.thinh_hanh_15p\nDelta, outputMode\nupdate", MAU["gold"], "checkpoint: /lake/checkpoints/tinh_thinh_hanh_v1"),
-    ("3  ghi_hien_thi  (profile hien_thi: 1 core, trigger 30 s)",
-     "hien-thi", [
-         "parse impression,\nclick and purchase\nmessages",
-         "aggregate per\nma_hien_thi within\nthe micro-batch",
-         "foreachBatch MERGE:\ninsert new impressions,\nOR-update click / buy",
-     ], "gold.nhat_ky_hien_thi\nDelta, Change Data\nFeed enabled", MAU["gold"], "checkpoint: /lake/checkpoints/ghi_hien_thi_v1"),
+    ("nap_su_kien\n1 core · trigger 15 s\nfrom earliest offset", "retailrocket-\nevents",
+     ["parse JSON, drop\nincomplete rows", "Vietnamese schema,\nsha256 event id", "join silver.san_pham\n(category)"],
+     "bronze.su_kien\nParquet, by day", "bronze"),
+    ("tinh_thinh_hanh\n2 cores · trigger 20 s\nRocksDB state store", "retailrocket-\nevents",
+     ["views and carts,\nKafka timestamp", "watermark 2 min,\nwindow 15 / 1 min", "score vs 24-h mean,\nMERGE (window, item)"],
+     "gold.thinh_hanh_15p\nDelta, update mode", "gold"),
+    ("ghi_hien_thi\n1 core · trigger 30 s\ncheckpoint on HDFS", "hien-thi",
+     ["parse impressions,\nclicks, purchases", "aggregate per\nimpression id", "MERGE: insert,\nupdate click / buy"],
+     "gold.nhat_ky_hien_thi\nChange Data Feed", "gold"),
 ]
-y = 0.12
-for i, (tieu_de, topic, buoc, dich, mau_dich, ckpt) in enumerate(lanes):
-    s.nhom(0.12, y, 7.16, 1.38, tieu_de, MAU["spark"], "#7FB27F", co=7.4)
-    s.hop("t%d" % i, 0.25, y + 0.42, 1.05, 0.72, "topic\n" + topic, MAU["kafka"], co=6.6, kieu="tru")
-    x = 1.47
-    prev = "t%d" % i
+for i, (dau, topic, buoc, dich, mau_dich) in enumerate(lanes):
+    y = 0.1 + i * 0.8
+    s.nhom(0.1, y, 7.2, 0.72, None, "luong")
+    s.hop("h%d" % i, 0.18, y + 0.1, 1.0, 0.52, dau, "luong", co=6.5)
+    s.hop("t%d" % i, 1.32, y + 0.08, 0.8, 0.56, topic, "kafka", co=6.4, kieu="tru", dam_dong_dau=False)
+    truoc = "t%d" % i
     for j, b in enumerate(buoc):
-        ten = "b%d%d" % (i, j)
-        s.hop(ten, x, y + 0.42, 1.3, 0.72, b, MAU["trang"], co=6.4, dam_dong_dau=False)
-        s.mui(prev, ten, "e", "w")
-        prev = ten
-        x += 1.43
-    s.hop("d%d" % i, x, y + 0.42, 1.3, 0.72, dich, mau_dich, co=6.5)
-    s.mui(prev, "d%d" % i, "e", "w")
-    s.chu(4.4, y + 1.25, ckpt, co=6.2, nghieng=True, mau="#555555")
-    y += 1.52
+        k = "b%d%d" % (i, j)
+        s.hop(k, 2.28 + j * 1.22, y + 0.1, 1.06, 0.52, b, "trang", co=6.4, dam_dong_dau=False)
+        s.mui(truoc, k, "e", "w", loai="luong")
+        truoc = k
+    s.hop("d%d" % i, 5.94, y + 0.1, 1.28, 0.52, dich, mau_dich, co=6.4)
+    s.mui(truoc, "d%d" % i, "e", "w", loai="luong")
 
-# Ngân sách độ trễ của khối thịnh hành
-s.nhom(0.12, y, 7.16, 0.85, "Latency budget of the trending block (target ≤ 90 s from a click to the updated block; measured 51 s on 11 November)", "#FFFFFF", "#8C8C8C", co=7.2)
-doan = [("click → Kafka\n< 1 s", 0.8), ("wait for next trigger\n≤ 20 s", 1.5), ("micro-batch: aggregate\n+ MERGE, ~10–30 s", 2.1), ("web reads newest\nwindow, < 5 s", 1.25), ("margin", 1.2)]
-x = 0.25
-mau = ["#D9E8F8", "#DCF0DC", "#F8E7A1", "#FFF4DE", "#F2F2F2"]
-for k, (nhan, w) in enumerate(doan):
-    s.hop("l%d" % k, x, y + 0.33, w, 0.42, nhan, mau[k], co=6.3, dam_dong_dau=False)
-    x += w
+# Ngân sách độ trễ: thanh tỉ lệ theo giây (0–90 s)
+y = 2.5
+s.nhom(0.1, y, 7.2, 0.84, None, "xam")
+s.hop("hb", 0.18, y + 0.12, 1.0, 0.6, "Trending latency\nbudget: click →\nupdated block", "xam", co=6.4)
+x0, x1 = 1.32, 7.12
+k = (x1 - x0) / 90.0
+doan = [(1, "", "kafka"), (20, "wait for the next\ntrigger, ≤ 20 s", "luong"), (30, "micro-batch: aggregate\n+ MERGE, 10–30 s", "gold"),
+        (5, "web\n< 5 s", "web"), (34, "margin to the 90 s target", "trang")]
+x, by, bh = x0, y + 0.2, 0.32
+for giay, nhan, mau in doan:
+    nen, vien, _ = BANG[mau]
+    s.ax.add_patch(Rectangle((x, by), giay * k, bh, fc=nen, ec=vien, lw=0.8, zorder=3))
+    if nhan:
+        s.ax.text(x + giay * k / 2, by + bh / 2, nhan, fontsize=6.1, ha="center", va="center", zorder=6,
+                  linespacing=1.1)
+    x += giay * k
+s.chu(x0 + 0.02, by - 0.07, "click → Kafka < 1 s", co=5.9, canh="left", nghieng=True, mau="#444444")
+for t in range(0, 91, 15):
+    xt = x0 + t * k
+    s.ax.plot([xt, xt], [by + bh, by + bh + 0.04], color="#333333", lw=0.6, zorder=4)
+    s.chu(xt, by + bh + 0.11, "%d s" % t, co=6.0)
+xm = x0 + 51 * k
+s.ax.plot([xm, xm], [by - 0.05, by + bh + 0.02], color="#B85450", lw=1.4, zorder=7)
+s.chu(xm + 0.04, by - 0.07, "measured: 51 s (11 Nov)", co=6.2, canh="left", dam=True, mau="#B85450")
 s.luu("f07_luong.png")

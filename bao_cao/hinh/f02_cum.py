@@ -1,52 +1,45 @@
-"""Hình: triển khai vật lý trên cụm 7 máy + laptop điều khiển."""
-from ve import MAU, So
+"""Hình: triển khai vật lý trên các máy phòng thí nghiệm (khổ ngang)."""
+from ve import So
 
-s = So(7.4, 6.55)
-s.hop("zt", 0.15, 0.12, 7.1, 0.36, "ZeroTier overlay network 'ttunet' (633e31d8a29b038c), subnet 10.68.71.0/24, carried over the LabSoe Wi-Fi (192.168.80.0/24)",
-      "#E8EEF6", co=7.4, dam_dong_dau=True)
+s = So(7.4, 3.22)
+s.hop("zt", 0.1, 0.1, 7.2, 0.27, "ZeroTier overlay network 'ttunet' · subnet 10.68.71.0/24 · carried over the LabSoe Wi-Fi",
+      "kafka", co=7.0)
 
 # Máy master
-s.nhom(0.15, 0.68, 4.1, 2.02, "labsoe-11 · 10.68.71.113 · master (12 cores, 7.4 GB)", MAU["may"], "#7A7A7A")
-s.hop("nn", 0.3, 1.02, 1.25, 1.55, "hadoop-master\nNameNode\nRPC :8020\nWeb UI :9870\nheap 1 GB\n(bridge network)", MAU["hdfs"], co=6.9)
-s.hop("sm", 1.65, 1.02, 1.25, 1.55, "spark-master\nMaster :7077\nWeb UI :8080\ndrivers of ALL jobs\nports 4041-4060\njob UIs 4140-4150", MAU["spark"], co=6.9)
-s.hop("af", 3.0, 1.02, 1.12, 1.55, "Airflow 3.3.1\napi-server :8088\nscheduler\ndag-processor\nPostgreSQL 16\n(slim, ~0.9 GB)", MAU["af"], co=6.9)
+s.nhom(0.1, 0.5, 3.62, 0.98, "labsoe-11 · 10.68.71.113 · master (12 cores, 7.4 GB RAM)", "xam", co=7.2)
+s.hop("nn", 0.18, 0.76, 1.1, 0.62, "hadoop-master\nNameNode\n:8020 · UI :9870", "gold", co=6.6)
+s.hop("sm", 1.36, 0.76, 1.1, 0.62, "spark-master\nMaster :7077\ndrivers of all jobs", "lo", co=6.6)
+s.hop("af", 2.54, 0.76, 1.1, 0.62, "Airflow 3.3.1\nAPI :8088\nPostgreSQL 16", "af", co=6.6)
 
-# Ctam (dự phòng) + laptop
-s.nhom(4.45, 0.68, 2.8, 0.95, "ctam · 10.68.71.205 · standby", MAU["may"], "#7A7A7A")
-s.hop("web", 4.6, 0.98, 2.5, 0.55, "Ubuntu in WSL2 on the laptop\nfirst web host, kept as standby", MAU["xam"], co=6.8, dam_dong_dau=False)
-s.nhom(4.45, 1.75, 2.8, 0.95, "whitehathacker · 10.68.71.182 · control laptop", MAU["may"], "#7A7A7A")
-s.hop("lap", 4.6, 2.05, 2.5, 0.55, "Git Bash: ssh_tat_ca.sh, --dong-bo-ma\nbrowser to all web UIs (SSH tunnel)", MAU["trang"], co=6.8, dam_dong_dau=False)
+s.nhom(3.84, 0.5, 1.68, 0.98, "whitehathacker · .182 · control", "xam", co=7.2)
+s.hop("lap", 3.92, 0.76, 1.52, 0.62, "Control laptop\nGit Bash · SSH tunnels\ncode sync: --dong-bo-ma", "trang", co=6.6)
+s.nhom(5.64, 0.5, 1.66, 0.98, "ctam · .205 · standby", "xam", co=7.2)
+s.hop("sb", 5.72, 0.76, 1.5, 0.62, "Ubuntu in WSL2\nfirst web host,\nkept as standby", "xam", co=6.6)
 
-# bus
-s.ax.plot([0.35, 7.05], [2.88, 2.88], color="#7A7A7A", lw=1.6, zorder=2)
-for x in (2.2, 5.85):
-    s.ax.plot([x, x], [2.7, 2.88], color="#7A7A7A", lw=0.9, zorder=2)
-s.ax.plot([5.85, 5.85], [1.63, 1.75], color="#7A7A7A", lw=0.9, zorder=2)
-s.ax.plot([7.2, 7.2], [0.48, 2.88], color="#7A7A7A", lw=0.9, zorder=2)
+# Đường trục mạng
+s.ax.plot([0.3, 7.1], [1.6, 1.6], color="#6C8EBF", lw=1.8, zorder=2)
+for x in (1.91, 4.68, 6.47):
+    s.ax.plot([x, x], [1.48, 1.6], color="#6C8EBF", lw=1.0, zorder=2)
 
-# 5 worker
-mays = [
-    ("labsit12", ".198", "8 cores · 3 GB", []),
-    ("labsit", ".204", "6 cores · 2 GB", ["kafka-server :9092", "kafka-ui :8080", "producer (replay)"]),
-    ("labsit-may25", ".42", "4 cores · 2 GB", ["(shared with another", "group's services)"]),
-    ("labsit-may26", ".90", "8 cores · 3 GB", ["(shared with another", "group's Airflow worker)"]),
-    ("labsoe-18", ".149", "8 cores · 3 GB", ["bd03-web :8000", "FastAPI + Spark local[2]", "SSH jump host"]),
+may = [
+    ("labsit12 · .198", "Spark: 8 cores · 3 GB", None),
+    ("labsit · .204", "Spark: 6 cores · 2 GB", ("Kafka :9092 · UI · producer", "kafka")),
+    ("labsit-may25 · .42", "Spark: 4 cores · 2 GB", ("shared with another group", "xam")),
+    ("labsit-may26 · .90", "Spark: 8 cores · 3 GB", ("another group's Airflow", "xam")),
+    ("labsoe-18 · .149", "Spark: 8 cores · 3 GB", ("bd03-web :8000 · SSH jump", "web")),
 ]
-w, gap, y0 = 1.34, 0.105, 3.12
-for i, (ten, ip, tn, them) in enumerate(mays):
-    x = 0.15 + i * (w + gap)
-    s.ax.plot([x + w / 2, x + w / 2], [2.88, y0], color="#7A7A7A", lw=0.9, zorder=2)
-    s.nhom(x, y0, w, 2.55, "%s %s" % (ten, ip), MAU["may"], "#7A7A7A", co=7.4)
-    s.hop("dn%d" % i, x + 0.08, y0 + 0.36, w - 0.16, 0.62, "hadoop-worker\nDataNode :9866\nheap 1 GB", MAU["hdfs"], co=6.8)
-    s.hop("sw%d" % i, x + 0.08, y0 + 1.06, w - 0.16, 0.62, "spark-worker\n%s\nhost network" % tn, MAU["spark"], co=6.8)
+w = 1.36
+for i, (ten, spark, them) in enumerate(may):
+    x = 0.1 + i * (w + 0.1)
+    s.ax.plot([x + w / 2, x + w / 2], [1.6, 1.72], color="#6C8EBF", lw=1.0, zorder=2)
+    s.nhom(x, 1.72, w, 1.08, ten, "xam", co=7.2)
+    s.hop("dn%d" % i, x + 0.07, 1.98, w - 0.14, 0.24, "DataNode :9866", "gold", co=6.5, dam_dong_dau=False)
+    s.hop("sw%d" % i, x + 0.07, 2.26, w - 0.14, 0.24, spark, "lo", co=6.5, dam_dong_dau=False)
     if them:
-        dam = not them[0].startswith("(")
-        s.hop("x%d" % i, x + 0.08, y0 + 1.76, w - 0.16, 0.68, "\n".join(them),
-              (MAU["web"] if them[0].startswith("bd03-web") else MAU["kafka"]) if dam else MAU["xam"],
-              co=6.6, dam_dong_dau=False)
+        s.hop("x%d" % i, x + 0.07, 2.54, w - 0.14, 0.24, them[0], them[1], co=6.3, dam_dong_dau=False)
 
-s.chu(3.7, 5.95, "Totals: Spark 5 workers, 34 cores, 13 GB executor memory  ·  HDFS 1 NameNode + 5 DataNodes, replication 2  ·  Kafka 1 broker (KRaft)",
-      co=7.0, dam=True)
-s.chu(3.7, 6.25, "Every lab machine: Ubuntu 22.04/24.04, 12 logical cores, 7 GB RAM, Docker; all services run in containers started by scripts/cum/khoi_dong_may.sh",
-      co=6.7)
+s.chu(3.7, 2.98, "Totals: Spark 5 workers, 34 cores, 13 GB executor memory  ·  HDFS 1 NameNode + 5 DataNodes, replication 2  ·  Kafka 1 broker (KRaft)",
+      co=6.9, dam=True)
+s.chu(3.7, 3.12, "Every lab machine: Ubuntu, 12 logical cores, 7 GB RAM, Docker; services start from scripts/cum/khoi_dong_may.sh",
+      co=6.4, nghieng=True, mau="#444444")
 s.luu("f02_cum.png")

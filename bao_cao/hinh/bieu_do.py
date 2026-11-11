@@ -19,7 +19,7 @@ plt.rcParams.update({
     "axes.grid": True, "axes.grid.axis": "y", "grid.color": "#D9D9D9", "grid.linewidth": 0.4, "grid.linestyle": ":",
     "axes.axisbelow": True, "legend.frameon": False, "legend.fontsize": 7,
     "patch.linewidth": 0.5, "hatch.linewidth": 0.5, "lines.linewidth": 1.0, "lines.markersize": 4,
-    "savefig.dpi": 220, "savefig.bbox": "tight", "savefig.pad_inches": 0.03})
+    "savefig.dpi": 300, "svg.fonttype": "path", "savefig.bbox": "tight", "savefig.pad_inches": 0.03})
 XANH, CAM, XAM, LUC, DO = "#3E6A9E", "#C47A3A", "#A6A6A6", "#4F7F52", "#8E2C2C"
 XANH_NHAT = "#A9C1DB"
 VIEN = dict(edgecolor="#1F1F1F", linewidth=0.5)
@@ -50,7 +50,7 @@ for ax, r in zip(axs, (10, 30, 50)):
 axs[0].set_ylabel(r"regParam $\lambda$")
 cb = fig.colorbar(im, ax=axs, shrink=0.85, pad=0.02); cb.set_label("NDCG@10"); cb.outline.set_linewidth(0.5)
 cb.ax.tick_params(direction="in", width=0.5)
-fig.savefig("c01_tuning.png"); plt.close(fig)
+fig.savefig("c01_tuning.png"); fig.savefig("c01_tuning.svg"); plt.close(fig)
 
 # ---------------------------------------------------------------- C2 phương pháp
 ten = ["Global\nbest-sellers", "Category\nbest-sellers", "ALS", "Re-rank\nβ 0.1", "Re-rank\nβ 0.3", "Served\nβ 1.0, 200"]
@@ -68,7 +68,7 @@ a2.axhline(10, color=DO, ls="--", lw=0.8); a2.text(5.4, 10.25, "target 10 %", co
 for i, v in enumerate(cov):
     a2.text(i, v + 0.2, "%.2f" % v, ha="center", fontsize=6.4)
 a2.set_ylim(0, 11.5)
-fig.tight_layout(); fig.savefig("c02_phuong_phap.png"); plt.close(fig)
+fig.tight_layout(); fig.savefig("c02_phuong_phap.png"); fig.savefig("c02_phuong_phap.svg"); plt.close(fig)
 
 # ---------------------------------------------------------------- C3 phân phối độ phổ biến
 nhom = ["N1 (top 10 %)", "N2", "N3", "N4", "N5–N10"]
@@ -89,7 +89,7 @@ ax.set_xlabel("Share of recommendation slots (%), test month, 9,467 users × 10 
 ax.grid(True, axis="x"); ax.grid(axis="y", visible=False)
 ax.legend(ncol=5, fontsize=6.8, loc="upper center", bbox_to_anchor=(0.5, 1.2), frameon=False,
           title="Popularity decile of the recommended item (training interactions)", title_fontsize=6.8)
-fig.savefig("c03_pho_bien.png"); plt.close(fig)
+fig.savefig("c03_pho_bien.png"); fig.savefig("c03_pho_bien.svg"); plt.close(fig)
 
 # ---------------------------------------------------------------- C4 xếp lại
 d50 = [(0, 3.44, 0.0680), (0.3, 4.14, 0.0746), (0.5, 4.65, 0.0797), (1.0, 5.67, 0.0854), (2.0, 6.30, 0.0683)]
@@ -108,7 +108,7 @@ ax.grid(True, axis="both")
 ax.set_xlabel("Coverage of train items (%)"); ax.set_ylabel("NDCG@10"); ax.set_xlim(3, 10.5); ax.set_ylim(0.04, 0.095)
 ax.text(9.9, 0.042, "target 10 %", color=DO, fontsize=6.8, ha="right", fontstyle="italic")
 ax.legend(fontsize=7, frameon=False, loc="lower left")
-fig.savefig("c04_xep_lai.png"); plt.close(fig)
+fig.savefig("c04_xep_lai.png"); fig.savefig("c04_xep_lai.svg"); plt.close(fig)
 
 # ---------------------------------------------------------------- C5 ZORDER
 gd = ["Fragmented\n(200 files)", "OPTIMIZE only\n(67 files)", "OPTIMIZE ZORDER BY\nma_nguoi_dung (55 files)"]
@@ -121,7 +121,7 @@ for i in range(3):
     ax.text(x[i], max(med[i], p95[i]) + 1300, "files read / query: %s" % doc[i], ha="center", fontsize=6.8, color=DO, fontstyle="italic")
 ax.set_xticks(x, gd, fontsize=7); ax.set_ylabel("Per-user lookup latency (ms)"); ax.set_ylim(0, 16500)
 ax.legend(frameon=False, fontsize=7, title="30 lookups per phase", title_fontsize=6.8)
-fig.savefig("c05_zorder.png"); plt.close(fig)
+fig.savefig("c05_zorder.png"); fig.savefig("c05_zorder.svg"); plt.close(fig)
 
 # ---------------------------------------------------------------- C6 A/B
 def kt(x, n):
@@ -132,15 +132,19 @@ def kt(x, n):
 ctr = [kt(3685, 175960), kt(3446, 174200)]
 cvr = [kt(412, 175960), kt(417, 174200)]
 fig, (a1, a2) = plt.subplots(1, 2, figsize=(6.6, 2.4))
-for ax, d, t, p in ((a1, ctr, "(a) CTR (%), z = −2.43, p = 0.015", "%.3f"), (a2, cvr, "(b) Conversion (%), p = 0.75", "%.3f")):
-    ax.bar([0, 1], [v[0] for v in d], yerr=[v[1] for v in d], color=[XANH, XANH_NHAT], hatch=["", "////"], capsize=4,
-           width=0.5, error_kw=dict(elinewidth=0.7, capthick=0.7), **VIEN)
+# Ước lượng điểm và khoảng tin cậy 95 % (Wald): trục y không bắt đầu từ 0 nên dùng điểm + râu, không dùng cột.
+for ax, d, t, nh in ((a1, ctr, "(a) CTR, z = −2.43, p = 0.015", "CTR (%)"), (a2, cvr, "(b) Conversion, p = 0.75", "Conversion (%)")):
+    for i, (v, e) in enumerate(d):
+        ax.errorbar([i], [v], yerr=[e], fmt="o" if i == 0 else "s", ms=6, color=XANH if i == 0 else CAM,
+                    mfc=XANH if i == 0 else "white", mew=1.1, capsize=5, elinewidth=1.0, capthick=1.0)
+        ax.text(i + 0.09, v, "%.3f" % v, ha="left", va="center", fontsize=7)
     ax.set_xticks([0, 1], ["A: ALS only\n175,960 impr.", "B: ALS + 30 % trending\n174,200 impr."], fontsize=7)
+    ax.set_xlim(-0.5, 1.6); ax.set_ylabel(nh)
     nhan_khung(ax, t)
-    for i, v in enumerate(d):
-        ax.text(i, v[0] + v[1] * 1.3, p % v[0], ha="center", fontsize=7)
-a1.set_ylim(1.7, 2.25); a2.set_ylim(0.15, 0.3)
-fig.tight_layout(); fig.savefig("c06_ab.png"); plt.close(fig)
+a1.set_ylim(1.85, 2.2); a2.set_ylim(0.2, 0.275)
+fig.text(0.5, -0.02, "markers: observed rate; whiskers: 95 % confidence interval (Wald); the y-axes do not start at zero",
+         ha="center", fontsize=6.6, fontstyle="italic", color="#444444")
+fig.tight_layout(); fig.savefig("c06_ab.png"); fig.savefig("c06_ab.svg"); plt.close(fig)
 
 # ---------------------------------------------------------------- C7 RAM master
 fig, ax = plt.subplots(figsize=(6.6, 2.3))
@@ -166,5 +170,5 @@ ax.grid(True, axis="x"); ax.grid(axis="y", visible=False)
 ax.legend(handles=[Patch(facecolor=XANH_NHAT, edgecolor="#1F1F1F", linewidth=0.5, label="NameNode (+ Spark Master at 22:20)"),
                    Patch(facecolor="#E3E3E3", edgecolor="#1F1F1F", linewidth=0.5, label="other OS processes")],
           fontsize=6.4, frameon=False, loc="lower right", bbox_to_anchor=(1.0, 1.0), ncol=2)
-fig.savefig("c07_ram_master.png"); plt.close(fig)
+fig.savefig("c07_ram_master.png"); fig.savefig("c07_ram_master.svg"); plt.close(fig)
 print("xong")
