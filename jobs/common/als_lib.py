@@ -496,3 +496,58 @@ def chay_tuning(spark, phien_ban, cac_to_hop, max_iter, hat_giong, so_khoi=None,
     if luu_mo_hinh_vao and mo_hinh_tot is not None:
         mo_hinh_tot.write().overwrite().save(luu_mo_hinh_vao)
     return ket_qua, phien_ban
+
+
+# ---------------------------------------------------------------------------
+# 8. Kỳ validation riêng (bổ sung 11/11/2026)
+# ---------------------------------------------------------------------------
+# Kết quả chính chọn siêu tham số trên chính tháng test (MO_HINH mục 13). Các hàm dưới đây
+# tách tháng đó theo thời gian: nửa đầu để CHỌN, nửa sau chỉ để BÁO CÁO. Không đổi gì ở
+# features, huấn luyện hay phục vụ: train vẫn là 4 tháng đầu của đúng phiên bản features.
+
+
+def chi_so_xep_hang(ds_goi_y, thuc_te, k=ch.K_DANH_GIA):
+    """Chỉ 4 metric xếp hạng (không coverage, novelty): phần đầu của tinh_chi_so, cùng công thức."""
+    du_lieu = thuc_te.join(ds_goi_y, "user_idx", "left").select(
+        F.coalesce(F.col("ds"), F.array().cast("array<int>")).alias("ds"), "thuc_te"
+    )
+    tong = du_lieu.rdd.map(lambda r: chi_so_mot_nguoi(list(r["ds"]), list(r["thuc_te"]), k)).fold(
+        (0.0, 0.0, 0.0, 0.0, 0), cong_chi_so
+    )
+    return trung_binh_chi_so(tong, k)
+
+
+def chia_ky_validation(su_kien, ngay_cat, so_ngay_val):
+    """Tách sự kiện của tháng test theo ngày: [ngay_cat, ngay_cat + so_ngay_val) là validation,
+    phần còn lại là kiểm tra. Trả về (validation, kiem_tra)."""
+    moc = F.date_add(F.lit(ngay_cat).cast("date"), int(so_ngay_val))
+    return su_kien.filter(F.col("ngay") < moc), su_kien.filter(F.col("ngay") >= moc)
+
+
+def thuc_te_tu_su_kien(su_kien_idx, train):
+    """(user_idx, item_idx) của một kỳ -> (user_idx, thuc_te) như doc_features: chỉ giữ user và
+    item có trong train, vì ALS không thể xếp hạng phần còn lại (thuộc về cold start)."""
+    return (
+        su_kien_idx.select("user_idx", "item_idx")
+        .join(train.select("user_idx").distinct(), "user_idx")
+        .join(train.select("item_idx").distinct(), "item_idx")
+        .groupBy("user_idx")
+        .agg(F.sort_array(F.collect_set("item_idx")).alias("thuc_te"))
+    )
+
+
+def danh_chi_so_bang_indexer_da_luu(su_kien):
+    """Gán user_idx/item_idx bằng hai StringIndexer đã lưu, CHỈ ĐỌC (không nối nhãn, không ghi).
+
+    Indexer chỉ nối thêm nhãn nên chỉ số trùng với mọi phiên bản features; nhãn lạ bị bỏ qua.
+    """
+    idx_user = StringIndexerModel.load(ch.duong_dan_mo_hinh("user_indexer")).setHandleInvalid("skip")
+    idx_item = StringIndexerModel.load(ch.duong_dan_mo_hinh("item_indexer")).setHandleInvalid("skip")
+    df = su_kien.select(
+        F.col("ma_nguoi_dung").cast("string").alias("ma_nguoi_dung"),
+        F.col("ma_san_pham").cast("string").alias("ma_san_pham"),
+    )
+    return (
+        idx_item.transform(idx_user.transform(df))
+        .select(F.col("user_idx").cast("int").alias("user_idx"), F.col("item_idx").cast("int").alias("item_idx"))
+    )

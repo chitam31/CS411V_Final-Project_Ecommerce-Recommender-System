@@ -34,3 +34,46 @@ def test_ket_luan_va_co_mau():
     assert "Chưa đủ dữ liệu" in ket_luan(None)
     # CTR nền 5%, muốn phát hiện tăng 10% tương đối: cỡ vài chục nghìn mỗi nhóm
     assert 25000 < co_mau_can_thiet(0.05, 0.10) < 40000
+
+
+# ---- kiểm định theo user (bổ sung 11/11/2026)
+from common.thong_ke import bootstrap_theo_user, he_so_thiet_ke, ztest_theo_cum  # noqa: E402
+
+
+def test_cum_mot_impression_moi_user_trung_z_khong_gop():
+    # 1000 user mỗi nhóm, mỗi user 1 impression: 50 click ở A, 80 click ở B
+    a = [(1, 1)] * 50 + [(1, 0)] * 950
+    b = [(1, 1)] * 80 + [(1, 0)] * 920
+    kq = ztest_theo_cum(a, b)
+    pa, pb = 0.05, 0.08
+    se = math.sqrt(pa * (1 - pa) / 1000 * 1000 / 999 + pb * (1 - pb) / 1000 * 1000 / 999)
+    assert kq["hieu"] == pytest.approx(0.03)
+    assert kq["sai_so_chuan"] == pytest.approx(se)
+    assert kq["p_value"] == pytest.approx(math.erfc(abs(0.03 / se) / math.sqrt(2)))
+    assert he_so_thiet_ke(a, b) == pytest.approx(1000 / 999, rel=1e-6)
+
+
+def test_cum_tuong_quan_trong_user_lam_p_lon_hon():
+    # Cùng tổng số như trên nhưng click dồn vào vài user: impression không còn độc lập.
+    a = [(10, 5)] * 10 + [(10, 0)] * 90   # 1000 impression, 50 click
+    b = [(10, 8)] * 10 + [(10, 0)] * 90   # 1000 impression, 80 click
+    _, p_impression = ztest_hai_ty_le(50, 1000, 80, 1000)
+    kq = ztest_theo_cum(a, b)
+    assert kq["hieu"] == pytest.approx(0.03)
+    assert kq["p_value"] > p_impression
+    assert he_so_thiet_ke(a, b) > 3.0
+
+
+def test_bootstrap_tai_lap_va_khoang_tin_cay():
+    a = [(10, 0)] * 300 + [(10, 1)] * 150 + [(10, 2)] * 50
+    b = [(10, 0)] * 250 + [(10, 1)] * 150 + [(10, 2)] * 100
+    kq1 = bootstrap_theo_user(a, b, so_lan=400, hat_giong=7)
+    kq2 = bootstrap_theo_user(a, b, so_lan=400, hat_giong=7)
+    assert kq1 == kq2
+    assert kq1["ci_hieu"][0] < kq1["hieu"] < kq1["ci_hieu"][1]
+    assert kq1["ci_hieu"][0] > 0          # B rõ ràng cao hơn A
+    assert kq1["p_value"] == pytest.approx(1 / 400)
+    giong = bootstrap_theo_user(a, a, so_lan=400, hat_giong=7)
+    assert giong["ci_hieu"][0] < 0 < giong["ci_hieu"][1]
+    assert giong["p_value"] > 0.3
+    assert bootstrap_theo_user([(1, 0)], b) is None
