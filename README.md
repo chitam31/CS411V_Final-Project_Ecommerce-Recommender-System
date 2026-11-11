@@ -1,4 +1,4 @@
-# bd03_khuyen_nghi — Hệ khuyến nghị sản phẩm cho sàn thương mại điện tử
+# Hệ khuyến nghị sản phẩm cho sàn thương mại điện tử
 
 Đề tài 3, học phần **Dữ liệu lớn (Big Data)** — Trường Đại học Tân Tạo.
 
