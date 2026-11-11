@@ -1,4 +1,8 @@
-"""bao_tri/toi_uu_delta.py - OPTIMIZE + ZORDER + VACUUM + xóa gợi ý cũ hơn 7 ngày (DAG 4).
+"""bao_tri/toi_uu_delta.py - OPTIMIZE + ZORDER + VACUUM + xóa gợi ý cũ (DAG 4).
+
+Gợi ý cũ = dòng có sinh_luc cũ hơn LẦN TRIỂN KHAI MỚI NHẤT quá 7 ngày (user không còn trong lần
+triển khai gần đây), không phải cũ hơn hôm nay 7 ngày: nếu DAG 1 giữ mô hình cũ hoặc không có dữ
+liệu mới suốt 7 ngày, mốc "hôm nay" sẽ xóa sạch danh sách đang phục vụ.
 
 VACUUM không truyền RETAIN: Delta dùng thuộc tính delta.deletedFileRetentionDuration của
 từng bảng (30 ngày với bảng do job tạo, xem common/spark_utils.tao_spark), nên phiên bản
@@ -19,6 +23,14 @@ BANG_TOI_UU = [
 ]
 
 
+def lenh_xoa_goi_y_cu(bang, moc_moi_nhat, so_ngay):
+    """Câu DELETE giữ nguyên lần triển khai mới nhất; None khi bảng chưa có dòng nào."""
+    if moc_moi_nhat is None:
+        return None
+    return "DELETE FROM {} WHERE sinh_luc < timestamp'{}' - INTERVAL {} DAYS".format(
+        bang, moc_moi_nhat.strftime("%Y-%m-%d %H:%M:%S"), int(so_ngay))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--so-ngay-giu-goi-y", type=int, default=7)
@@ -32,11 +44,11 @@ def main():
     # gold.thinh_hanh_15p và gold.nhat_ky_hien_thi đang được luồng streaming MERGE liên tục:
     # mọi lệnh ghi ở đây đi qua thu_lai_khi_xung_dot để không hỏng vì xung đột ghi đồng thời.
     if bang_ton_tai(spark, "gold.goi_y_nguoi_dung"):
-        thu_lai_khi_xung_dot(lambda: spark.sql(
-            "DELETE FROM {} WHERE sinh_luc < current_timestamp() - INTERVAL {} DAYS".format(
-                sql_bang("gold.goi_y_nguoi_dung"), int(args.so_ngay_giu_goi_y)
-            )
-        ))
+        bang = sql_bang("gold.goi_y_nguoi_dung")
+        moc = spark.sql("SELECT max(sinh_luc) AS m FROM {}".format(bang)).first()["m"]
+        lenh = lenh_xoa_goi_y_cu(bang, moc, args.so_ngay_giu_goi_y)
+        if lenh:
+            thu_lai_khi_xung_dot(lambda: spark.sql(lenh))
     if bang_ton_tai(spark, "gold.thinh_hanh_15p"):
         thu_lai_khi_xung_dot(lambda: spark.sql(
             "DELETE FROM {} WHERE cua_so_ket_thuc < current_timestamp() - INTERVAL 2 DAYS".format(

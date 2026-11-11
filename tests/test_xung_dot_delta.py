@@ -48,3 +48,17 @@ def test_loi_khac_nem_ngay_va_het_lan_thi_nem():
     with pytest.raises(LoiGiaPy4J):
         thu_lai_khi_xung_dot(luon_xung_dot, so_lan=4, ngu=lambda _: None)
     assert len(dem) == 4
+
+
+def test_xoa_goi_y_cu_giu_lan_trien_khai_moi_nhat():
+    """DAG 4 chỉ xóa dòng cũ hơn lần triển khai mới nhất 7 ngày: sau 7 ngày không triển khai mới
+    (giữ mô hình cũ, không có dữ liệu mới), danh sách đang phục vụ vẫn còn nguyên."""
+    from datetime import datetime
+
+    from bao_tri.toi_uu_delta import lenh_xoa_goi_y_cu
+
+    lenh = lenh_xoa_goi_y_cu("delta.`/lake/gold/goi_y_nguoi_dung`", datetime(2026, 11, 11, 9, 30, 5), 7)
+    assert lenh == ("DELETE FROM delta.`/lake/gold/goi_y_nguoi_dung` "
+                    "WHERE sinh_luc < timestamp'2026-11-11 09:30:05' - INTERVAL 7 DAYS")
+    assert "current_timestamp" not in lenh
+    assert lenh_xoa_goi_y_cu("t", None, 7) is None

@@ -22,7 +22,7 @@ Table: Configuration errors found in the inherited cluster {#tab:ra-soat w=4,26,
 
 ## Issues Found During Development and Operation
 
-@tab:loi lists the issues found while developing and running the project, in the order they appeared. Issues 1–12 were found by tests or code review before deployment; issues 13–26 appeared on the cluster.
+@tab:loi lists the issues found while developing and running the project, in the order they appeared. Issues 1–12 were found by tests or code review before deployment; issues 13–28 appeared on the cluster.
 
 Table: Issues found during development and operation {#tab:loi w=4,46,50}
 | # | Issue | Fix |
@@ -53,6 +53,8 @@ Table: Issues found during development and operation {#tab:loi w=4,46,50}
 | 24 | The hourly A/B DAG (run timeout 50 min) failed twice while its task waited for the single pool slot held by the nightly pipeline | No data lost: the job resumes from the last processed Change Data Feed version; two slots in the daytime |
 | 25 | A web application started from home would hang reading HDFS: the home network drops large ZeroTier packets (1,300-byte pings pass, 1,400-byte pings are lost) | `ZT_MTU=1280` lowers the MTU of the ZeroTier interface before the services start |
 | 26 | The first web host (Ubuntu in WSL2 on the laptop, 3.8 GB) crashed twice while building and starting the web container because Windows ran short of memory; one crash corrupted the cached base image | The web role moved to labsoe-18 inside the laboratory LAN; `--chi=<role>` starts one role without recreating the other services of a machine |
+| 27 | Restarting a stream left a zombie driver: cancelling the application through the Spark Master did not stop the client-mode driver, which later collided with the new stream on the same checkpoint and stopped both streams | `luong.sh dung` also stops the driver process; `khoi_dong` removes a leftover driver first; `trang_thai` warns |
+| 28 | The maintenance DAG deleted recommendations older than *today* minus 7 days, so seven days without a new deployment would have emptied the served table (on the morning of the defence) | The cut-off is now the latest deployment minus 7 days; only rows of users missing from recent deployments are removed |
 
 ## Key Incidents
 
