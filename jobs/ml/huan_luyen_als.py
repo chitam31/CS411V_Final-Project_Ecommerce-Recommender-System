@@ -7,7 +7,7 @@ Cả hai lưới luôn có thêm tổ hợp của mô hình đang phục vụ n�
 lần chạy mới được so với mô hình cũ ở cùng siêu tham số; --khong-them-dang-phuc-vu để tắt.
 
 Mỗi tổ hợp ghi một dòng vào gold.ket_qua_tuning kèm ma_chay và phien_ban_features.
-Mô hình tốt nhất được lưu ở /lake/models/als/<ma_chay> để bước danh_gia dùng lại.
+Mô hình tốt nhất được lưu ở /lakehouse/bd03_khuyen_nghi/models/als/<ma_chay> để bước danh_gia dùng lại.
 """
 import argparse
 import itertools
@@ -56,10 +56,13 @@ def main():
     for d in dong:
         d["ma_chay"] = ma_chay
         d["phien_ban_features"] = phien_ban
+    # Ghi đè đúng các dòng của ma_chay này (replaceWhere, một commit): Airflow retry hoặc "Clear" task trong
+    # cùng lượt chạy (cùng ma_chay) không nhân đôi bảng tuning. Lượt chạy mới có ma_chay mới nên vẫn giữ lịch sử.
     ghi_delta(
         tao_df(spark, "gold.ket_qua_tuning", dong),
         "gold.ket_qua_tuning",
-        "append",
+        "overwrite",
+        tuy_chon={"replaceWhere": "ma_chay = '{}'".format(ma_chay)},
         ghi_chu={"ma_chay": ma_chay, "max_iter": args.max_iter, "luoi": args.luoi, "so_khoi": args.so_khoi,
                  "them_to_hop_dang_phuc_vu": da_them},
     )

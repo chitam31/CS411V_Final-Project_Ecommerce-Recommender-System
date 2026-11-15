@@ -24,6 +24,7 @@ class KhoGia:
     la_gia_lap = True
 
     def __init__(self, hat_giong=42):
+        self._tai_lap_da_ghi = []
         rnd = random.Random(hat_giong)
         self._san_pham = {
             "sp{}".format(i): {
@@ -174,7 +175,12 @@ class KhoGia:
         ]
 
     def ket_qua_tai_lap(self):
-        return []
+        return list(self._tai_lap_da_ghi)
+
+    def ghi_ket_qua_tai_lap(self, dong):
+        """Chế độ giả lập: giữ trong bộ nhớ thay cho Delta, để giao diện hiển thị như thật."""
+        self._tai_lap_da_ghi.append(dict(dong, thoi_diem=str(dong["thoi_diem"])[:19]))
+        return len(self._tai_lap_da_ghi) - 1
 
     def do_zorder(self):
         return [

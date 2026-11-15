@@ -21,7 +21,6 @@ Kèm số tệp Spark thực sự phải đọc cho mỗi truy vấn (lấy từ
 của bước quét), vì thời gian trên cụm dao động còn số tệp thì không.
 """
 import argparse
-import random
 import statistics
 import time
 from datetime import datetime
@@ -93,6 +92,21 @@ def tong_hop(giai_doan, so_tep_bang, thoi_gian, so_tep_doc):
     }
 
 
+def chon_user_mau(goi_y, n, hat_giong=ch.HAT_GIONG):
+    """Chọn n user ngẫu nhiên nhưng cố định theo hạt giống, NGAY TRÊN CỤM.
+
+    Bản cũ collect toàn bộ ~180 nghìn mã user về driver rồi random.sample. Bản này băm mã user kèm
+    hạt giống, sắp theo giá trị băm và lấy n dòng đầu: Spark chỉ gửi về driver đúng n mã cần đo
+    (sort + limit được thực hiện thành takeOrdered trên từng phân vùng).
+    """
+    return [
+        r["ma_nguoi_dung"]
+        for r in goi_y.select("ma_nguoi_dung").distinct()
+        .withColumn("_k", F.xxhash64("ma_nguoi_dung", F.lit(hat_giong)))
+        .orderBy("_k", "ma_nguoi_dung").limit(n).collect()
+    ]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--so-truy-van", type=int, default=30)
@@ -118,8 +132,7 @@ def main():
             .save(duong_dan)
         )
 
-    tat_ca = [r["ma_nguoi_dung"] for r in doc_delta(spark, "gold.goi_y_nguoi_dung").select("ma_nguoi_dung").distinct().collect()]
-    cac_user = random.Random(ch.HAT_GIONG).sample(tat_ca, min(args.so_truy_van, len(tat_ca)))
+    cac_user = chon_user_mau(doc_delta(spark, "gold.goi_y_nguoi_dung"), args.so_truy_van)
 
     bang = sql_bang("gold.goi_y_nguoi_dung")
 

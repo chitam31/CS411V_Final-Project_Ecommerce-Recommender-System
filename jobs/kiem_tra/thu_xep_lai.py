@@ -68,7 +68,7 @@ def main():
         for r in pho_bien.select("item_idx", "so_nguoi").collect()
     }
     nov_bc = spark.sparkContext.broadcast(nov)
-    mo_hinh = ALSModel.load(lich_su["duong_dan_mo_hinh"])
+    mo_hinh = ALSModel.load(ch.duong_dan_mo_hinh_hien_tai(lich_su["duong_dan_mo_hinh"]))
     k = ch.K_DANH_GIA
 
     dong = []

@@ -13,6 +13,7 @@ jobs/common.zip.*
 ha_tang/*/.env
 ha_tang/*/.env.rieng
 ha_tang/airflow/mat_khau.json
+conf/.env
 .kaggle/
 kaggle.json
 
@@ -26,7 +27,7 @@ derby.log
 logs/
 *.log
 
-# Mô hình thật nằm trên HDFS /lake/models; chỉ giữ tài liệu trong models/
+# Mô hình thật nằm trên HDFS /lakehouse/bd03_khuyen_nghi/models; chỉ giữ tài liệu trong models/
 models/*
 !models/README.md
 !models/.gitkeep

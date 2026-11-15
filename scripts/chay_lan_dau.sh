@@ -12,6 +12,7 @@
 set -euo pipefail
 THU_MUC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 S="bash $THU_MUC/ha_tang/spark/submit.sh"
+LAKE="${LAKE_DUONG_DAN:-/lakehouse/bd03_khuyen_nghi}"
 LUOI="${LUOI:-day_du}"
 TU_BUOC="${TU_BUOC:-1}"
 if [ "$TU_BUOC" -ge 6 ] && [ -z "${MA_CHAY:-}" ]; then
@@ -23,11 +24,11 @@ tieu_de() { echo; echo "=================== $* ==================="; }
 
 buoc_1() {
   tieu_de "1. Tạo thư mục HDFS và bảng Delta"
-  docker exec hadoop-master hdfs dfs -mkdir -p /lake/landing/retailrocket /lake/models /lake/checkpoints
+  docker exec hadoop-master hdfs dfs -mkdir -p "$LAKE/landing/retailrocket" "$LAKE/models" "$LAKE/checkpoints" "$LAKE/_quarantine"
   # Kiểm tra đầu vào trước, để không chạy nửa chừng mới báo thiếu tệp.
   for t in events.csv item_properties_part1.csv item_properties_part2.csv category_tree.csv; do
-    docker exec hadoop-master hdfs dfs -test -e "/lake/landing/retailrocket/$t" || {
-      echo "Thiếu /lake/landing/retailrocket/$t trên HDFS: chạy bash scripts/tai_du_lieu.sh <thư mục CSV> trước." >&2
+    docker exec hadoop-master hdfs dfs -test -e "$LAKE/landing/retailrocket/$t" || {
+      echo "Thiếu $LAKE/landing/retailrocket/$t trên HDFS: chạy bash scripts/tai_du_lieu.sh <thư mục CSV> trước." >&2
       exit 1
     }
   done

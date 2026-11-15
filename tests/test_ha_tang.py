@@ -17,7 +17,7 @@ def test_luoc_do_dung_dac_ta():
                                                      "thoi_diem_hien_thi", "da_click", "da_mua"]
     assert "phien_ban_delta_du_lieu" in ten_cot("gold.ket_qua_ab")
     assert BANG_DELTA["gold.nhat_ky_hien_thi"]["thuoc_tinh"]["delta.enableChangeDataFeed"] == "true"
-    assert ch.duong_dan("silver.tuong_tac").endswith("/lake/silver/tuong_tac")
+    assert ch.duong_dan("silver.tuong_tac").endswith("/lakehouse/bd03_khuyen_nghi/silver/tuong_tac")
     assert sum(len(v) for v in ch.LUOI_DAY_DU.values()) == 9 and len(ch.LUOI_TOI_THIEU["rank"]) * len(ch.LUOI_TOI_THIEU["regParam"]) == 9
 
 
@@ -308,6 +308,7 @@ def test_chep_du_lieu(tmp_path):
 def test_don_du_lieu(tmp_path):
     """don_du_lieu.sh: mặc định chỉ xem trước; --xoa cần gõ XOA; chỉ xóa đường dẫn của dự án,
     giữ thư mục khác (dữ liệu cũ của nhóm); từ chối khi còn ứng dụng Spark đang chạy."""
+    R = "/lakehouse/bd03_khuyen_nghi"
     import http.server
     import threading
     web = tmp_path / "web" / "json"
@@ -323,8 +324,8 @@ def test_don_du_lieu(tmp_path):
         os.symlink(GOC, goc_may / h / "bd03_khuyen_nghi")
     bin_gia.mkdir()
     ls_lake = "\\n".join("drwxr-xr-x   - u g 0 2026-11-10 12:00 " + d for d in (
-        "/lake/bronze", "/lake/bronze/su_kien", "/lake/bronze/su_kien_v2", "/lake/silver",
-        "/lake/silver/tuong_tac", "/lake/cu_nhom", "/lake/checkpoints", "/lake/checkpoints/nap_su_kien_v2"))
+        "/lakehouse/bd03_khuyen_nghi/bronze", "/lakehouse/bd03_khuyen_nghi/bronze/su_kien", "/lakehouse/bd03_khuyen_nghi/bronze/cu", "/lakehouse/bd03_khuyen_nghi/silver",
+        "/lakehouse/bd03_khuyen_nghi/silver/tuong_tac", "/lakehouse/bd03_khuyen_nghi/cu_nhom", "/lakehouse/bd03_khuyen_nghi/checkpoints", "/lakehouse/bd03_khuyen_nghi/checkpoints/nap_su_kien_v2"))
     lenh_gia = {
         "ssh": "while [ $# -gt 0 ]; do case \"$1\" in -o) shift 2;; -*) shift;; *) break;; esac; done\n"
                "h=\"$1\"; shift; HOME=\"$GOC_MAY/$h\" exec bash -c \"$*\"\n",
@@ -348,10 +349,10 @@ def test_don_du_lieu(tmp_path):
     try:
         kq = chay()  # xem trước
         assert kq.returncode == 0, kq.stdout + kq.stderr
-        assert "/lake/silver/tuong_tac" in kq.stdout and "1.5 M" in kq.stdout and "150 tin" in kq.stdout
+        assert R + "/silver/tuong_tac" in kq.stdout and "1.5 M" in kq.stdout and "150 tin" in kq.stdout
         giu = kq.stdout.split("GIỮ NGUYÊN")[1].split("#####")[0]
-        assert "/lake/bronze/su_kien\n" in giu and "/lake/cu_nhom" in giu
-        assert "su_kien_v2" not in giu and "/lake/silver" not in giu and "/lake/checkpoints" not in giu
+        assert R + "/bronze/cu\n" in giu and R + "/cu_nhom" in giu
+        assert "/bronze/su_kien\n" not in giu and R + "/silver" not in giu and R + "/checkpoints" not in giu
         assert " -rm " not in nhat_ky.read_text() and "--delete" not in nhat_ky.read_text() and mau.exists()
 
         kq = chay("--xoa", nhap="khong\n")  # không gõ đúng XOA: không xóa
@@ -361,8 +362,8 @@ def test_don_du_lieu(tmp_path):
         assert kq.returncode == 0, kq.stdout + kq.stderr
         dong_xoa = [d for d in nhat_ky.read_text().splitlines() if " -rm " in d]
         assert len(dong_xoa) == 1 and "silver/tuong_tac" in dong_xoa[0] and "landing/retailrocket" in dong_xoa[0]
-        assert "su_kien_v2" not in dong_xoa[0]  # du giả không báo có, nên không đưa vào lệnh xóa
-        assert "/lake/bronze/su_kien " not in dong_xoa[0] + " " and "cu_nhom" not in dong_xoa[0]
+        assert "bronze/su_kien" not in dong_xoa[0]  # du giả không báo có, nên không đưa vào lệnh xóa
+        assert "bronze/cu" not in dong_xoa[0] and "cu_nhom" not in dong_xoa[0]
         assert nhat_ky.read_text().count("--delete --topic") == 2 and "--create" in nhat_ky.read_text()
         assert not mau.exists()
 
@@ -592,3 +593,147 @@ def test_luong_dung_va_khoi_dong_xu_ly_driver_ma(tmp_path):
     trang_thai_ma.write_text("x")
     kq = subprocess.run(["bash", tep, "dung", "hien_thi"], capture_output=True, text=True, env=mt)
     assert kq.returncode == 0 and "pkill -TERM -f streaming/ghi_hien_thi.py" in nhat_ky.read_text()
+
+
+def test_submit_chan_khi_du_lieu_con_o_goc_cu(tmp_path):
+    """submit.sh không nộp job khi mã dùng gốc mới mà dữ liệu vẫn còn ở /lake (chưa chuyển gốc)."""
+    bin_gia, nhat_ky = tmp_path / "bin", tmp_path / "docker.log"
+    bin_gia.mkdir()
+    (bin_gia / "docker").write_text('#!/bin/bash\necho "$*" >> "$NHAT_KY"\n')
+    # curl giả: in mã HTTP theo đường dẫn được hỏi, đọc từ biến môi trường MA_MOI / MA_CU
+    (bin_gia / "curl").write_text('#!/bin/bash\ncase "$*" in *lakehouse*) printf "$MA_MOI";; *) printf "$MA_CU";; esac\n')
+    for t in ("docker", "curl"):
+        (bin_gia / t).chmod(0o755)
+    tep = os.path.join(GOC, "ha_tang", "spark", "submit.sh")
+    mt = {k: v for k, v in os.environ.items() if k not in ("LAKE_GOC", "LAKE_DUONG_DAN")}
+    mt.update(PATH="{}:{}".format(bin_gia, os.environ["PATH"]), NHAT_KY=str(nhat_ky))
+
+    kq = subprocess.run(["bash", tep, "nhanh", "kiem_tra/kiem_tra_lakehouse.py"], capture_output=True, text=True,
+                        env=dict(mt, MA_MOI="404", MA_CU="200"))
+    assert kq.returncode == 3 and "chuyen_lakehouse.sh" in kq.stderr and not nhat_ky.exists()
+
+    for moi, cu in (("200", "404"), ("404", "404"), ("000", "000")):   # đã chuyển / cụm mới / không hỏi được
+        kq = subprocess.run(["bash", tep, "nhanh", "kiem_tra/kiem_tra_lakehouse.py"], capture_output=True, text=True,
+                            env=dict(mt, MA_MOI=moi, MA_CU=cu))
+        assert kq.returncode == 0, kq.stderr
+    dong = nhat_ky.read_text().splitlines()
+    assert len(dong) == 3 and all("-e LAKE_DUONG_DAN=/lakehouse/bd03_khuyen_nghi" in d for d in dong)
+
+
+def test_chon_user_mau_do_zorder_khong_collect_toan_bo(spark):
+    """do_zorder chọn user mẫu trên cụm: cố định theo hạt giống, đủ n, không trùng."""
+    from bao_tri.do_zorder import chon_user_mau
+
+    df = spark.createDataFrame([("u{}".format(i % 500), i) for i in range(5000)], "ma_nguoi_dung string, xep_hang int")
+    a, b = chon_user_mau(df, 30), chon_user_mau(df, 30)
+    assert a == b and len(a) == 30 and len(set(a)) == 30
+    assert chon_user_mau(df, 30, hat_giong=7) != a
+    assert len(chon_user_mau(df, 10_000)) == 500
+
+
+def _bin_gia(tmp_path, docker):
+    bin_gia = tmp_path / "bin"
+    bin_gia.mkdir(exist_ok=True)
+    (bin_gia / "docker").write_text("#!/bin/bash\n" + docker)
+    (bin_gia / "docker").chmod(0o755)
+    return dict(os.environ, PATH="{}:{}".format(bin_gia, os.environ["PATH"]), NHAT_KY=str(tmp_path / "docker.log"))
+
+
+def test_delta_sql_demo_gui_dung_cau_lenh(tmp_path):
+    """delta_sql.sh: mỗi câu là một đối số của chay_sql.py, tên bảng thành delta.`<gốc lakehouse>/...`."""
+    mt = _bin_gia(tmp_path, 'for a in "$@"; do echo "$a"; done >> "$NHAT_KY"\n')
+    tep = os.path.join(GOC, "scripts", "demo", "delta_sql.sh")
+    kq = subprocess.run(["bash", tep, "demo", "u_123"], capture_output=True, text=True, env=mt)
+    assert kq.returncode == 0, kq.stderr
+    log = (tmp_path / "docker.log").read_text()
+    assert "--master\nlocal[2]" in log and "/opt/spark/jobs/kiem_tra/chay_sql.py" in log
+    assert "DESCRIBE HISTORY delta.`hdfs://10.68.71.113:8020/lakehouse/bd03_khuyen_nghi/gold/nhat_ky_hien_thi` LIMIT 4" in log
+    assert "VERSION AS OF 1" in log and "ma_nguoi_dung = 'u_123'" in log and "gold/ket_qua_tai_lap" in log
+    (tmp_path / "docker.log").unlink()
+    kq = subprocess.run(["bash", tep, "cau", "SELECT count(*) FROM {bronze.su_kien}", "THAO_TAC {gold.ket_qua_ab}"],
+                        capture_output=True, text=True, env=mt)
+    log = (tmp_path / "docker.log").read_text()
+    assert "parquet.`hdfs://10.68.71.113:8020/lakehouse/bd03_khuyen_nghi/bronze/su_kien`" in log
+    assert "THAO_TAC delta.`hdfs://10.68.71.113:8020/lakehouse/bd03_khuyen_nghi/gold/ket_qua_ab`" in log
+
+
+def test_cay_hdfs_loc_thu_muc(tmp_path):
+    R = "/lakehouse/bd03_khuyen_nghi"
+    dong = ["drwxr-xr-x   - root supergroup 0 2026-11-15 10:00 hdfs://nn:8020" + R + p for p in (
+        "/bronze", "/bronze/su_kien", "/bronze/su_kien/ngay=2015-05-03", "/bronze/su_kien/_spark_metadata",
+        "/silver/tuong_tac", "/silver/tuong_tac/_delta_log", "/checkpoints/nap_su_kien_v2",
+        "/checkpoints/nap_su_kien_v2/offsets", "/_quarantine/tuong_tac", "/models/als/r1/metadata")]
+    dong.append("-rw-r--r--   2 root supergroup 10 2026-11-15 10:00 hdfs://nn:8020" + R + "/silver/tuong_tac/x.parquet")
+    (tmp_path / "ls.txt").write_text("\n".join(dong) + "\n")
+    mt = _bin_gia(tmp_path, 'case "$*" in *"-ls -R"*) cat "' + str(tmp_path / "ls.txt") + '";; *) echo "$*";; esac\n')
+    kq = subprocess.run(["bash", os.path.join(GOC, "scripts", "demo", "cay_hdfs.sh")], capture_output=True, text=True, env=mt)
+    assert kq.returncode == 0, kq.stderr
+    cay = kq.stdout.split("chỉ thư mục")[1].split("\n", 1)[1]
+    for p in ("/bronze/su_kien", "/silver/tuong_tac", "/checkpoints/nap_su_kien_v2", "/_quarantine/tuong_tac"):
+        assert R + p + "\n" in cay, p
+    for p in ("ngay=", "_spark_metadata", "_delta_log", "/offsets", "/models/als/r1/metadata", "x.parquet"):
+        assert p not in cay, p
+    assert "hdfs dfs -du -h " + R in kq.stdout
+
+
+def test_chay_sql_rut_gon_describe_history(spark):
+    from datetime import datetime
+
+    from kiem_tra.chay_sql import rut_gon_lich_su
+
+    df = spark.createDataFrame(
+        [(3, datetime(2026, 11, 15, 10), "u", "MERGE", {"predicate": "x" * 200}, {"numTargetRowsUpdated": "12"},
+          '{"ma_chay": "r1"}', "Apache-Spark/3.5.3 Delta-Lake/3.2.0")],
+        "version long, timestamp timestamp, userId string, operation string, operationParameters map<string,string>, "
+        "operationMetrics map<string,string>, userMetadata string, engineInfo string")
+    kq = rut_gon_lich_su(df).first().asDict()
+    assert list(kq) == ["version", "timestamp", "operation", "operationParameters", "operationMetrics", "userMetadata"]
+    assert kq["operationParameters"].endswith("...") and len(kq["operationParameters"]) == 73
+    assert kq["operationMetrics"] == '{"numTargetRowsUpdated":"12"}'
+
+
+def test_eda_tren_du_lieu_mau(spark, tmp_path):
+    """kiem_tra/eda.py chạy được trên dữ liệu mẫu đúng định dạng RetailRocket, số liệu nhất quán."""
+    import json
+
+    from kiem_tra.eda import chuan_hoa_su_kien, tinh_eda
+    from tao_du_lieu_mau import sinh
+
+    sinh(str(tmp_path), so_nguoi=300, so_item=120, so_ngay=20)
+    doc = lambda t: spark.read.option("header", True).csv(str(tmp_path / t))
+    ev = chuan_hoa_su_kien(doc("events.csv"))
+    kq = tinh_eda(ev, doc("item_properties_part1.csv").unionByName(doc("item_properties_part2.csv")),
+                  doc("category_tree.csv"))
+    json.dumps(kq)  # phải tuần tự hóa được
+    tq = kq["tong_quan"]
+    assert tq["so_su_kien"] == sum(d["so_su_kien"] for d in kq["theo_loai"]) == sum(d["so_su_kien"] for d in kq["theo_ngay"])
+    assert sum(d["so_luong"] for d in kq["phan_bo_nguoi_dung"]) == tq["so_nguoi_dung"]
+    assert sum(d["count"] for d in kq["theo_gio_utc"]) == tq["so_su_kien"]
+    assert kq["chat_luong"]["so_nguoi_dung_bot"] >= 1 and kq["chat_luong"]["nhap_lap_trong_5_giay"] >= 1
+    assert 0 < kq["tap_trung_san_pham"]["top_1pct"] <= kq["tap_trung_san_pham"]["top_10pct"] <= 1
+    assert kq["pheu_nguoi_dung"]["co_xem"] >= kq["pheu_nguoi_dung"]["co_mua"]
+    assert kq["thuoc_tinh"]["san_pham_co_danh_muc"] > 0 and kq["cay_danh_muc"]["so_danh_muc"] > 0
+
+
+def test_conf_spark_defaults_khop_submit():
+    """conf/spark-defaults.conf (mục A.5) phải khớp các --conf cố định mà submit.sh truyền cho mọi job."""
+    import re
+
+    mac_dinh = {}
+    for dong in open(os.path.join(GOC, "conf", "spark-defaults.conf"), encoding="utf-8"):
+        if dong.strip() and not dong.startswith("#"):
+            khoa, gia_tri = dong.split(None, 1)
+            mac_dinh[khoa] = gia_tri.strip()
+    submit = open(os.path.join(GOC, "ha_tang", "spark", "submit.sh"), encoding="utf-8").read()
+    co_dinh = dict(re.findall(r"--conf \"?([a-z][\w.\-]+)=([^\"$\s]+)\"? \\", submit))
+    assert co_dinh, "không đọc được --conf trong submit.sh"
+    for khoa, gia_tri in co_dinh.items():
+        if khoa in ("spark.hadoop.dfs.replication",):
+            continue
+        assert mac_dinh.get(khoa) == gia_tri, khoa
+    assert mac_dinh["spark.master"] == "spark://10.68.71.113:7077"
+    from common import cau_hinh as ch
+    assert mac_dinh["spark.databricks.delta.properties.defaults.deletedFileRetentionDuration"] == ch.GIU_FILE_DA_XOA
+    assert mac_dinh["spark.databricks.delta.properties.defaults.logRetentionDuration"] == ch.GIU_NHAT_KY_DELTA
+    assert os.path.realpath(os.path.join(GOC, "conf", "hdfs-site.xml")) == os.path.realpath(
+        os.path.join(GOC, "ha_tang", "hadoop", "config", "hdfs-site.xml"))

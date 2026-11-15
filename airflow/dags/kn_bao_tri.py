@@ -4,7 +4,7 @@ from datetime import timedelta
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.sdk import DAG
 
-from bd03_chung import NGAY_BAT_DAU, THAM_SO_MAC_DINH, lenh_spark
+from bd03_chung import NGAY_BAT_DAU, THAM_SO_MAC_DINH, han_chot, lenh_spark
 
 with DAG(
     dag_id="kn_bao_tri",
@@ -14,6 +14,7 @@ with DAG(
     max_active_runs=1,
     default_args=THAM_SO_MAC_DINH,
     dagrun_timeout=timedelta(hours=2),
+    deadline=han_chot(90),   # SLA: bảo trì 04:00 phải xong trước 05:30
     tags=["bd03", "bao_tri"],
 ) as dag:
     BashOperator(

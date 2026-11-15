@@ -102,3 +102,52 @@ def test_ghi_phan_vung_moi_ngay_mot_tep(spark, tmp_path):
     assert so_tep_moi_ngay(khong_gom) == [8] * 5
     assert so_tep_moi_ngay(co_gom) == [1] * 5
     assert spark.read.parquet(co_gom).count() == 3000
+
+
+def test_phan_loai_moi_dong_vao_dung_mot_noi_kem_ly_do(spark):
+    """Mỗi dòng bronze vào silver HOẶC _quarantine (mục A.4), lý do đúng với từng bước làm sạch."""
+    from transform.bronze_to_silver import LY_DO_LOAI, phan_loai
+
+    bot = [dong("b{}".format(i), "bot", "sp{}".format(i % 7), i * 3) for i in range(501)]
+    du_lieu = bot + [
+        dong("1", "u", "a", 0), dong("1", "u", "a", 0),                  # trùng ma_su_kien
+        dong("2", "u", "a", 0),                                          # trùng nội dung với "1"
+        dong("3", "u", "a", 3),                                          # nhấp lặp trong 5 giây
+        dong("4", "u", "b", 40, "mua"), dong("5", "u", "c", 50, "bo_gio"),
+        ("6", None, "a", T0, "xem", T0.date(), "phat_lai"),             # thiếu người dùng
+    ]
+    giu, bi_loai = phan_loai(spark.createDataFrame(du_lieu, COT))
+    dem = {r["ly_do"]: r["count"] for r in bi_loai.groupBy("ly_do").count().collect()}
+    assert dem == {"bot": 501, "trung_ma_su_kien": 1, "trung_noi_dung": 1, "nhap_lap_5_giay": 1,
+                   "loai_su_kien_khong_dung": 1, "thieu_truong": 1}
+    assert set(dem) == set(LY_DO_LOAI)
+    assert sorted(r["ma_su_kien"] for r in giu.collect()) == ["1", "4"]
+    assert giu.count() + bi_loai.count() == len(du_lieu)
+    assert "ly_do" in bi_loai.columns and "ma_phien" not in bi_loai.columns   # giữ nguyên cột bronze + ly_do
+    assert sorted(r["ma_su_kien"] for r in bi_loai.filter("ly_do = 'trung_noi_dung'").collect()) == ["2"]
+
+
+def test_phan_loai_chon_ban_nap_som_nhat_khi_co_ingest_ts(spark):
+    from transform.bronze_to_silver import phan_loai
+
+    cot = COT + ", _ingest_ts timestamp"
+    goc = dong("x", "u", "a", 0)
+    du_lieu = [goc + (T0 + timedelta(minutes=9),), goc + (T0 + timedelta(minutes=1),)]
+    giu, bi_loai = phan_loai(spark.createDataFrame(du_lieu, cot))
+    assert giu.first()["_ingest_ts"] == T0 + timedelta(minutes=1)
+    assert bi_loai.first()["_ingest_ts"] == T0 + timedelta(minutes=9)
+
+
+def test_chon_ngay_backfill_khong_doi_moc(spark):
+    from transform.bronze_to_silver import chon_ngay_can_xu_ly
+
+    cot = COT + ", _ingest_ts timestamp"
+    du_lieu = [dong(str(i), "u", "a", i * 86400) + (T0,) for i in range(5)]   # 5 ngày liên tiếp
+    bronze = spark.createDataFrame(du_lieu, cot)
+    ngay, moc, la_backfill = chon_ngay_can_xu_ly(spark, bronze, False, "2015-06-02", "2015-06-03")
+    assert [str(n) for n in ngay] == ["2015-06-02", "2015-06-03"] and la_backfill and moc == T0
+    ngay, _, _ = chon_ngay_can_xu_ly(spark, bronze, False, "2015-06-04", None)   # một ngày
+    assert [str(n) for n in ngay] == ["2015-06-04"]
+    import pytest
+    with pytest.raises(ValueError):
+        chon_ngay_can_xu_ly(spark, bronze, False, "2015-06-04", "2015-06-01")

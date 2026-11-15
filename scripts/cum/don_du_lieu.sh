@@ -6,10 +6,11 @@
 #   bash scripts/cum/don_du_lieu.sh --xoa    # xóa thật (hỏi xác nhận: gõ XOA)
 #
 # Chỉ xóa những gì dự án này tạo ra, lấy từ chính mã nguồn trên master:
-#   - mọi bảng trong jobs/common/cau_hinh.py (_BANG), CSV ở /lake/landing/retailrocket
+#   - mọi bảng trong jobs/common/cau_hinh.py (_BANG), CSV ở <gốc>/landing/retailrocket
+#     (<gốc> = /lakehouse/bd03_khuyen_nghi, mục A.4 đề cương)
 #   - checkpoint của các luồng streaming và thư mục mô hình mà các job có ghi
 #   - hai topic Kafka retailrocket-events, hien-thi (xóa rồi tạo lại rỗng, 3 phân vùng)
-# Thư mục khác dưới /lake (ví dụ dữ liệu cũ của nhóm ở /lake/bronze/su_kien) được GIỮ NGUYÊN
+# Thư mục khác dưới gốc (và toàn bộ /lake cũ, ví dụ dữ liệu cũ của nhóm ở /lake/bronze/su_kien) được GIỮ NGUYÊN
 # và in ra để biết. Không xóa gì khi còn ứng dụng Spark đang chạy.
 set -uo pipefail
 
@@ -40,6 +41,7 @@ for tep in glob.glob("jobs/**/*.py", recursive=True):
 print("\n".join(sorted(ds)))
 PY
 )
+  GOC_LAKE="$(python3 -c 'import sys; sys.path.insert(0, "jobs"); from common import cau_hinh as ch; print(ch.LAKE_DUONG_DAN)')"
   [ ${#CUA_DU_AN[@]} -gt 10 ] || { echo "!! Không đọc được danh sách bảng từ jobs/common/cau_hinh.py"; exit 1; }
   HD="docker exec hadoop-master hdfs dfs"
   docker exec hadoop-master hdfs dfsadmin -safemode wait > /dev/null
@@ -49,8 +51,8 @@ PY
   DU="$($HD -du -s -h "${CUA_DU_AN[@]}" 2> /dev/null)"
   mapfile -t CO < <(awk 'NF {print $NF}' <<< "$DU")
   if [ ${#CO[@]} -gt 0 ]; then sed 's#hdfs://[^/]*##; s#^#   #' <<< "$DU"; else echo "   (không còn gì)"; fi
-  echo "-- Thư mục khác dưới /lake, 2 cấp đầu (GIỮ NGUYÊN):"
-  $HD -ls -d '/lake/*' '/lake/*/*' 2> /dev/null | awk '$1 ~ /^d/ {print $NF}' | sed 's#^hdfs://[^/]*##' \
+  echo "-- Thư mục khác dưới $GOC_LAKE, 2 cấp đầu (GIỮ NGUYÊN):"
+  $HD -ls -d "$GOC_LAKE/*" "$GOC_LAKE/*/*" 2> /dev/null | awk '$1 ~ /^d/ {print $NF}' | sed 's#^hdfs://[^/]*##' \
     | while read -r d; do
         giu=1
         for p in "${CUA_DU_AN[@]}"; do

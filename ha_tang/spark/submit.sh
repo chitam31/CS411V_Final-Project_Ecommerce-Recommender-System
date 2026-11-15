@@ -41,6 +41,20 @@ if [ "$HO_SO" = "thinh_hanh" ]; then
   THEM_CONF=(--conf spark.sql.streaming.stateStore.providerClass=org.apache.spark.sql.execution.streaming.state.RocksDBStateStoreProvider)
 fi
 
+# Chốt an toàn khi chuyển gốc hồ dữ liệu (15/11/2026): mã từ bản này đọc/ghi /lakehouse/bd03_khuyen_nghi.
+# Nếu dữ liệu vẫn còn ở /lake (chưa chạy scripts/cum/chuyen_lakehouse.sh) thì KHÔNG nộp job: job chạy
+# với gốc mới sẽ tạo bảng/checkpoint rỗng ở đó và làm bước chuyển sau này bị chặn. Hỏi qua WebHDFS
+# (một lệnh curl, không khởi động JVM). Không hỏi được NameNode thì cứ nộp, job tự báo lỗi.
+LAKE_DUONG_DAN="${LAKE_DUONG_DAN:-/lakehouse/bd03_khuyen_nghi}"
+if [ -z "${LAKE_GOC:-}" ] && [ "${BO_QUA_KIEM_TRA_GOC:-0}" != "1" ]; then
+  _trang_thai() { curl -s -o /dev/null -w '%{http_code}' -m 10 "http://$MASTER_IP:9870/webhdfs/v1$1?op=GETFILESTATUS" || true; }
+  if [ "$(_trang_thai "$LAKE_DUONG_DAN/silver")" = "404" ] && [ "$(_trang_thai /lake/silver/tuong_tac)" = "200" ]; then
+    echo "!! Dữ liệu còn ở /lake nhưng mã đã dùng gốc $LAKE_DUONG_DAN: chạy scripts/cum/chuyen_lakehouse.sh --chay" >&2
+    echo "   từ laptop trước (không nộp $JOB để tránh tạo bảng rỗng ở gốc mới)." >&2
+    exit 3
+  fi
+fi
+
 # Đóng gói jobs/common để executor import được. Ghi ra tệp tạm rồi đổi tên một lần,
 # để hai job nộp cùng lúc (DAG song song) không đọc phải tệp zip đang ghi dở.
 (cd "$THU_MUC/jobs" && python3 - <<'PY'
@@ -69,6 +83,7 @@ fi
 
 exec docker exec "${CHE_DO_EXEC[@]}" \
   -e HDFS_GOC="${HDFS_GOC:-hdfs://$MASTER_IP:8020}" \
+  -e LAKE_DUONG_DAN="$LAKE_DUONG_DAN" \
   -e KAFKA_BROKER="${KAFKA_BROKER:-10.68.71.204:9092}" \
   -e PYTHONPATH=/opt/spark/jobs \
   spark-master "${BOC[@]}" /opt/spark/bin/spark-submit \

@@ -42,7 +42,7 @@
                                          Web giả lập sàn TMĐT (labsoe-18 10.68.71.149:8000) ◄─┘
 ```
 
-Mọi bảng nằm trên HDFS `hdfs://10.68.71.113:8020/lake/...`. Bronze là Parquet; silver, features và gold là Delta Lake 3.2.0. Năm DAG Airflow 3.3.1 trên máy master điều phối các job lô. Chi tiết ở [docs/KIEN_TRUC.md](docs/KIEN_TRUC.md).
+Mọi bảng nằm trên HDFS dưới gốc `hdfs://10.68.71.113:8020/lakehouse/bd03_khuyen_nghi/` đúng quy ước mục A.4 của đề cương (bronze, silver, gold, features, models, checkpoints, `_quarantine`). Bronze là Parquet; silver, features, gold và `_quarantine` là Delta Lake 3.2.0. Năm DAG Airflow 3.3.1 trên máy master điều phối các job lô. Chi tiết ở [docs/KIEN_TRUC.md](docs/KIEN_TRUC.md).
 
 ### Phân vai 8 máy
 
@@ -72,6 +72,7 @@ bd03_khuyen_nghi/
 ├── requirements-airflow.txt  Chỉ cần khi muốn chạy test DAG ngoài container
 ├── pytest.ini
 ├── cau_hinh/cum.env        Danh bạ 8 máy (IP, vai trò, lõi, RAM)
+├── conf/                   spark-defaults.conf, hdfs-site.xml, core-site.xml (liên kết), .env.example
 ├── jobs/                   Toàn bộ job PySpark, nộp bằng ha_tang/spark/submit.sh
 │   ├── common/             Thư viện dùng chung (đóng gói thành common.zip gửi executor)
 │   ├── streaming/          nap_su_kien, tinh_thinh_hanh, ghi_hien_thi
@@ -86,10 +87,34 @@ bd03_khuyen_nghi/
 ├── airflow/dags/           5 DAG theo mục 3.9
 ├── ha_tang/                Docker compose cho Hadoop, Spark, Kafka, Airflow, Web
 ├── scripts/                Khởi động từng máy, điều khiển cụm qua SSH, kiểm tra cụm, chạy lần đầu, demo
-├── tests/                  109 kiểm thử pytest, chạy trên Spark local thật
-├── docs/                   KIEN_TRUC, TRIEN_KHAI_CUM, HUONG_DAN_DEMO, DOI_CHIEU_YEU_CAU
-└── models/                 Ghi chú về mô hình (mô hình thật nằm trên HDFS /lake/models)
+├── notebooks/              eda_retailrocket.ipynb: khảo sát dữ liệu gốc (số liệu do kiem_tra/eda.py tính trên cụm)
+├── tests/                  Kiểm thử pytest trên Spark local thật và Airflow 3.3.1 thật
+├── docs/                   KIEN_TRUC, TRIEN_KHAI_CUM, HUONG_DAN_DEMO, DOI_CHIEU_YEU_CAU, CHUAN_BI_BAO_VE,
+│                           AI_USAGE (khai báo dùng AI, mục A.9), bang_chung/ (output thu trên cụm)
+└── models/                 Ghi chú về mô hình (mô hình thật nằm trên HDFS /lakehouse/bd03_khuyen_nghi/models)
 ```
+
+### 2.1. Ánh xạ với cấu trúc repository chuẩn (mục A.5 đề cương)
+
+Tên thư mục giữ theo tiếng Việt và theo cụm nhiều máy, vì container của từng máy gắn đúng các đường dẫn
+này (`/opt/spark/jobs`, `/opt/bd03/airflow/dags`). Bảng dưới chỉ ra mỗi mục của cấu trúc chuẩn nằm ở đâu.
+
+| Cấu trúc chuẩn (A.5) | Trong repo này | Ghi chú |
+|---|---|---|
+| `docker-compose.yml` | `ha_tang/{hadoop,spark,kafka,airflow,web}/docker-compose*.yml` | Mỗi vai trò một tệp vì 6 máy chạy các tập vai trò khác nhau; `scripts/cum/khoi_dong_may.sh` bật đúng vai trò của từng máy |
+| `conf/` | `conf/` (+ nguồn thật `ha_tang/hadoop/config/`, `cau_hinh/cum.env`) | `spark-defaults.conf` khớp `submit.sh` (có kiểm thử) |
+| `spark_jobs/ingest/` | `jobs/streaming/nap_su_kien.py`, `jobs/transform/nhap_danh_muc.py` | Nạp bronze là luồng Kafka → Parquet |
+| `spark_jobs/transform/` | `jobs/transform/` | bronze → silver → gold, A/B |
+| `spark_jobs/streaming/` | `jobs/streaming/` | 3 luồng Structured Streaming |
+| `spark_jobs/ml/` | `jobs/ml/` (+ `jobs/common/als_lib.py`) | train, evaluate, predict, trộn |
+| (bảo trì, kiểm tra) | `jobs/bao_tri/`, `jobs/kiem_tra/` | OPTIMIZE/ZORDER/VACUUM; tái lập, thí nghiệm, EDA |
+| `dags/` | `airflow/dags/` | 5 DAG |
+| `webapp/backend/` | `web/app.py`, `web/dich_vu/` | FastAPI |
+| `webapp/frontend/` | `web/templates/`, `web/static/` | Jinja2 + Chart.js (đóng gói sẵn trong `web/static/vendor/`) |
+| `notebooks/` | `notebooks/eda_retailrocket.ipynb` | EDA |
+| `tests/` | `tests/` | Kiểm thử chất lượng dữ liệu, logic job, DAG, web, script hạ tầng |
+| `docs/` | `docs/`, `bao_cao/` | Sơ đồ kiến trúc, báo cáo, slide, AI_USAGE |
+| `README.md` | `README.md` | Dựng lại hệ thống từ đầu: mục 3 và docs/TRIEN_KHAI_CUM.md |
 
 ---
 
@@ -146,7 +171,7 @@ bash scripts/cum/kiem_tra_cum.sh
 # Trên laptop: tải RetailRocket bằng khóa Kaggle của laptop, chép sang master và máy Kafka
 bash scripts/cum/chep_du_lieu.sh
 # Trên máy master (labsoe-11), lần đầu:
-bash scripts/tai_du_lieu.sh                        # ~/du_lieu/retailrocket -> HDFS /lake/landing
+bash scripts/tai_du_lieu.sh                        # ~/du_lieu/retailrocket -> HDFS /lakehouse/bd03_khuyen_nghi/landing
 # Trên máy Kafka (labsit):
 bash scripts/tao_topic.sh
 python3 producer/phat_lai_su_kien.py --tep ~/du_lieu/retailrocket/events.csv &
@@ -154,6 +179,11 @@ python3 producer/phat_lai_su_kien.py --tep ~/du_lieu/retailrocket/events.csv &
 bash scripts/chay_lan_dau.sh                       # toàn bộ pipeline theo thứ tự của DAG 1
 bash scripts/luong.sh khoi_dong tat_ca             # 3 luồng streaming chạy liên tục
 ```
+
+Cụm đã chạy từ trước ngày 15/11/2026 với gốc cũ `/lake`: chuyển sang gốc chuẩn MỘT LẦN từ laptop bằng
+`bash scripts/cum/chuyen_lakehouse.sh --chay` (dừng luồng, đồng bộ mã, `hdfs dfs -mv`, viết lại `_spark_metadata`
+của bronze, kiểm tra, bật lại; chi tiết docs/TRIEN_KHAI_CUM.md mục 8). Sau đó thu bằng chứng cho báo cáo trên master:
+`bash scripts/thu_bang_chung.sh`.
 
 Sau đó Airflow (http://10.68.71.113:8088) chạy DAG hằng đêm, web ở http://10.68.71.149:8000 (ngoài trường: `ssh -N -L 8001:localhost:8000 labsoe-18`, rồi mở http://localhost:8001).
 
@@ -173,24 +203,33 @@ Sau đó Airflow (http://10.68.71.113:8088) chạy DAG hằng đêm, web ở htt
 | 3.10 Rủi ro | lọc user ≥ 3 tương tác, `numBlocks`, traffic mô phỏng có gắn nhãn, chỉ sinh cho user hoạt động 30 ngày, re-ranking novelty |
 | 3.11 Nghiệm thu | Kịch bản từng mục ở [docs/HUONG_DAN_DEMO.md](docs/HUONG_DAN_DEMO.md) |
 
+Ánh xạ tới quy định chung (Phần A của đề cương):
+
+| Mục | Hiện thực |
+|---|---|
+| A.3 Môi trường | Hadoop 3.5.0, Spark 3.5.3, Delta 3.2.0, Airflow 3.3.1, Kafka 3.7.2 (đều ≥ phiên bản tối thiểu), FastAPI + Jinja2 + Chart.js, Git |
+| A.4 Cây HDFS | `/lakehouse/bd03_khuyen_nghi/{bronze,silver,gold,features,models,checkpoints,_quarantine}`; `_quarantine.tuong_tac` giữ mọi dòng bị loại kèm `ly_do` |
+| A.6.1 Spark | Job lô (bronze_to_silver...), MLlib ALS, 3 luồng streaming chạy liên tục |
+| A.6.2 Delta | MERGE INTO (ghi_gold, tinh_thinh_hanh, ghi_hien_thi, tinh_ket_qua_ab, tien_hoa_luoc_do); DESCRIBE HISTORY và VERSION AS OF (`scripts/demo/delta_sql.sh`, DAG 5); OPTIMIZE/ZORDER có số đo trước/sau (`bao_tri/do_zorder.py`) |
+| A.6.3 HDFS | Mọi bảng trên HDFS; `hdfs dfs -du -h /lakehouse/bd03_khuyen_nghi` trong `docs/bang_chung/cum/01_hdfs_du_h.txt` |
+| A.6.4 Web | 5 màn hình; ghi ngược Delta trực tiếp (Tái lập → `gold.ket_qua_tai_lap`) và qua Kafka → MERGE (`gold.nhat_ky_hien_thi`) |
+| A.6.5 Airflow | 5 DAG khác lịch, retries, **Deadline Alerts** (thay `sla` mà Airflow 3 đã bỏ), BranchPythonOperator + PythonSensor + ShortCircuitOperator |
+| A.8 | Không kéo dữ liệu lớn về driver; độ trễ web đo được (`/api/hieu-nang`, `scripts/do_do_tre_web.py`); backfill DAG 1 (khoảng ngày) và DAG 3 (`airflow backfill create`) |
+| A.9 | [docs/AI_USAGE.md](docs/AI_USAGE.md) |
+
 Bảng đối chiếu đầy đủ từng yêu cầu: [docs/DOI_CHIEU_YEU_CAU.md](docs/DOI_CHIEU_YEU_CAU.md).
 
 ---
 
-## 5. Trạng thái kiểm chứng (cập nhật 10/11/2026)
+## 5. Trạng thái kiểm chứng (cập nhật 15/11/2026)
 
 | Hạng mục | Trạng thái |
 |---|---|
-| Logic làm sạch, trọng số, suy giảm thời gian, chia train/test | Đã kiểm thử tự động trên Spark local |
-| ALS, 4 metric (đối chiếu `RankingMetrics` của Spark), coverage, novelty, 2 baseline, tính tất định theo hạt giống | Đã kiểm thử tự động |
-| Trộn A/B, 3 chiến lược cold start, item mới, mô hình v2 lọc tầm giá | Đã kiểm thử tự động |
-| Structured Streaming cửa sổ trượt + watermark (nguồn tệp) | Đã kiểm thử tự động |
-| z-test hai tỷ lệ, tổng hợp A/B, mô phỏng click theo vị trí | Đã kiểm thử tự động |
-| Web: 5 màn hình và API | Đã kiểm thử bằng TestClient ở chế độ giả lập |
-| 5 DAG Airflow 3.3.1: nạp được, đúng lịch, đúng nhánh | Đã kiểm thử bằng DagBag |
-| Delta Lake chạy thật trên cụm | Đã chạy `kiem_tra/khoi_tao_bang.py` trên cụm 10/11/2026: tạo 8 bảng Delta trên HDFS (42 giây). MERGE, VERSION AS OF, CDF, ALTER TABLE, OPTIMIZE ZORDER, VACUUM chưa chạy: sẽ kiểm chứng khi chạy pipeline với dữ liệu thật |
-| Hạ tầng cụm | Đã bật 10/11/2026: 5 DataNode (1,93 TB trống), 5 Spark worker (34 lõi, 13 GB RAM), Kafka 2 topic. Mạng Wi-Fi phòng labsit chặn các máy nói chuyện trực tiếp nên ZeroTier đi đường chuyển tiếp, xem NHAT_KY.md |
-| Toàn bộ pipeline với số liệu thật của RetailRocket | **Chưa chạy.** Nhóm chạy theo docs/TRIEN_KHAI_CUM.md và điền kết quả vào NHAT_KY.md |
+| Logic job (làm sạch, quarantine, trọng số, suy giảm, chia train/test, ALS, metric, trộn, cold start, A/B) | Kiểm thử tự động trên Spark local thật (`pytest`) |
+| 5 DAG Airflow: nạp, tuần tự hóa, Deadline Alert, tham số backfill | Kiểm thử bằng Airflow 3.3.1 thật (`tests/test_airflow_dags.py`); Deadline Alert và `airflow backfill create` chạy thử trên Airflow thật: docs/bang_chung/kiem_chung_airflow_cuc_bo.md |
+| Chuyển gốc `/lake` → `/lakehouse/bd03_khuyen_nghi` | Thử với Spark thật trên đĩa cục bộ: dời bảng, viết lại `_spark_metadata`, luồng chạy tiếp không xử lý lại, hoàn tác (`tests/test_chuyen_lakehouse.py`) |
+| Web: 5 màn hình, API, ghi ngược, đo độ trễ | TestClient ở chế độ giả lập; số đo thật trong docs/bang_chung/cum/ |
+| Pipeline đầy đủ với dữ liệu thật RetailRocket | Đã chạy trên cụm 10–11/11/2026: 8 bước, 3 luồng, 5 DAG, 2 lần tái lập trùng khớp. Số liệu ở NHAT_KY.md và báo cáo |
 
 ---
 
@@ -201,7 +240,11 @@ Bảng đối chiếu đầy đủ từng yêu cầu: [docs/DOI_CHIEU_YEU_CAU.md
 - [docs/KIEN_TRUC.md](docs/KIEN_TRUC.md) — kiến trúc, đặc tả bảng, quyết định thiết kế
 - [docs/TRIEN_KHAI_CUM.md](docs/TRIEN_KHAI_CUM.md) — triển khai từng máy trong 8 máy
 - [docs/HUONG_DAN_DEMO.md](docs/HUONG_DAN_DEMO.md) — kịch bản bảo vệ theo danh mục nghiệm thu 3.11
-- [docs/DOI_CHIEU_YEU_CAU.md](docs/DOI_CHIEU_YEU_CAU.md) — đối chiếu từng yêu cầu của đề tài
+- [docs/DOI_CHIEU_YEU_CAU.md](docs/DOI_CHIEU_YEU_CAU.md) — đối chiếu từng yêu cầu của đề tài và của đề cương (Phần A, C)
+- [docs/AI_USAGE.md](docs/AI_USAGE.md) — khai báo sử dụng AI (mục A.9)
+- [docs/bang_chung/](docs/bang_chung/) — output thu trên cụm: du -h, DESCRIBE HISTORY, độ trễ web, EDA
+- [notebooks/eda_retailrocket.ipynb](notebooks/eda_retailrocket.ipynb) — khảo sát dữ liệu
+- [conf/](conf/) — cấu hình dùng chung
 - [models/README.md](models/README.md) — nơi lưu và cách lấy mô hình
 
 ## 7. Nhóm thực hiện

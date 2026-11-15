@@ -338,8 +338,8 @@ bash scripts/cum/chep_du_lieu.sh                     # hoặc --khoa <tệp kagg
 # -> labsoe-11: ~/du_lieu/retailrocket/ đủ 4 tệp CSV; labsit: ~/du_lieu/retailrocket/events.csv
 
 # Trên máy master
-bash scripts/tai_du_lieu.sh                          # ~/du_lieu/retailrocket -> HDFS /lake/landing/retailrocket
-docker exec hadoop-master hdfs dfs -ls -h /lake/landing/retailrocket
+bash scripts/tai_du_lieu.sh                          # ~/du_lieu/retailrocket -> HDFS /lakehouse/bd03_khuyen_nghi/landing/retailrocket
+docker exec hadoop-master hdfs dfs -ls -h /lakehouse/bd03_khuyen_nghi/landing/retailrocket
 ```
 
 Đã chạy thử pipeline bằng dữ liệu mẫu (`scripts/tao_du_lieu_mau.py`) thì phải dọn trước khi đưa dữ liệu thật lên, nếu không bảng Delta và checkpoint sẽ trộn hai bộ dữ liệu. Chạy trên laptop, khi không còn job Spark nào chạy:
@@ -349,7 +349,7 @@ bash scripts/cum/don_du_lieu.sh          # xem trước: đường dẫn nào s�
 bash scripts/cum/don_du_lieu.sh --xoa    # xóa thật, gõ XOA để xác nhận
 ```
 
-Script chỉ xóa những gì dự án tạo ra (danh sách bảng đọc từ `jobs/common/cau_hinh.py`, checkpoint và thư mục mô hình đọc từ mã các job, CSV ở `/lake/landing/retailrocket`), làm rỗng hai topic Kafka (xóa rồi tạo lại 3 phân vùng) và xóa `/tmp/mau` trên master. Thư mục khác dưới `/lake` (dữ liệu cũ của nhóm) được giữ nguyên và in ra để kiểm tra.
+Script chỉ xóa những gì dự án tạo ra (danh sách bảng đọc từ `jobs/common/cau_hinh.py`, checkpoint và thư mục mô hình đọc từ mã các job, CSV ở `/lakehouse/bd03_khuyen_nghi/landing/retailrocket`), làm rỗng hai topic Kafka (xóa rồi tạo lại 3 phân vùng) và xóa `/tmp/mau` trên master. Thư mục khác dưới gốc lakehouse và toàn bộ `/lake` cũ (dữ liệu cũ của nhóm) được giữ nguyên và in ra để kiểm tra.
 
 ---
 
@@ -368,7 +368,7 @@ Muốn có dữ liệu nhanh để thử pipeline, phát hết mức bằng `--g
 
 ```bash
 cd ~/bd03_khuyen_nghi
-docker exec hadoop-master hdfs dfs -mkdir -p /lake/landing/retailrocket /lake/models /lake/checkpoints
+docker exec hadoop-master hdfs dfs -mkdir -p /lakehouse/bd03_khuyen_nghi/landing/retailrocket /lakehouse/bd03_khuyen_nghi/models /lakehouse/bd03_khuyen_nghi/checkpoints /lakehouse/bd03_khuyen_nghi/_quarantine
 bash ha_tang/spark/submit.sh nhanh kiem_tra/khoi_tao_bang.py
 bash ha_tang/spark/submit.sh lo transform/nhap_danh_muc.py
 bash scripts/luong.sh khoi_dong tat_ca
@@ -388,6 +388,63 @@ bash scripts/chay_lan_dau.sh                    # đủ 27 tổ hợp tuning cho
 Bước 3 trong `chay_lan_dau.sh` chạy `nap_su_kien.py --mot-lan`; nếu luồng nạp đang chạy liên tục thì bước này chỉ xử lý phần còn lại (cùng checkpoint, không trùng dữ liệu).
 
 Theo dõi job: Spark UI của từng job ở `http://10.68.71.113:4140`–`4150` (mỗi hồ sơ một cổng, xem `ha_tang/spark/submit.sh`).
+
+---
+
+### 8b. Chuyển gốc hồ dữ liệu sang `/lakehouse/bd03_khuyen_nghi` (một lần, 15/11/2026)
+
+Đề cương (mục A.4, A.6.3) quy định gốc `hdfs:///lakehouse/<ma_de_tai>/`. Cụm đã chạy từ 10/11 với gốc `/lake`.
+Mã từ commit ngày 15/11 dùng gốc mới. `submit.sh` sẽ **từ chối nộp job** cho tới khi dữ liệu được chuyển,
+để không job nào tạo bảng rỗng ở gốc mới.
+
+Trên laptop (Git Bash), sau khi `git pull`:
+
+```bash
+bash scripts/cum/chuyen_lakehouse.sh          # xem trước kế hoạch (cặp nguồn -> đích), không đổi gì
+bash scripts/cum/chuyen_lakehouse.sh --chay   # chuyển thật, gõ CHUYEN để xác nhận (~10-15 phút)
+```
+
+Script làm lần lượt:
+
+1. Tạm dừng DAG 2–4 (DAG 1 vẫn để tạm dừng).
+2. Dừng 3 luồng và chờ tới khi không còn ứng dụng Spark nào của dự án.
+3. Đồng bộ mã sang mọi máy.
+4. `hdfs dfs -mv` từng bảng, checkpoint, mô hình, landing sang gốc mới, rồi viết lại `_spark_metadata` của bronze.
+5. Chạy job `kiem_tra/kiem_tra_lakehouse.py`: đọc bronze qua metadata mới, in phiên bản của mọi bảng Delta.
+6. Bật lại 3 luồng, build lại web trên labsoe-18, bật lại DAG 2–4.
+7. In `hdfs dfs -du -h /lakehouse/bd03_khuyen_nghi`.
+
+Nếu bước 5 lỗi, script dừng và không bật lại gì. Khi đó chạy `bash scripts/cum/chuyen_lakehouse.sh --hoan-tac`:
+dữ liệu về lại `/lake`, metadata được viết lại về tiền tố cũ. Sau đó checkout commit trước 15/11 trên laptop và
+đồng bộ mã. Dữ liệu cũ khác của nhóm dưới `/lake` (`/lake/bronze/su_kien`, `/lake/cu_nhom`...) không bị đụng tới.
+
+Làm tay từng bước (khi không chạy được từ laptop), trên master:
+
+```bash
+bash scripts/luong.sh dung tat_ca                       # và tạm dừng DAG 2-4 trên giao diện Airflow
+python3 scripts/cum/chuyen_lakehouse.py --xem
+python3 scripts/cum/chuyen_lakehouse.py --thuc-hien
+bash ha_tang/spark/submit.sh nhanh kiem_tra/kiem_tra_lakehouse.py
+bash scripts/luong.sh khoi_dong tat_ca                  # rồi trên labsoe-18: bash scripts/cum/khoi_dong_may.sh --chi=web
+```
+
+### 8c. Dựng `_quarantine` và thu bằng chứng cho báo cáo
+
+Trên master, trong `tmux`, sau bước 8b:
+
+```bash
+bash scripts/thu_bang_chung.sh        # 15-20 phút; kết quả ở ~/bd03_bang_chung/<thời điểm>/ và .tar.gz
+```
+
+Script làm các việc sau:
+
+- Dựng `_quarantine.tuong_tac` từ bronze nếu chưa có (`bronze_to_silver.py --toan-bo --chi-cach-ly`, không ghi silver).
+- Thu output `hdfs dfs -du -h` (phải nộp theo A.6.3) và cây thư mục (`hdfs dfs -ls -R` đã lọc).
+- Thu DESCRIBE HISTORY, số commit theo thao tác (MERGE, OPTIMIZE...), VERSION AS OF, schema evolution, số đo Z-ORDER.
+- Thu thống kê làm sạch, danh sách DAG kèm Deadline Alert, thời gian chạy của các luồng, độ trễ web và EDA.
+
+Trên laptop: `scp labsoe-11:~/bd03_bang_chung/<thời điểm>.tar.gz .`, giải nén vào `docs/bang_chung/cum/` rồi commit.
+Kết quả để ngoài repo trên master vì tệp lạ trong thư mục làm việc sẽ chặn lần `--dong-bo-ma` sau.
 
 ---
 
@@ -439,7 +496,7 @@ ssh labsoe-11 "bash ~/bd03_khuyen_nghi/scripts/cum/tinh_trang.sh"
 | Log Spark worker: `Connection refused: /0.0.0.0:7077` | Spark Master chạy mạng bridge với `--host 0.0.0.0`, tự quảng bá địa chỉ 0.0.0.0 | Master chạy `network_mode: host`, `--host 10.68.71.113` (đã sửa trong repo) |
 | Cụm chạy rất chậm, ping giữa các máy lab hàng trăm ms | ZeroTier không nối thẳng được giữa hai phòng lab, phải đi qua máy chuyển tiếp | Mục 10b |
 | Kafka: `Connection to node -1 could not be established` | Sai `KAFKA_ADVERTISED_LISTENERS` hoặc cổng 9092 bị chặn | `ha_tang/kafka/.env` phải có `NODE_IP=10.68.71.204` |
-| Luồng streaming lỗi sau khi sửa mã | Checkpoint cũ không tương thích với truy vấn mới | Đổi tên checkpoint trong job (hậu tố `_v2`...) hoặc xóa `/lake/checkpoints/<ten>` |
+| Luồng streaming lỗi sau khi sửa mã | Checkpoint cũ không tương thích với truy vấn mới | Đổi tên checkpoint trong job (hậu tố `_v2`...) hoặc xóa `/lakehouse/bd03_khuyen_nghi/checkpoints/<ten>` |
 | `ConcurrentAppendException` khi hai job ghi cùng bảng | Chạy tay một job trong lúc DAG đang chạy job đó | Chờ DAG xong; các DAG đặt `max_active_runs=1` |
 | ALS báo `OutOfMemoryError` | Ma trận quá lớn so với RAM executor | `huan_luyen_als.py --so-khoi 50`; tăng `RAM_ALS`; tăng `--min-tuong-tac` ở `chuan_bi_ma_tran.py` |
 | Airflow task: `permission denied ... docker.sock` | `DOCKER_GID` sai | `getent group docker`, sửa `ha_tang/airflow/.env`, `docker compose up -d` lại |
@@ -484,7 +541,7 @@ Máy nối Wi-Fi (`wlo1`, `wlp…`) mà không ping được IP mạng nội b�
 3. Dùng một router hoặc điểm phát Wi-Fi riêng cho các máy trong cụm.
 4. Nếu tường lửa đang bật, mở cổng ZeroTier: `sudo ufw allow 9993/udp`.
 
-Trong lúc còn đi đường chuyển tiếp (khoảng 0,4 MB/s), giữ `HE_SO_SAO_CHEP=1` trong `cau_hinh/cum.env` để HDFS và Spark không phải chép bản sao qua mạng chậm. Khi tốc độ giữa các máy đạt vài MB/s, đặt 2 (giá trị hiện tại từ 10/11/2026), rồi `--dong-bo-ma` và chạy lại `khoi_dong_may.sh` trên mọi máy. Với 1 bản sao, một DataNode khựng là job đọc tệp của nó hỏng hẳn; với 2 bản sao, HDFS client tự đọc bản còn lại. Tệp cũ giữ số bản sao cũ; muốn nâng lên thì chạy `docker exec hadoop-master hdfs dfs -setrep 2 /lake` (NameNode chép thêm ở chế độ nền; thêm `-w` nếu muốn chờ chép xong). Cũng vì mạng Wi-Fi, HDFS client chờ DataNode 3 phút (`dfs.client.socket-timeout` trong `hdfs-site.xml` và `submit.sh`) thay vì 60 giây, và mỗi task Spark được thử 8 lần thay vì 4.
+Trong lúc còn đi đường chuyển tiếp (khoảng 0,4 MB/s), giữ `HE_SO_SAO_CHEP=1` trong `cau_hinh/cum.env` để HDFS và Spark không phải chép bản sao qua mạng chậm. Khi tốc độ giữa các máy đạt vài MB/s, đặt 2 (giá trị hiện tại từ 10/11/2026), rồi `--dong-bo-ma` và chạy lại `khoi_dong_may.sh` trên mọi máy. Với 1 bản sao, một DataNode khựng là job đọc tệp của nó hỏng hẳn; với 2 bản sao, HDFS client tự đọc bản còn lại. Tệp cũ giữ số bản sao cũ; muốn nâng lên thì chạy `docker exec hadoop-master hdfs dfs -setrep 2 /lakehouse/bd03_khuyen_nghi` (NameNode chép thêm ở chế độ nền; thêm `-w` nếu muốn chờ chép xong). Cũng vì mạng Wi-Fi, HDFS client chờ DataNode 3 phút (`dfs.client.socket-timeout` trong `hdfs-site.xml` và `submit.sh`) thay vì 60 giây, và mỗi task Spark được thử 8 lần thay vì 4.
 
 ### 10c. SSH từ nhà vào master treo ở `expecting SSH2_MSG_KEX_ECDH_REPLY`
 

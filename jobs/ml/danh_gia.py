@@ -107,7 +107,9 @@ def main():
         "duong_dan_mo_hinh": duong_dan,
         "chi_tiet_json": json.dumps(chi_tiet, ensure_ascii=False),
     }
-    ghi_delta(tao_df(spark, "gold.lich_su_huan_luyen", [dong]), "gold.lich_su_huan_luyen", "append")
+    # replaceWhere theo ma_chay: chạy lại bước đánh giá của cùng lượt không sinh hai dòng lịch sử.
+    ghi_delta(tao_df(spark, "gold.lich_su_huan_luyen", [dong]), "gold.lich_su_huan_luyen", "overwrite",
+              tuy_chon={"replaceWhere": "ma_chay = '{}'".format(args.ma_chay)})
 
     in_ket_qua(
         {

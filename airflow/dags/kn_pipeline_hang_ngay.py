@@ -9,6 +9,11 @@ cho_du_lieu_ngay_moi (Sensor)
 
 Thêm so với sơ đồ: tao_ma_chay (mã định danh lần chạy dùng chung cho mọi bước) và
 san_pham_lien_quan (bảng cho khối "Sản phẩm liên quan" của web).
+
+SLA: Deadline Alert 7 giờ (lượt 02:00 phải xong trước 09:00, đầu giờ làm việc), xem bd03_chung.han_chot.
+Backfill: Trigger DAG w/ config {"tu_ngay": "2015-09-10", "den_ngay": "2015-09-12"} (hoặc
+airflow backfill create ... --dag-run-conf '<cùng JSON>'): bronze_to_silver tính lại đúng các ngày đó
+bằng replaceWhere, không chờ sensor, không đổi mốc tăng dần; các bước sau chạy như thường lệ.
 """
 import logging
 from datetime import datetime, timedelta
@@ -18,9 +23,12 @@ from airflow.providers.standard.operators.python import BranchPythonOperator, Py
 from airflow.providers.standard.sensors.python import PythonSensor
 from airflow.sdk import DAG, Param
 
-from bd03_chung import NGAY_BAT_DAU, THAM_SO_MAC_DINH, co_du_lieu_moi, doc_json_xcom, lenh_spark
+from bd03_chung import NGAY_BAT_DAU, THAM_SO_MAC_DINH, co_du_lieu_moi, doc_json_xcom, han_chot, lenh_spark
 
 MA_CHAY = "{{ ti.xcom_pull(task_ids='tao_ma_chay') }}"
+# Backfill: chỉ thêm tham số khi params.tu_ngay có giá trị; để trống là chạy tăng dần theo mốc.
+THAM_SO_BACKFILL = ("{% if params.tu_ngay %}--tu-ngay {{ params.tu_ngay }} "
+                    "--den-ngay {{ params.den_ngay or params.tu_ngay }}{% endif %}")
 
 
 def tao_ma_chay():
@@ -59,11 +67,14 @@ with DAG(
     max_active_runs=1,
     default_args=THAM_SO_MAC_DINH,
     dagrun_timeout=timedelta(hours=8),
+    deadline=han_chot(7 * 60),
     params={
         "luoi": Param("toi_thieu", enum=["toi_thieu", "day_du"], description="9 hoặc 27 tổ hợp tuning"),
         "min_tuong_tac": Param(3, type="integer", minimum=1),
         "bo_qua_cho_du_lieu": Param(False, type="boolean",
                                     description="Chạy tay: bỏ qua sensor, chạy trên dữ liệu hiện có"),
+        "tu_ngay": Param("", type="string", description="Backfill: ngày dữ liệu đầu (YYYY-MM-DD), để trống = tăng dần"),
+        "den_ngay": Param("", type="string", description="Backfill: ngày dữ liệu cuối (mặc định bằng tu_ngay)"),
     },
     tags=["bd03", "cs411"],
 ) as dag:
@@ -76,7 +87,7 @@ with DAG(
         soft_fail=True,
     )
     ma_chay = PythonOperator(task_id="tao_ma_chay", python_callable=tao_ma_chay)
-    bronze_to_silver = BashOperator(task_id="bronze_to_silver", bash_command=lenh_spark("lo", "transform/bronze_to_silver.py"))
+    bronze_to_silver = BashOperator(task_id="bronze_to_silver", bash_command=lenh_spark("lo", "transform/bronze_to_silver.py", THAM_SO_BACKFILL))
     thong_ke = BashOperator(task_id="thong_ke_san_pham", bash_command=lenh_spark("lo", "transform/thong_ke_san_pham.py"))
     lien_quan = BashOperator(task_id="san_pham_lien_quan", bash_command=lenh_spark("lo", "ml/san_pham_lien_quan.py"))
     chuan_bi = BashOperator(

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # trien_khai_lai.sh - đánh giá lại và sinh lại danh sách phục vụ cho MỘT lần huấn luyện đã có,
-# không tuning lại (dùng mô hình đã lưu ở /lake/models/als/<ma_chay>). Dùng khi đổi cách phục
+# không tuning lại (dùng mô hình đã lưu ở /lakehouse/bd03_khuyen_nghi/models/als/<ma_chay>). Dùng khi đổi cách phục
 # vụ, ví dụ bật xếp lại theo độ mới (BETA_XEP_LAI, SO_UNG_VIEN_XEP_LAI trong cau_hinh.py).
 #   danh_gia (ghi thêm 1 dòng lịch sử, có số đo cấu hình phục vụ) -> sinh_goi_y_toan_bo ->
 #   tron_goi_y -> ghi_gold (MERGE, tạo phiên bản gold mới) -> xuất số liệu

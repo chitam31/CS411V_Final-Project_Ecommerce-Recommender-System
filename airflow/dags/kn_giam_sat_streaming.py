@@ -12,7 +12,7 @@ from airflow.providers.standard.operators.bash import BashOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import DAG
 
-from bd03_chung import NGAY_BAT_DAU, SPARK_MASTER_IP, THAM_SO_MAC_DINH, THU_MUC_DU_AN, lenh_spark
+from bd03_chung import NGAY_BAT_DAU, SPARK_MASTER_IP, THAM_SO_MAC_DINH, THU_MUC_DU_AN, han_chot, lenh_spark
 
 UNG_DUNG_LUONG = {"bd03-tinh-thinh-hanh": "bat_buoc", "bd03-nap-su-kien": "nen_co", "bd03-ghi-hien-thi": "nen_co"}
 
@@ -38,6 +38,7 @@ with DAG(
     max_active_runs=1,
     default_args=dict(THAM_SO_MAC_DINH, retries=0),
     dagrun_timeout=timedelta(minutes=14),
+    deadline=han_chot(10),   # SLA: phải xong trước lượt giám sát kế tiếp
     tags=["bd03", "giam_sat"],
 ) as dag:
     job_song = PythonOperator(task_id="kiem_tra_job_song", python_callable=kiem_tra_job_song)

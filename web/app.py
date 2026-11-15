@@ -6,7 +6,15 @@ Trang chủ  /         GET /api/goi-y/{user_id}, POST /api/hien-thi
 Sản phẩm   /san-pham POST /api/su-kien  (Xem / Thêm giỏ / Mua -> Kafka)
 A/B        /ab       GET /api/ab/ket-qua
 Mô hình    /mo-hinh  GET /api/mo-hinh/chi-so
-Tái lập    /tai-lap  POST /api/tai-lap/{ngay}
+Tái lập    /tai-lap  POST /api/tai-lap/{ngay}  (ghi kết quả chạy lại vào Delta gold.ket_qua_tai_lap)
+
+Ghi ngược vào Delta (mục A.6.4 đề cương), hai đường:
+  - Trực tiếp: "Chạy lại" ở màn hình Tái lập ghi một dòng loai='ab_web' vào gold.ket_qua_tai_lap
+    bằng phiên Spark + Delta ngay trong tiến trình web (ghi nền, không làm chậm phản hồi).
+  - Qua Kafka: mỗi lần hiển thị/nhấp/mua -> topic hien-thi -> luồng ghi_hien_thi MERGE vào
+    gold.nhat_ky_hien_thi; Xem/Thêm giỏ/Mua -> topic retailrocket-events -> bronze -> thịnh hành.
+Hiệu năng (mục A.8, phản hồi < 3 giây): mọi phản hồi có header X-Thoi-Gian-Xu-Ly-Ms,
+GET /api/hieu-nang trả trung vị, p95 theo từng API.
 
 Chạy:  uvicorn app:app --host 0.0.0.0 --port 8000   (thư mục web, PYTHONPATH có jobs/)
 Biến môi trường:
@@ -18,10 +26,11 @@ import logging
 import os
 import time
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -33,6 +42,7 @@ from common.tron import chon_nhom
 from dich_vu.goi_y import goi_y_trang_chu
 from dich_vu.gui_su_kien import GuiBoNho, GuiKafka, thong_diep_click_stream
 from dich_vu import minh_hoa
+from dich_vu.do_hieu_nang import ThongKeThoiGian
 from dich_vu.kho_du_lieu import lay_kho
 from dich_vu.phien import BoNhoPhien
 
@@ -77,6 +87,21 @@ def create_app(kho=None, gui=None, phien=None):
         """Thêm ngành hàng, tên hiển thị và ảnh minh họa (RetailRocket ẩn danh, xem dich_vu/minh_hoa.py)."""
         return dict(sp, **minh_hoa.trang_tri(sp, goc_danh_muc(sp.get("ma_danh_muc"))))
     app.state.kho, app.state.gui, app.state.phien = kho, gui, phien
+    hieu_nang = ThongKeThoiGian()
+    app.state.hieu_nang = hieu_nang
+
+    @app.middleware("http")
+    async def do_thoi_gian(request: Request, call_next):
+        """Đo thời gian xử lý mỗi yêu cầu (không tính tệp tĩnh) theo mẫu route."""
+        bat_dau = time.perf_counter()
+        phan_hoi = await call_next(request)
+        ms = (time.perf_counter() - bat_dau) * 1000
+        phan_hoi.headers["X-Thoi-Gian-Xu-Ly-Ms"] = "{:.1f}".format(ms)
+        route = request.scope.get("route")
+        duong = getattr(route, "path", None) or request.url.path
+        if not duong.startswith("/static"):
+            hieu_nang.ghi(duong, request.method, ms)
+        return phan_hoi
 
     # ------------------------------------------------------------ nghiệp vụ
     def ghi_hien_thi(ma_nguoi_dung, danh_sach, chien_luoc, nguon_traffic):
@@ -259,8 +284,28 @@ def create_app(kho=None, gui=None, phien=None):
     def api_mo_hinh():
         return chi_so_mo_hinh()
 
+    def ghi_tai_lap_vao_delta(kq):
+        """Ghi kết quả "Chạy lại" vào Delta gold.ket_qua_tai_lap (chạy nền sau khi trả phản hồi)."""
+        import json as _json
+
+        dong = {
+            "thoi_diem": datetime.utcnow(),
+            "loai": "ab_web",
+            "khoa": kq["ngay"],
+            "phien_ban_delta": int(kq["phien_ban_delta_du_lieu"]),
+            "chi_so_cu_json": _json.dumps(kq["cu"], ensure_ascii=False, default=str),
+            "chi_so_moi_json": _json.dumps(kq["moi"], ensure_ascii=False, default=str),
+            "lech_lon_nhat": float(kq["lech_lon_nhat"]),
+            "trung_khop": bool(kq["trung_khop"]),
+        }
+        try:
+            phien_ban = kho.ghi_ket_qua_tai_lap(dong)
+            logging.getLogger("web").info("Đã ghi gold.ket_qua_tai_lap phiên bản %s (ngày %s)", phien_ban, kq["ngay"])
+        except Exception:  # ghi nền: lỗi chỉ vào log, phản hồi đã trả cho người dùng
+            logging.getLogger("web").exception("Ghi gold.ket_qua_tai_lap thất bại")
+
     @app.post("/api/tai-lap/{ngay}")
-    def api_tai_lap(ngay: str):
+    def api_tai_lap(ngay: str, nen: BackgroundTasks):
         kq = kho.tai_lap_ab(ngay)
         if kq is None:
             raise HTTPException(404, "Chưa có kết quả A/B cho ngày {}".format(ngay))
@@ -277,6 +322,9 @@ def create_app(kho=None, gui=None, phien=None):
         kq["so_sanh"] = so_sanh
         kq["lech_lon_nhat"] = lech
         kq["trung_khop"] = lech == 0.0 and len(kq["moi"]) == len(kq["cu"])
+        if hasattr(kho, "ghi_ket_qua_tai_lap"):
+            nen.add_task(ghi_tai_lap_vao_delta, dict(kq))
+            kq["ghi_delta"] = {"bang": "gold.ket_qua_tai_lap", "loai": "ab_web", "trang_thai": "dang_ghi_nen"}
         return kq
 
     @app.post("/api/tai-lap-mo-hinh")
@@ -292,6 +340,11 @@ def create_app(kho=None, gui=None, phien=None):
     @app.get("/api/nguoi-dung-mau")
     def api_nguoi_dung_mau(n: int = 12):
         return kho.nguoi_dung_mau(n)
+
+    @app.get("/api/hieu-nang")
+    def api_hieu_nang():
+        """Thời gian phản hồi đo trong tiến trình web, theo từng API (ngưỡng 3 giây)."""
+        return hieu_nang.tom_tat()
 
     @app.get("/api/suc-khoe")
     def suc_khoe():

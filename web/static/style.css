@@ -120,3 +120,6 @@ tr:hover td { background: #FAFBFD; }
   .luoi { grid-template-columns: repeat(2, 1fr); } .chi-tiet { grid-template-columns: 1fr; }
   .ba-chien-luoc { grid-template-columns: 1fr; } .dau-trong { flex-direction: column; align-items: flex-start; }
 }
+
+/* Khung biểu đồ Chart.js: canvas co giãn theo chiều ngang, cao cố định. */
+.khung-bieu-do { position: relative; width: 100%; height: 280px; }

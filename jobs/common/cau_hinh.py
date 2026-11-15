@@ -4,6 +4,10 @@ Giá trị mặc định khớp đúng cụm hiện tại của nhóm (repo spar
 hadoop-cluster, kafka-docker). Muốn chạy thử ở máy cá nhân chỉ cần đặt biến
 môi trường LAKE_GOC=file:///tmp/lake.
 
+Gốc hồ dữ liệu theo quy ước mục A.4 của đề cương: hdfs:///lakehouse/<ma_de_tai>/ với các thư
+mục bronze, silver, gold, features, models, checkpoints, _quarantine. Trước ngày 15/11/2026 hồ
+dữ liệu nằm ở /lake; scripts/cum/chuyen_lakehouse.sh chuyển dữ liệu cũ sang gốc mới.
+
 Lưu ý: cụm Spark standalone của nhóm KHÔNG có Hive Metastore, nên tên bảng dạng
 "silver.tuong_tac" không tồn tại trong catalog giữa các phiên. Vì vậy dự án
 truy cập bảng theo đường dẫn, còn tên bảng chỉ là khóa tra cứu trong _BANG.
@@ -12,17 +16,21 @@ import os
 
 # ----- Địa chỉ cụm qua ZeroTier -----
 HDFS_GOC = os.environ.get("HDFS_GOC", "hdfs://10.68.71.113:8020")
-LAKE_GOC = os.environ.get("LAKE_GOC", HDFS_GOC + "/lake")
+MA_DE_TAI = "bd03_khuyen_nghi"
+# Đường dẫn trên HDFS (không kèm hdfs://host:port) của gốc hồ dữ liệu, và gốc cũ trước khi chuyển.
+LAKE_DUONG_DAN = os.environ.get("LAKE_DUONG_DAN", "/lakehouse/" + MA_DE_TAI)
+LAKE_DUONG_DAN_CU = "/lake"
+LAKE_GOC = os.environ.get("LAKE_GOC", HDFS_GOC + LAKE_DUONG_DAN)
 KAFKA_BROKER = os.environ.get("KAFKA_BROKER", "10.68.71.204:9092")
 TOPIC_SU_KIEN = os.environ.get("TOPIC_SU_KIEN", "retailrocket-events")
 TOPIC_HIEN_THI = os.environ.get("TOPIC_HIEN_THI", "hien-thi")
 
 # ----- Ánh xạ tên bảng logic -> thư mục con trong hồ dữ liệu -----
 _BANG = {
-    # Bronze để Parquet thuần, đúng theo job hiện có của nhóm và Bảng 6.2 giáo trình.
-    # Dùng thư mục _v2 vì thư mục cũ /lake/bronze/su_kien có lược đồ khác và có
-    # _spark_metadata riêng; ghi chung sẽ làm file sink bỏ qua các lô đã "commit".
-    "bronze.su_kien": "bronze/su_kien_v2",
+    # Bronze để Parquet thuần (lựa chọn của nhóm, giữ job bronze cũ và Bảng 6.2 giáo trình;
+    # đặc tả 3.4 chỉ quy định cột). Ở gốc cũ /lake bảng này nằm ở bronze/su_kien_v2 vì
+    # /lake/bronze/su_kien là dữ liệu cũ của nhóm với lược đồ khác; gốc mới không còn trùng tên.
+    "bronze.su_kien": "bronze/su_kien",
     "silver.tuong_tac": "silver/tuong_tac",
     "silver.san_pham": "silver/san_pham",
     "features.ma_tran_tuong_tac": "features/ma_tran_tuong_tac",
@@ -38,7 +46,13 @@ _BANG = {
     "gold.lich_su_huan_luyen": "gold/lich_su_huan_luyen",
     "gold.ket_qua_tai_lap": "gold/ket_qua_tai_lap",
     "gold.do_hieu_nang_zorder": "gold/do_hieu_nang_zorder",
+    # Mục A.4: bản ghi lỗi bị loại khỏi silver, kèm lý do (bronze_to_silver ghi).
+    "_quarantine.tuong_tac": "_quarantine/tuong_tac",
 }
+
+# Vị trí của từng bảng ở gốc cũ /lake, chỉ dùng cho scripts/cum/chuyen_lakehouse.py.
+_BANG_GOC_CU = dict(_BANG, **{"bronze.su_kien": "bronze/su_kien_v2"})
+_BANG_GOC_CU.pop("_quarantine.tuong_tac")
 
 
 def duong_dan(ten_bang):
@@ -54,6 +68,16 @@ def duong_dan_checkpoint(ten_job):
 def duong_dan_mo_hinh(ten):
     """Vị trí lưu mô hình và StringIndexer trên HDFS."""
     return "{}/models/{}".format(LAKE_GOC, ten)
+
+
+def duong_dan_mo_hinh_hien_tai(duong_dan_luu):
+    """Đổi đường dẫn mô hình đã lưu trong gold.lich_su_huan_luyen sang gốc hồ dữ liệu hiện tại.
+
+    Các lượt huấn luyện trước khi chuyển gốc ghi hdfs://.../lake/models/als/<ma_chay>; thư mục
+    models đã được chuyển nguyên vẹn sang gốc mới nên chỉ cần thay phần trước "/models/".
+    """
+    vi_tri = (duong_dan_luu or "").find("/models/")
+    return LAKE_GOC + duong_dan_luu[vi_tri:] if vi_tri >= 0 else duong_dan_luu
 
 
 def duong_dan_landing(ten_tep=""):

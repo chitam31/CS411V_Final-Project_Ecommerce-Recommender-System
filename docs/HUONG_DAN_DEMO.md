@@ -1,4 +1,7 @@
-# Hướng dẫn demo và bảo vệ — theo danh mục nghiệm thu 3.11
+# Hướng dẫn demo và bảo vệ — theo danh mục nghiệm thu 3.11 và kịch bản C.4 của đề cương
+
+Phần B' (ngay sau phần A) đi qua 6 bước của kịch bản demo mục C.4 đề cương; phần B đi qua đủ 8 mục nghiệm thu 3.11.
+Kịch bản chạy thật cho buổi 19/11 (từng lệnh, từng cửa sổ): `bao_cao/kich_ban/KICH_BAN_DEMO_19_11.md`.
 
 Kịch bản dưới đây đi qua đủ 8 mục nghiệm thu, mỗi mục ghi rõ **làm gì**, **ở đâu**, **bằng chứng cần thấy** và **lệnh dự phòng** nếu giao diện gặp sự cố. Toàn bộ trình chiếu từ máy Windows (10.68.71.59); thao tác dòng lệnh trên máy master (10.68.71.113) qua SSH.
 
@@ -36,6 +39,23 @@ Mở sẵn các tab: web (`:8000`), Spark Master (`:8080`), Kafka UI (`10.68.71.
 
 ---
 
+## B'. Kịch bản demo mục C.4 đề cương (các yêu cầu chung)
+
+| Phút | C.4 yêu cầu | Làm gì | Bằng chứng |
+|---|---|---|---|
+| 0–2 | Sơ đồ kiến trúc | Slide kiến trúc; Spark UI 5 worker, HDFS UI 5 DataNode | — |
+| 2–4 | Airflow UI: các DAG, **chạy 1 DAG trực tiếp** | Mở `:8088/dags`, chỉ 5 DAG khác lịch và mục "Deadline"; bấm **Trigger** `kn_tinh_ab` | Lượt chạy xanh trong khoảng 1–2 phút; log task in JSON `phien_ban_delta_du_lieu` |
+| 4–6 | Terminal: `hdfs dfs -ls -R`, DESCRIBE HISTORY, VERSION AS OF | Trên master: `bash scripts/demo/cay_hdfs.sh` rồi `bash scripts/demo/delta_sql.sh demo <user>` | Cây `/lakehouse/bd03_khuyen_nghi/{bronze,silver,gold,features,models,checkpoints,_quarantine}`; bảng HISTORY có STREAMING UPDATE/MERGE; số dòng ở `VERSION AS OF 1` khác hiện tại |
+| 6–8 | Streaming: bật producer, dữ liệu chảy vào bronze | Kafka UI: offset `retailrocket-events` tăng; Spark UI: 3 luồng **đã chạy ≥ 30 phút** (cột Duration) | Số sự kiện bronze tăng (`bash scripts/demo/delta_sql.sh sql "SELECT max(_ingest_ts), count(*) FROM {bronze.su_kien}"`) |
+| 8–11 | Web: các màn hình, **ghi ngược**, quay lại Delta xác nhận | Trang chủ chọn user → bấm sản phẩm (click) → Tái lập: **Chạy lại** | `delta_sql.sh demo <user>`: dòng `da_click = true` mới trong `gold.nhat_ky_hien_thi`, dòng `ab_web` mới trong `gold.ket_qua_tai_lap` |
+| 11–13 | Kết quả mô hình, baseline, phân tích lỗi | Web → Chất lượng mô hình; slide phân tích lỗi | Bảng ALS vs 2 baseline, biểu đồ phân bố độ phổ biến |
+| 13–15 | Câu hỏi phản biện | `docs/CHUAN_BI_BAO_VE.md` mục câu hỏi C.5 | — |
+
+`delta_sql.sh` chạy Spark local[2] trong container `spark-master`: không lấy lõi của cụm, không tranh tài nguyên
+với 3 luồng. Mỗi lần gọi mất khoảng 15–20 giây khởi động, nên gom mọi câu bằng `demo`.
+
+---
+
 ## B. Trình tự demo (khoảng 15 phút)
 
 ### 0. Kiến trúc và cụm (1 phút)
@@ -48,10 +68,7 @@ Mở Spark Master UI: 5 worker `ALIVE` với đúng IP ZeroTier, 3 ứng dụng 
 - **Bằng chứng:** 27 dòng (hoặc tối thiểu 9), đủ `rank ∈ {10,30,50}`, `regParam ∈ {0.01,0.1,1.0}`, `alpha ∈ {1,10,40}`, cột NDCG@10, xếp giảm dần; dòng đầu trùng siêu tham số của mô hình đang triển khai.
 - **Dự phòng:**
   ```bash
-  docker exec -i spark-master /opt/spark/bin/spark-sql --conf spark.sql.extensions=io.delta.sql.DeltaSparkSessionExtension \
-    --conf spark.sql.catalog.spark_catalog=org.apache.spark.sql.delta.catalog.DeltaCatalog \
-    --conf spark.hadoop.dfs.client.use.datanode.hostname=true \
-    -e "SELECT rank, reg_param, alpha, round(ndcg_at_10,5) ndcg FROM delta.\`hdfs://10.68.71.113:8020/lake/gold/ket_qua_tuning\` WHERE ma_chay = '<ma_chay>' ORDER BY ndcg DESC"
+  bash scripts/demo/delta_sql.sh sql "SELECT rank, reg_param, alpha, round(ndcg_at_10,5) ndcg FROM {gold.ket_qua_tuning} WHERE ma_chay = '<ma_chay>' ORDER BY ndcg DESC"
   ```
 
 ### 2. ☐ So sánh ALS với 2 baseline theo 4 metric + Coverage + Novelty (2 phút)

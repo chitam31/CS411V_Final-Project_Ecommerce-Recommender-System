@@ -15,7 +15,7 @@ from airflow.providers.standard.operators.bash import BashOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import DAG, Param
 
-from bd03_chung import NGAY_BAT_DAU, THAM_SO_MAC_DINH, doc_json_xcom, lenh_spark
+from bd03_chung import NGAY_BAT_DAU, THAM_SO_MAC_DINH, doc_json_xcom, han_chot, lenh_spark
 
 
 def bao_cao(ti):
@@ -37,6 +37,7 @@ with DAG(
     catchup=False,
     default_args=dict(THAM_SO_MAC_DINH, retries=0),
     dagrun_timeout=timedelta(hours=4),
+    deadline=han_chot(180),   # SLA: tái lập phải xong trong 3 giờ
     params={
         "phien_ban_delta": Param(0, type="integer", minimum=0, description="Phiên bản Delta của features.ma_tran_tuong_tac"),
         "che_do": Param("mo_hinh_chon", enum=["mo_hinh_chon", "toan_bo_luoi"]),

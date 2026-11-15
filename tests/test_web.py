@@ -153,3 +153,37 @@ def test_nganh_hang_theo_danh_muc_cap_2():
     import xml.etree.ElementTree as ET
     for i in range(64):
         ET.fromstring(minh_hoa.anh_svg(str(i), str(i)))
+
+
+def test_ghi_nguoc_delta_khi_chay_lai_tai_lap(web):
+    """Mục A.6.4: "Chạy lại" ghi một dòng loai='ab_web' vào gold.ket_qua_tai_lap (KhoGia giữ trong bộ nhớ)."""
+    c, _ = web
+    ngay = c.get("/api/ab/ket-qua").json()["theo_ngay"][0]["ngay"]
+    r = c.post("/api/tai-lap/" + ngay)
+    assert r.status_code == 200 and r.json()["ghi_delta"]["bang"] == "gold.ket_qua_tai_lap"
+    ghi = c.app.state.kho.ket_qua_tai_lap()            # tác vụ nền đã chạy xong khi TestClient trả phản hồi
+    assert len(ghi) == 1 and ghi[0]["loai"] == "ab_web" and ghi[0]["khoa"] == ngay and ghi[0]["trung_khop"] is True
+    assert json.loads(ghi[0]["chi_so_cu_json"]) and isinstance(ghi[0]["phien_ban_delta"], int)
+    assert "ab_web" in c.get("/tai-lap").text
+
+
+def test_do_thoi_gian_phan_hoi(web):
+    """Mục A.8: header X-Thoi-Gian-Xu-Ly-Ms và /api/hieu-nang theo mẫu route, ngưỡng 3 giây."""
+    c, _ = web
+    for u in ("u_als_1", "u_als_2", "moi_x"):
+        r = c.get("/api/goi-y/" + u)
+        assert float(r.headers["X-Thoi-Gian-Xu-Ly-Ms"]) >= 0
+    c.get("/static/style.css")
+    hn = c.get("/api/hieu-nang").json()
+    assert hn["nguong_ms"] == 3000.0
+    route = hn["theo_route"]["GET /api/goi-y/{user_id}"]
+    assert route["so_yeu_cau"] == 3 and route["ty_le_duoi_nguong"] == 1.0 and route["p95_ms"] >= route["trung_vi_ms"]
+    assert not any("/static" in k for k in hn["theo_route"])
+
+
+def test_chart_js_dong_goi_san(web):
+    c, _ = web
+    r = c.get("/static/vendor/chart.umd.min.js")
+    assert r.status_code == 200 and "Chart.js v4" in r.text[:200]
+    assert "/static/vendor/chart.umd.min.js" in c.get("/ab").text
+    assert "new Chart(" in c.get("/static/bieu_do.js").text

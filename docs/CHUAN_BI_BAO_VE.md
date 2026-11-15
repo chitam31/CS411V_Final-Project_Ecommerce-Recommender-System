@@ -1,6 +1,6 @@
 # Chuẩn bị bảo vệ và demo — BD03 (đề tài 3, hệ thống gợi ý TMĐT)
 
-Tài liệu dùng trong tuần cuối và ngày bảo vệ **18/11/2026**. Đọc kèm:
+Tài liệu dùng trong tuần cuối và ngày bảo vệ **19/11/2026**. Đọc kèm:
 
 - `bao_cao/kich_ban/BD03_Kich_ban_thuyet_trinh.docx`: lời nói từng slide, phân công, thời lượng.
 - `bao_cao/hoi_dap/BD03_Hoi_dap_bao_ve.docx`: 52 câu hỏi – đáp dự kiến.
@@ -20,7 +20,7 @@ Quy ước trong tài liệu này:
 
 | Mục | Giá trị |
 |---|---|
-| Ngày bảo vệ | 18/11/2026. Nộp báo cáo trước 15/11/2026 |
+| Ngày bảo vệ | 19/11/2026 tại phòng lab: demo trước, thuyết trình sau (không giới hạn thời gian thuyết trình). Nộp báo cáo và sản phẩm sau 19/11, trước 22/11/2026 |
 | Thời lượng | 20 phút trình bày (25 slide, thêm slide 26 dự phòng cho hỏi – đáp), sau đó hỏi – đáp, rồi demo khoảng 5 phút. Hội đồng có thể muốn xem demo trước |
 | Thành viên | Lê Chí Tâm (2302220) nói slide 1–9 và 21–25, đồng thời bấm máy khi demo. Lê Nguyễn Quốc Anh (2302283) nói slide 10–20 và nói lời dẫn khi demo |
 | Giảng viên hướng dẫn | TS. Cao Tiến Dũng |
@@ -50,7 +50,16 @@ Quy ước trong tài liệu này:
 
 ---
 
-## 1. Lịch chuẩn bị từ 12/11 đến 18/11
+## 0b. Việc bắt buộc thêm sau khi đối chiếu đề cương (15–16/11)
+
+| Khi | Việc | Lệnh | Xong |
+|---|---|---|---|
+| 15/11 tối hoặc 16/11 sáng | `git pull` trên laptop, chuyển gốc hồ dữ liệu sang `/lakehouse/bd03_khuyen_nghi` (mục A.4, A.6.3) | `[laptop] bash scripts/cum/chuyen_lakehouse.sh` rồi `--chay` (TRIEN_KHAI_CUM mục 8b) | ☐ |
+| Ngay sau đó | Thu bằng chứng: du -h, DESCRIBE HISTORY, quarantine, độ trễ web, EDA, phân tích lỗi | `[labsoe-11] bash scripts/thu_bang_chung.sh` (trong tmux, 20–25 phút) | ☐ |
+| Ngay sau đó | Chép kết quả về laptop, giải nén vào `docs/bang_chung/cum/`, commit + push | `[laptop] scp labsoe-11:~/bd03_bang_chung/<thời điểm>.tar.gz .` | ☐ |
+| 16–18/11 | Tập phần demo C.4: chạy DAG `kn_tinh_ab` trực tiếp, `cay_hdfs.sh`, `delta_sql.sh demo <user>`, ghi ngược rồi xác nhận | `docs/HUONG_DAN_DEMO.md` mục B' | ☐ |
+
+## 1. Lịch chuẩn bị từ 12/11 đến 19/11
 
 | Ngày | Việc | Xong |
 |---|---|---|
@@ -59,13 +68,13 @@ Quy ước trong tài liệu này:
 | 14/11 | Tập chung trọn 20 phút và ghi âm. Kiểm tra các mốc 7:15, 16:30, 20:00 | ☐ |
 | 15/11 | **Nộp báo cáo** (Word và PDF). Tập 5 bước demo trên cụm thật | ☐ |
 | 16/11 | Hỏi – đáp thử theo bộ 52 câu, hai người đổi vai hỏi và trả lời | ☐ |
-| 17/11 sáng | Làm toàn bộ **mục 2** (kiểm tra cụm, chọn sản phẩm, quay video dự phòng) | ☐ |
-| 17/11 tối | Tập lần cuối. **Tạm dừng DAG `kn_pipeline_hang_ngay`** (mục 2.5). Sạc đầy pin laptop, chuẩn bị đồ ở mục 3 | ☐ |
-| 18/11 | Làm theo **mục 4** (T−60 đến T), demo theo **mục 5**, dọn dẹp theo **mục 11** | ☐ |
+| 18/11 sáng | Làm toàn bộ **mục 2** (kiểm tra cụm, chọn sản phẩm, quay video dự phòng) | ☐ |
+| 18/11 tối | Tập lần cuối. **Tạm dừng DAG `kn_pipeline_hang_ngay`** (mục 2.5). Sạc đầy pin laptop, chuẩn bị đồ ở mục 3 | ☐ |
+| 19/11 | Làm theo **mục 4** (T−60 đến T), demo theo **mục 5**, dọn dẹp theo **mục 11** | ☐ |
 
 ---
 
-## 2. Kiểm tra cụm và chuẩn bị (17/11)
+## 2. Kiểm tra cụm và chuẩn bị (18/11)
 
 ### 2.1 Laptop SSH được tới các máy
 
@@ -120,9 +129,9 @@ curl -s http://localhost:8000/api/suc-khoe
 ### 2.5 Airflow
 
 - Đăng nhập `http://10.68.71.113:8088`. Phải thấy 5 DAG: `kn_pipeline_hang_ngay`, `kn_giam_sat_streaming`, `kn_tinh_ab`, `kn_bao_tri`, `kn_tai_lap`.
-- Nút **Kích hoạt kn_tai_lap** trên web **đã thử thành công tối 11/11** (features v3, 19:37–19:56, lệch 0, trùng khớp). Ngày 17/11 không cần thử lại nếu không đổi mật khẩu Airflow; ngày 18/11 kích hoạt đúng một lần ở mốc T−15.
-- **Khuyến nghị: tạm dừng (pause) `kn_pipeline_hang_ngay` từ tối 17/11 đến sau buổi bảo vệ.**
-  - Lý do: buổi tập tối 17/11 sẽ đẩy sự kiện mới vào bronze. Sensor của DAG 1 thấy dữ liệu mới thì chạy lại toàn bộ lúc 02:00 ngày 18/11.
+- Nút **Kích hoạt kn_tai_lap** trên web **đã thử thành công tối 11/11** (features v3, 19:37–19:56, lệch 0, trùng khớp). Ngày 18/11 không cần thử lại nếu không đổi mật khẩu Airflow; ngày 19/11 kích hoạt đúng một lần ở mốc T−15.
+- **Khuyến nghị: tạm dừng (pause) `kn_pipeline_hang_ngay` từ tối 18/11 đến sau buổi bảo vệ.**
+  - Lý do: buổi tập tối 18/11 sẽ đẩy sự kiện mới vào bronze. Sensor của DAG 1 thấy dữ liệu mới thì chạy lại toàn bộ lúc 02:00 ngày 19/11.
   - Lần chạy đó có thể đổi tên mô hình đang phục vụ, đổi số trên màn hình Chất lượng mô hình, hoặc để lại một lần chạy đỏ trên trang chủ Airflow đúng ngày bảo vệ.
   - Nếu bị hỏi: “We froze the nightly pipeline for the defence so that the screens match the report. It runs on schedule otherwise; on 11 November it deployed version two by itself.”
   - Các DAG khác vẫn bật: giám sát streaming, A/B mỗi giờ, bảo trì 04:00.
@@ -145,7 +154,7 @@ for sp in 102605 320844 461686; do echo "== $sp"; curl -s http://10.68.71.149:80
 - Chạy đúng 5 bước ở mục 5, có bật bộ phát (mục 4, bước T−10).
 - Quay màn hình bằng **Win + Alt + R** (Xbox Game Bar) hoặc OBS. Lưu vào laptop và USB.
 - Video này là phương án cuối cùng nếu mất mạng trong lúc bảo vệ.
-- Ghi lại các số đang hiện để so vào ngày 18/11:
+- Ghi lại các số đang hiện để so vào ngày 19/11:
   - ☐ p-value trên **Bảng điều khiển A/B**: `______`
   - ☐ tên mô hình có trạng thái triển khai trên **Chất lượng mô hình**: `______`
   - ☐ số giây đo được ở bước vòng khép kín: `______`
@@ -171,9 +180,9 @@ for sp in 102605 320844 461686; do echo "== $sp"; curl -s http://10.68.71.149:80
 - ☐ USB chứa: slide (PDF và PowerPoint tải từ trang slide), báo cáo (Word và PDF), bộ hỏi – đáp, kịch bản, thư mục ảnh chụp màn hình `bao_cao/hinh/s0*.png`, video demo dự phòng.
 - ☐ Điện thoại có 4G để phát Wi-Fi khi Wi-Fi phòng hỏng. Qua 4G, nên dùng đường hầm SSH ngay từ đầu.
 - ☐ Bản in báo cáo, nếu khoa yêu cầu.
-- ☐ Giấy ghi: mã sản phẩm demo, user A/B, p-value sáng 18/11.
+- ☐ Giấy ghi: mã sản phẩm demo, user A/B, p-value sáng 19/11.
 
-### 3.2 Chuẩn bị laptop (sáng 18/11)
+### 3.2 Chuẩn bị laptop (sáng 19/11)
 
 - ☐ Cắm sạc. Tắt chế độ ngủ: Settings → System → Power → Never.
 - ☐ Bật **Focus assist / Do not disturb**. Thoát Zalo, Messenger, Teams, ứng dụng đồng bộ.
@@ -191,7 +200,7 @@ ssh -N -L 8001:localhost:8000 labsoe-18
 
 - Mở web ở `http://localhost:8001`.
 - Muốn xem cả Spark và Airflow qua đường hầm: thêm `-L 8081:10.68.71.113:8080 -L 8089:10.68.71.113:8088`, rồi mở `localhost:8081` và `localhost:8089`.
-- **Phải thử trước ngày 18/11.** Trang Airflow có thể chuyển hướng về địa chỉ gốc; nếu vậy chỉ dùng đường hầm cho web.
+- **Phải thử trước ngày 19/11.** Trang Airflow có thể chuyển hướng về địa chỉ gốc; nếu vậy chỉ dùng đường hầm cho web.
 - Lệnh dự phòng ở bước vòng khép kín khi dùng đường hầm: thay `--web http://10.68.71.149:8000` bằng `--web http://localhost:8001`.
 
 ---
@@ -461,3 +470,123 @@ curl -s http://localhost:8000/api/suc-khoe
 docker restart bd03-web                                        # web treo (chờ ~30 giây)
 bash scripts/cum/khoi_dong_may.sh --chi=web                    # bật lại web sau khi máy khởi động lại
 ```
+
+
+## 13. Câu hỏi phản biện mẫu mục C.5 của đề cương (giảng viên hỏi ít nhất 3 câu)
+
+### C.5.1 Vì sao phân vùng theo cột này mà không phải cột khác? Chọn sai thì sao?
+
+- `bronze.su_kien`, `silver.tuong_tac`, `_quarantine.tuong_tac` phân vùng theo `ngay` (139 ngày → 140 tệp ở silver sau
+  khi sửa lỗi tệp nhỏ). Mọi job lô đọc theo khoảng ngày: tăng dần theo ngày mới, chia train/test theo ngày cắt,
+  backfill một khoảng ngày, ghi đè đúng phân vùng bằng `replaceWhere` (`jobs/transform/bronze_to_silver.py`).
+- Không phân vùng theo `ma_nguoi_dung`: 1,4 triệu người dùng → hàng triệu thư mục và tệp nhỏ, NameNode phải giữ metadata
+  của từng tệp trong RAM, nhật ký Delta phình to, mỗi truy vấn theo ngày phải mở hàng triệu tệp. Nhóm đã gặp đúng
+  hiện tượng này ở dữ liệu mẫu: 7.334 tệp cho 20.624 dòng trước khi gom theo phân vùng (NHAT_KY).
+- Truy vấn nóng của web là lấy gợi ý theo một người dùng. Bài toán này giải bằng `ZORDER BY (ma_nguoi_dung)` trên
+  `gold.goi_y_nguoi_dung` (data skipping theo min/max của từng tệp), không bằng phân vùng.
+
+### C.5.2 Một bản ghi đến trễ 3 ngày thì sao? Bảng gold có tự cập nhật không?
+
+- `nap_su_kien` ghi bản ghi vào phân vùng của **ngày xảy ra sự kiện** (`ngay = to_date(thoi_diem)`), kèm `_ingest_ts` là lúc nạp.
+- Lượt `bronze_to_silver` kế tiếp chọn mọi ngày có `_ingest_ts` mới hơn mốc đã xử lý (`chon_ngay_can_xu_ly`), nên
+  ngày cũ đó được tính lại **trọn phân vùng** bằng `replaceWhere`: khử trùng, lọc bot, khoảng 5 giây đều tính lại đúng.
+- DAG 1 chạy tiếp các bước sau: `thong_ke_san_pham` ghi đè, ma trận đặc trưng dựng lại (phiên bản Delta mới), mô hình
+  huấn luyện lại, `ghi_gold` MERGE theo người dùng. Vậy bảng gold tự cập nhật ở lượt DAG 1 kế tiếp.
+- Riêng khối thịnh hành 15 phút tính theo thời điểm thông điệp tới Kafka (`kafka_ts`, watermark 2 phút). Bản ghi trễ
+  được tính vào cửa sổ hiện tại, vì "đang thịnh hành" là hoạt động đang diễn ra; cửa sổ cũ không mở lại.
+- Impression hay click trễ được MERGE theo `ma_hien_thi`. CDF báo ngày có thay đổi, DAG 3 tính lại A/B của ngày đó.
+- Muốn ép tính lại một khoảng ngày, dùng backfill: DAG 1 `{"tu_ngay": ..., "den_ngay": ...}`.
+
+### C.5.3 Chỗ nào trong code có thể gây data leakage, đã ngăn thế nào?
+
+- Chia theo thời gian, không ngẫu nhiên: `jobs/ml/chuan_bi_ma_tran.py` `chia_theo_thoi_gian` / `dung_ma_tran`, train
+  `ngay < ngay_cat`, test `ngay >= ngay_cat` (30 ngày cuối, cắt 19/8/2015).
+- Suy giảm thời gian tính so với ngày cắt (`tinh_diem(..., ngay_cat)`), không so với ngày cuối dữ liệu.
+- Độ phổ biến cho baseline, novelty và độ phủ chỉ đếm trên train: `thong_ke_pho_bien(train)` trong
+  `jobs/common/als_lib.py`. Danh mục người dùng của baseline 2 cũng chỉ lấy từ train.
+- StringIndexer người dùng fit trên train (`train_tho`). Tập test chỉ giữ người dùng và sản phẩm đã có trong train
+  (`doc_features`); phần còn lại thuộc cold start, đánh giá riêng.
+- Rủi ro còn lại: siêu tham số được chọn trên chính tháng test. Thí nghiệm bổ sung chọn lại trên một kỳ validation riêng
+  (15 ngày đầu tháng test) và báo cáo trên các ngày còn lại (`jobs/kiem_tra/tuning_validation.py`, báo cáo mục 6.10).
+- Mô hình phục vụ fit lại trên train + test **sau** khi đã đánh giá, không dùng để báo cáo metric.
+
+### C.5.4 DAG thất bại ở task 3/5, chạy lại có nhân đôi dữ liệu không? Chứng minh.
+
+Không. Mọi bước ghi của DAG 1 đều idempotent:
+
+| Task | Cách ghi | Chạy lại |
+|---|---|---|
+| `bronze_to_silver` | `replaceWhere ngay IN (...)` cho silver và `_quarantine` | Thay đúng các phân vùng đó |
+| `thong_ke_san_pham`, `san_pham_lien_quan`, `chuan_bi_ma_tran` | `overwrite` | Ghi đè, tạo phiên bản Delta mới |
+| `huan_luyen_als` | `replaceWhere ma_chay = '<ma_chay>'` vào `gold.ket_qua_tuning` | Thay các dòng của cùng lượt |
+| `danh_gia` | `replaceWhere ma_chay = ...` vào `gold.lich_su_huan_luyen` | Một dòng mỗi lượt |
+| `sinh_goi_y_toan_bo`, `tron_goi_y` | `overwrite` bảng trung gian | Ghi đè |
+| `ghi_gold` | `MERGE INTO gold.goi_y_nguoi_dung ... ON ma_nguoi_dung, xep_hang` | Cập nhật, không chèn trùng |
+
+`ma_chay` được tạo một lần ở task `tao_ma_chay`. Retry hay "Clear" task 3 dùng lại cùng mã. Lượt chạy mới có mã mới
+và là một lượt huấn luyện mới (lịch sử), không phải dữ liệu trùng.
+
+Chứng minh tại chỗ bằng hai lệnh:
+
+- `bash scripts/demo/delta_sql.sh sql "SELECT ma_chay, count(*) AS so_dong, count(DISTINCT rank, reg_param, alpha) AS so_to_hop FROM {gold.ket_qua_tuning} GROUP BY ma_chay"`: mỗi lượt `so_dong = so_to_hop`, không tổ hợp nào lặp.
+- `DESCRIBE HISTORY` của silver: commit có `operationParameters.predicate` là danh sách ngày.
+
+Luồng streaming cũng không nhân đôi: checkpoint giữ offset Kafka, sink MERGE theo khóa (`ghi_hien_thi` theo `ma_hien_thi`,
+thịnh hành theo cửa sổ + sản phẩm), file sink của bronze ghi nhận lô trong `_spark_metadata`.
+
+### C.5.5 OPTIMIZE cải thiện bao nhiêu? Vì sao?
+
+- Truy vấn lấy gợi ý của một người dùng trên `gold.goi_y_nguoi_dung`, đo bằng `bao_tri/do_zorder.py` với 30 truy vấn.
+- Ba giai đoạn: 200 tệp (trước) → 67 tệp sau OPTIMIZE chỉ gộp tệp → sau ZORDER mỗi truy vấn chỉ đọc 1,07 tệp.
+  Trung vị 10,8 s → 8,3 s → 0,98 s.
+- Vì sao: gộp tệp giảm chi phí mở tệp và đọc footer Parquet (giảm khoảng 23 %). ZORDER sắp dữ liệu theo
+  `ma_nguoi_dung`, nên khoảng min/max của cột này trong từng tệp hẹp lại và gần như không giao nhau. Delta dùng số
+  thống kê min/max trong `_delta_log` để bỏ qua tệp (data skipping): truy vấn `WHERE ma_nguoi_dung = ?` chỉ còn mở
+  khoảng 1 tệp, gấp khoảng 11 lần nhanh hơn.
+
+### C.5.6 Mô hình kém baseline ở trường hợp nào? Vì sao?
+
+- Độ phủ và độ mới: baseline 2 (bán chạy trong danh mục) có độ phủ 5,28 % và novelty 11,88, cao hơn ALS thuần (3,44 %,
+  10,86). ALS implicit với alpha lớn đẩy điểm về các sản phẩm nhiều tương tác (popularity bias); bản phục vụ có xếp
+  lại theo novelty nâng độ phủ lên 6,47 %.
+- Theo người dùng: `jobs/kiem_tra/phan_tich_loi.py` tính NDCG@10 từng người dùng cho ALS và hai baseline, gom theo số
+  tương tác train, độ phổ biến của sản phẩm test, số danh mục đã xem (`docs/bang_chung/cum/phan_tich_loi.json`,
+  báo cáo mục phân tích lỗi). Dự đoán cần đối chiếu với số đo:
+  - người dùng ít tương tác (3–4) có nhân tố ẩn kém tin cậy;
+  - người dùng chỉ quanh quẩn một danh mục thì baseline 2 đã gần đúng.
+- Người dùng mới và sản phẩm mới: ALS không chấm điểm được, nên dùng thịnh hành, bán chạy theo danh mục, chèn sản phẩm
+  mới vào 20 % vị trí cuối. Đây là giới hạn cấu trúc của phân rã ma trận, không phải lỗi huấn luyện.
+
+### C.5.7 Dữ liệu tăng 100 lần thì chỗ nào vỡ trước?
+
+Theo thứ tự dự kiến:
+
+1. RAM máy master (7,4 GB): driver của mọi job chạy client mode ngay trên master, cùng NameNode và Airflow.
+2. Các bảng giữ trên driver theo số sản phẩm và người dùng: nhãn StringIndexer (180 nghìn → 18 triệu người dùng),
+   bảng novelty broadcast (126 nghìn → 12,6 triệu sản phẩm, vài trăm MB).
+3. `recommendForAllUsers` và phép tự nối đồng xuất hiện.
+4. Kafka 3 phân vùng và một broker; băng thông ZeroTier, khi đi đường chuyển tiếp chỉ khoảng 0,4 MB/s.
+5. Web dùng Spark local[2].
+
+HDFS và Delta chịu được nhất: thêm DataNode là mở rộng được.
+
+Hướng xử lý:
+
+- Driver chạy cluster mode trên YARN hoặc Kubernetes.
+- Thay bảng novelty bằng broadcast join DataFrame.
+- Chỉ sinh gợi ý cho người dùng hoạt động trong 30 ngày (đã có).
+- Thêm phân vùng Kafka.
+- Đưa bảng gợi ý ra kho key-value (Redis, Cassandra) cho web.
+
+Chi tiết ở bổ sung 6 của kịch bản thuyết trình.
+
+### C.5.8 Chỉ một dòng code bất kỳ và giải thích
+
+Mở đúng tệp và đọc docstring đầu tệp và đầu hàm: mỗi job, DAG, script đều có giải thích tiếng Việt về **vì sao**.
+
+Tài liệu tra cứu:
+
+- `docs/KIEN_TRUC.md`: quyết định thiết kế, đặc tả bảng, mục 9 "dữ liệu đưa về driver".
+- `MO_HINH.md`: lý thuyết ALS implicit, metric.
+- `tests/`: hành vi mong đợi của từng hàm.
+- `docs/AI_USAGE.md`: phần nào do AI sinh.

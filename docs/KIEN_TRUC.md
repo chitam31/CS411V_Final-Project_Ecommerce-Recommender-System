@@ -95,22 +95,41 @@ Web **không ghi thẳng** impression vào Delta: mỗi impression sẽ là mộ
 
 ## 4. Bố cục hồ dữ liệu trên HDFS
 
+Gốc theo quy ước mục A.4 của đề cương: `hdfs:///lakehouse/<ma_de_tai>/` (đường dẫn trong
+`jobs/common/cau_hinh.py`: `LAKE_DUONG_DAN = /lakehouse/bd03_khuyen_nghi`).
+
 ```
-/lake
+/lakehouse/bd03_khuyen_nghi
 ├── landing/retailrocket/        CSV gốc (events, item_properties_part1/2, category_tree)
-├── bronze/su_kien_v2/           Parquet, ngay=YYYY-MM-DD/   (+ _spark_metadata của file sink)
+├── bronze/su_kien/              Parquet, ngay=YYYY-MM-DD/   (+ _spark_metadata của file sink), append-only
 ├── silver/tuong_tac/            Delta, phân vùng theo ngay
 ├── silver/san_pham/             Delta
 ├── features/ma_tran_tuong_tac/  Delta
 ├── gold/<bảng>/                 Delta (12 bảng, mục 5)
-├── checkpoints/<luồng>/         checkpoint Structured Streaming
-└── models/
-    ├── user_indexer/, item_indexer/     StringIndexerModel (chỉ nối nhãn, không fit lại)
-    ├── als/<ma_chay>/                    mô hình tốt nhất của lần tuning (học trên train)
-    └── als/<ma_chay>_phuc_vu/            mô hình phục vụ (fit lại trên train + test)
+├── checkpoints/<luồng>/         checkpoint Structured Streaming (offset Kafka, trạng thái RocksDB)
+├── models/
+│   ├── user_indexer/, item_indexer/     StringIndexerModel (chỉ nối nhãn, không fit lại)
+│   ├── als/<ma_chay>/                    mô hình tốt nhất của lần tuning (học trên train)
+│   └── als/<ma_chay>_phuc_vu/            mô hình phục vụ (fit lại trên train + test)
+└── _quarantine/tuong_tac/       Delta, phân vùng theo ngay: mọi dòng bronze bị loại khỏi silver + cột ly_do
 ```
 
-Bronze dùng thư mục `su_kien_v2` vì thư mục cũ `/lake/bronze/su_kien` của nhóm có lược đồ khác và có `_spark_metadata` riêng; ghi chung sẽ làm file sink bỏ qua các lô đã được ghi nhận. Dữ liệu cũ được giữ nguyên.
+**Chuyển gốc ngày 15/11/2026.** Từ 09/11 đến 15/11 hồ dữ liệu nằm ở `/lake` (bronze ở `/lake/bronze/su_kien_v2`
+vì `/lake/bronze/su_kien` là dữ liệu cũ của nhóm, lược đồ khác). `scripts/cum/chuyen_lakehouse.sh` chuyển sang gốc
+chuẩn bằng `hdfs dfs -mv`, không chép lại khối dữ liệu nào:
+
+- Bảng Delta ghi đường dẫn **tương đối** của tệp dữ liệu trong `_delta_log`, nên dời cả thư mục bảng vẫn đọc được;
+  lịch sử phiên bản và `VERSION AS OF` giữ nguyên.
+- Checkpoint streaming chỉ chứa offset Kafka, mã lô và trạng thái RocksDB theo đường dẫn tương đối.
+- Ngoại lệ là bronze: file sink Parquet ghi **đường dẫn tuyệt đối** của từng tệp vào `_spark_metadata`. Script
+  viết lại tiền tố của mọi tệp trong đó. Nếu không viết lại, đọc bronze sẽ báo FileNotFound.
+- Đường dẫn mô hình đã ghi trong `gold.lich_su_huan_luyen` (dạng `.../lake/models/...`) được đổi sang gốc hiện tại
+  khi đọc (`cau_hinh.duong_dan_mo_hinh_hien_tai`). Bảng lịch sử giữ nguyên, không ghi lại.
+- Chốt an toàn: `submit.sh` không nộp job khi mã đã dùng gốc mới mà dữ liệu vẫn còn ở `/lake`, để không job nào
+  tạo bảng rỗng ở gốc mới trước khi chuyển. Web cũng chỉ ghi ngược khi bảng đích đã có ở gốc hiện tại.
+
+Toàn bộ quy trình (dời, viết lại metadata, luồng chạy tiếp không xử lý lại lô cũ, hoàn tác) được kiểm thử với
+Spark thật trên đĩa cục bộ: `tests/test_chuyen_lakehouse.py`.
 
 ## 5. Đặc tả bảng
 
@@ -131,6 +150,16 @@ Cột in đậm là cột **thêm vào** so với mục 3.4 của đề tài; m�
 | `_schema_ver` | Phân biệt với dữ liệu bronze cũ của nhóm |
 
 Bronze để Parquet thuần như job cũ của nhóm: tầng thô chỉ ghi nối, không cần MERGE hay time travel.
+
+### _quarantine.tuong_tac (Delta, phân vùng `ngay`) — mục A.4
+
+Mọi cột của bronze + **`ly_do`** + **`_cach_ly_luc`**. `transform/bronze_to_silver.py` chia mỗi dòng bronze của các
+ngày đang xử lý vào đúng một trong hai bảng: silver hoặc quarantine. Lý do theo đúng thứ tự các bước làm sạch:
+`thieu_truong`, `trung_ma_su_kien`, `trung_noi_dung`, `bot`, `nhap_lap_5_giay`, `loai_su_kien_khong_dung`
+(vd. `bo_gio`). Bảng ghi đè đúng các phân vùng ngày vừa tính, như silver, nên chạy lại không nhân đôi.
+Đếm theo `ly_do` chính là bảng thống kê làm sạch của báo cáo (`scripts/demo/delta_sql.sh cach_ly`). Chọn bản
+giữ lại trong nhóm trùng bằng `row_number` theo `_ingest_ts` (bản nạp sớm nhất), không dùng `dropDuplicates`:
+`dropDuplicates` giữ một dòng tùy ý, tính hai lần (cho silver và cho quarantine) có thể chọn hai dòng khác nhau.
 
 ### silver.tuong_tac (Delta, phân vùng `ngay`)
 
@@ -201,6 +230,26 @@ API phụ: `GET /api/thinh-hanh`, `GET /api/thinh-hanh/{ma}` (dùng cho đo đ�
 
 Hai chế độ dữ liệu: `WEB_CHE_DO=delta` (đọc cụm thật, mặc định) và `WEB_CHE_DO=gia` (dữ liệu giả lập để làm giao diện, không cần cụm). Chế độ được hiển thị ở `/api/suc-khoe`.
 
+**Ghi ngược vào Delta (mục A.6.4).** Hai đường:
+
+1. Trực tiếp: nút "Chạy lại" ở màn hình Tái lập. Sau khi trả kết quả, web ghi nền một dòng
+   `loai='ab_web'` vào `gold.ket_qua_tai_lap` (append) bằng phiên Spark + Delta ngay trong tiến trình web
+   (`KhoDelta.ghi_ket_qua_tai_lap`). Append không xung đột với commit của DAG 5. Bảng cuối màn hình Tái lập
+   hiển thị các dòng đã ghi.
+2. Qua Kafka: mỗi lần hiển thị khối "Dành cho bạn", mỗi lần nhấp, mua → topic `hien-thi` → luồng `ghi_hien_thi`
+   MERGE vào `gold.nhat_ky_hien_thi` (mỗi 30 giây). Xem/Thêm giỏ/Mua → topic `retailrocket-events` → bronze →
+   bảng thịnh hành.
+
+Xác nhận bản ghi mới trong Delta: `bash scripts/demo/delta_sql.sh demo <ma_nguoi_dung>`.
+
+**Hiệu năng (phản hồi < 3 giây, mục A.8).** Middleware đo thời gian xử lý mọi yêu cầu, gắn header
+`X-Thoi-Gian-Xu-Ly-Ms`, gom theo mẫu route. `GET /api/hieu-nang` trả trung vị, p95, lớn nhất và tỷ lệ dưới 3 giây.
+`scripts/do_do_tre_web.py` đo từ phía máy khách (chỉ yêu cầu đọc, không ghi impression). Bộ đệm TTL: thịnh hành
+10 giây, gợi ý 30 giây, bảng nhỏ 60 giây, sản phẩm liên quan 600 giây, bảng lớn 3.600 giây.
+
+**Biểu đồ.** Chart.js 4.6.1 đóng gói sẵn trong `web/static/vendor/` (phòng lab không cần Internet);
+`web/static/bieu_do.js` giữ giao diện hàm `veDuong` / `veCot`.
+
 ## 8. Airflow (mục 3.9)
 
 | DAG | Lịch | Nội dung |
@@ -211,4 +260,47 @@ Hai chế độ dữ liệu: `WEB_CHE_DO=delta` (đọc cụm thật, mặc đ�
 | `kn_bao_tri` | `0 4 * * *` | Xóa gợi ý > 7 ngày → OPTIMIZE (+ZORDER) → VACUUM |
 | `kn_tai_lap` | thủ công | Tham số `phien_ban_delta` (hoặc `ma_chay`) và `che_do`; chạy lại huấn luyện, so với lịch sử |
 
+**SLA bằng Deadline Alerts (mục A.6.5).** Airflow 3.0 đã gỡ `sla`/`sla_miss_callback` của Airflow 2; từ 3.1
+tính năng thay thế là Deadline Alerts. Mỗi DAG có `deadline=han_chot(phút)` (`airflow/dags/bd03_chung.py`):
+mốc `DAGRUN_QUEUED_AT` (có ở mọi kiểu lượt chạy), hạn DAG 1 = 7 giờ (lượt 02:00 phải xong trước 09:00), DAG 2 =
+10 phút, DAG 3 = 30 phút, DAG 4 = 90 phút, DAG 5 = 3 giờ. Quá hạn mà lượt chạy chưa xong thì scheduler gọi
+`canh_bao_tre_han` ngay (SLA cũ chỉ kiểm tra khi lượt chạy kết thúc), ghi `logs/canh_bao.log`. Dùng
+`SyncCallback` (chạy trong executor) vì triggerer mặc định không bật. Kiểm chứng trên Airflow 3.3.1 thật:
+`docs/bang_chung/kiem_chung_airflow_cuc_bo.md`. Giới hạn cứng vẫn là `dagrun_timeout` và `execution_timeout`.
+
+**Xử lý lỗi.** `retries=1`, `retry_delay` 5 phút, `on_failure_callback=canh_bao` cho DAG 1, 3, 4; DAG 2 không
+retry (lượt sau 15 phút nữa) mà có nhánh `trigger_rule="one_failed"` tự khởi động lại luồng; nhánh
+`BranchPythonOperator` của DAG 1 giữ mô hình cũ khi NDCG không cải thiện; sensor `mode="reschedule"`,
+`soft_fail=True`. Mọi bước ghi đều idempotent (replaceWhere theo ngày, MERGE theo khóa, ghi theo `ma_chay`),
+nên retry hay chạy lại DAG không nhân đôi dữ liệu.
+
+**Backfill.**
+
+- DAG 1: tham số `tu_ngay`/`den_ngay` (ngày dữ liệu, từ "Trigger DAG w/ config" hoặc
+  `airflow backfill create ... --dag-run-conf`). `bronze_to_silver` tính lại đúng các phân vùng đó bằng
+  replaceWhere (cả silver lẫn quarantine), không chờ sensor, **không đổi mốc tăng dần**: commit backfill ghi
+  `userMetadata = {"backfill": ...}` thay vì `moc_ingest`, nên lượt tăng dần kế tiếp vẫn xử lý các ngày mới chưa tính.
+- DAG 3: backfill bằng lệnh chuẩn
+  `airflow backfill create --dag-id kn_tinh_ab --from-date ... --to-date ... --reprocess-behavior completed`.
+  Cổng `cong_backfill` (ShortCircuitOperator) cho lượt 00:00 UTC của mỗi ngày tính lại cả ngày đó
+  (`--tu-ngay`), 23 lượt còn lại bỏ qua. Job vẫn gộp các ngày CDF báo có thay đổi, nên
+  `phien_ban_delta_du_lieu` ghi vào là mốc đúng cho lượt tăng dần kế tiếp.
+
 Mọi task gọi `ha_tang/spark/submit.sh` bằng `BashOperator`. Airflow chạy `LocalExecutor` trên máy master: task chỉ là lệnh `spark-submit` chờ kết quả, việc nặng chạy trên cụm Spark. Container Airflow gắn **cùng thư mục dự án trên máy chủ** mà container `spark-master` đang gắn (`BD03_HOST_DIR` → `/opt/bd03`), và gắn `/var/run/docker.sock`; nhờ vậy `submit.sh` chạy trong Airflow ghi `jobs/common.zip` vào đúng chỗ Spark nhìn thấy và gọi được `docker exec spark-master ...`.
+
+
+## 9. Dữ liệu đưa về driver (mục A.8: "không kéo dữ liệu về driver")
+
+Pipeline chính không `collect()` dữ liệu theo dòng sự kiện hay theo cặp người dùng – sản phẩm. Các chỗ đưa dữ liệu
+về driver đều là bảng nhỏ có chủ đích:
+
+| Chỗ | Đưa về driver | Cỡ | Lý do |
+|---|---|---|---|
+| `bronze_to_silver.chon_ngay_can_xu_ly` | Danh sách ngày cần tính lại | ≤ 140 dòng | Dựng điều kiện replaceWhere |
+| `bronze_to_silver` (thống kê) | Số dòng bị loại theo lý do | ≤ 6 dòng | In kết quả JSON |
+| `sinh_goi_y_toan_bo.bang_novelty`, `als_lib.xep_lai_theo_novelty` | Độ phổ biến của từng sản phẩm, rồi `broadcast` | 126.230 cặp (int, float), cỡ 2–3 MB | Bảng chiều nhỏ dùng tra cứu trong UDF xếp lại, tương đương broadcast join. Giữ nguyên vì DAG 5 tái lập metric phải trùng khớp tuyệt đối |
+| `als_lib.gop_nhan_tren_driver` | Ground truth của tập kiểm tra | khoảng 9.500 người dùng | Cắt lineage dài (NHAT_KY lỗi về tính lại từ HDFS) |
+| `chuan_bi_ma_tran` | Nhãn mới để nối vào StringIndexer | số người dùng/sản phẩm mới | StringIndexerModel vốn giữ toàn bộ nhãn trên driver |
+| `danh_gia`, `tron_goi_y`, `ab.py` | Kết quả tuning, đếm theo nguồn, tổng hợp A/B | ≤ vài chục dòng | Ghi bảng kết quả |
+| `bao_tri/do_zorder.chon_user_mau` | n mã người dùng để đo truy vấn | n = số truy vấn (mặc định 30) | Trước 15/11 lấy toàn bộ ~180 nghìn mã rồi chọn ngẫu nhiên trên driver; nay sắp theo băm trên cụm và chỉ lấy n dòng |
+| `kiem_tra/*` (thí nghiệm bổ sung) | Danh sách gợi ý của khoảng 9.500 người dùng | vài trăm nghìn số nguyên | Chỉ chạy tay, cắt lineage cho nhiều lần đo |

@@ -342,6 +342,24 @@ class KhoDelta:
             "so_giay": round(time.time() - bat_dau, 2),
         }
 
+    def ghi_ket_qua_tai_lap(self, dong):
+        """Ghi ngược một dòng vào Delta gold.ket_qua_tai_lap (append), trả về phiên bản mới.
+
+        Chỉ ghi khi bảng đã tồn tại ở gốc hồ dữ liệu hiện tại: nếu web chạy mã mới trong lúc dữ liệu
+        còn ở gốc cũ (chưa chạy chuyen_lakehouse) thì không được tạo bảng lẻ ở gốc mới.
+        Append không xung đột với commit của DAG kn_tai_lap (Delta cho phép hai blind append song song).
+        """
+        from common.luoc_do import tao_df
+        from common.spark_utils import bang_ton_tai, ghi_delta, phien_ban_moi_nhat
+
+        if not bang_ton_tai(self.spark, "gold.ket_qua_tai_lap"):
+            from common import cau_hinh as ch
+
+            raise RuntimeError("Chưa có bảng gold.ket_qua_tai_lap ở " + ch.LAKE_GOC)
+        ghi_delta(tao_df(self.spark, "gold.ket_qua_tai_lap", [dong]), "gold.ket_qua_tai_lap", "append")
+        self.dem_bang_nho.xoa()
+        return phien_ban_moi_nhat(self.spark, "gold.ket_qua_tai_lap")
+
     def xoa_bo_dem(self):
         for bd in (self.dem_thinh_hanh, self.dem_goi_y, self.dem_lien_quan, self.dem_bang_nho, self.dem_lon):
             bd.xoa()

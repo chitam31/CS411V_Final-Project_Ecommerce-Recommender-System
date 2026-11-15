@@ -4,7 +4,8 @@
   <h1>Tái lập thí nghiệm</h1>
   <p>Mỗi kết quả A/B được ghi kèm <code>phien_ban_delta_du_lieu</code> của impression log đã đọc.
     Bấm <b>Chạy lại</b>: web đọc lại đúng phiên bản đó bằng <code>VERSION AS OF</code>, chạy lại cùng hàm tổng hợp và kiểm định,
-    rồi đặt kết quả cũ cạnh kết quả mới. Cột "phiên bản hiện tại" cho thấy nếu KHÔNG dùng time travel thì số liệu sẽ khác khi log đã có thêm dữ liệu.</p>
+    rồi đặt kết quả cũ cạnh kết quả mới. Cột "phiên bản hiện tại" cho thấy nếu KHÔNG dùng time travel thì số liệu sẽ khác khi log đã có thêm dữ liệu.
+    Mỗi lần chạy lại được <b>ghi ngược vào Delta</b> <code>gold.ket_qua_tai_lap</code> (loại <code>ab_web</code>, bảng cuối trang).</p>
   <table>
     <tr><th>Ngày</th><th>Phiên bản Delta của dữ liệu</th><th></th></tr>
     {% for ngay, pb in cac_ngay %}
@@ -14,7 +15,7 @@
   <div id="ket-qua-tai-lap"></div>
 </section>
 <section class="hop">
-  <h2>Tái lập huấn luyện mô hình (DAG kn_tai_lap)</h2>
+  <h2>Tái lập huấn luyện mô hình (DAG kn_tai_lap) và lịch sử tái lập</h2>
   <p>Chạy lại toàn bộ tuning + đánh giá trên features <code>VERSION AS OF</code> đã ghi trong lịch sử. Job nặng nên chạy qua Airflow.</p>
   <div class="hang">
     <select id="pb-features">
@@ -48,6 +49,8 @@ async function chayLai(ngay) {
     const ht = hienTai[x.nhom_ab] ? hienTai[x.nhom_ab][x.chi_so] : null;
     h += "<tr><td>" + x.nhom_ab + "</td><td>" + x.chi_so + "</td><td>" + so(x.cu) + "</td><td>" + so(x.moi) + "</td><td>" + so(x.lech) + "</td><td>" + so(ht) + "</td></tr>";
   });
+  if (d.ghi_delta) h += "<p class='mo'>Đang ghi kết quả vào Delta " + d.ghi_delta.bang + " (loại " + d.ghi_delta.loai +
+                        "). Tải lại trang sau vài giây để thấy dòng mới ở bảng cuối trang.</p>";
   o.innerHTML = h + "</table>";
 }
 async function kichHoatDag() {

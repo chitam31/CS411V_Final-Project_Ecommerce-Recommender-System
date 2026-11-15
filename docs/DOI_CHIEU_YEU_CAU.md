@@ -1,6 +1,41 @@
-# Đối chiếu yêu cầu đề tài 3 với mã nguồn
+# Đối chiếu yêu cầu với mã nguồn: đề cương đồ án (Phần A, C) và đề tài 3 (mục 3.1–3.11)
 
-Ký hiệu trạng thái:
+Phần đầu đối chiếu các quy định chung của `de_cuong_do_an_big_data.pdf` (Phần A: môi trường, cây HDFS, cấu trúc
+repo, 5 yêu cầu bắt buộc, thang điểm, chống sao chép; Phần C: báo cáo, demo, câu hỏi phản biện). Phần sau đối
+chiếu đặc tả riêng của đề tài 3.
+
+## Phần A — Quy định chung
+
+| Mục | Yêu cầu | Hiện thực | Bằng chứng |
+|---|---|---|---|
+| A.2 | Nhóm 3–4 sinh viên, bảng phân công 4 vai trò, mỗi thành viên có commit ở ≥ 2 vai trò | Nhóm tự hoàn thiện (ngoài phạm vi đợt sửa ngày 15/11) | — |
+| A.3 | Hadoop ≥ 3.3, Spark 3.5, Delta ≥ 3.1, Airflow ≥ 2.9, Kafka ≥ 3.6, FastAPI/Flask, Jinja2 + Chart.js, Git | Hadoop 3.5.0, Spark 3.5.3 Standalone, Delta 3.2.0, Airflow 3.3.1 (BashOperator), Kafka 3.7.2 KRaft, FastAPI + Jinja2 + Chart.js 4.6.1, Git; docker-compose cho mọi thành phần | `ha_tang/*`, `web/static/vendor/` |
+| A.4 | `hdfs:///lakehouse/<ma_de_tai>/` với bronze, silver, gold, features, models, checkpoints, `_quarantine` | `LAKE_DUONG_DAN=/lakehouse/bd03_khuyen_nghi` (`jobs/common/cau_hinh.py`); `_quarantine.tuong_tac` ghi mọi dòng bị loại khỏi silver kèm `ly_do`; chuyển từ `/lake` bằng `scripts/cum/chuyen_lakehouse.sh` | `docs/bang_chung/cum/02_hdfs_cay.txt`, `tests/test_chuyen_lakehouse.py` |
+| A.5 | Cấu trúc repo chuẩn | Bảng ánh xạ ở README mục 2.1; thêm `conf/`, `notebooks/eda_retailrocket.ipynb` | README |
+| A.6.1 | Job lô + mô hình MLlib + streaming chạy ≥ 30 phút khi demo | `bronze_to_silver` và các job lô; ALS (`huan_luyen_als`); 3 luồng chạy liên tục (bật trước giờ demo, xem thời gian chạy ở Spark UI) | `docs/bang_chung/cum/06_streaming.txt` |
+| A.6.2 | MERGE INTO, DESCRIBE HISTORY, VERSION AS OF, OPTIMIZE có số trước/sau | MERGE: `ghi_gold`, `tinh_thinh_hanh`, `ghi_hien_thi`, `tinh_ket_qua_ab`, `tien_hoa_luoc_do`; DESCRIBE HISTORY: `spark_utils.phien_ban_moi_nhat`/`doc_ghi_chu_*` và `scripts/demo/delta_sql.sh lich_su`; VERSION AS OF: DAG 5, màn hình Tái lập, `delta_sql.sh phien_ban`; OPTIMIZE/ZORDER 3 giai đoạn: `bao_tri/do_zorder.py` | `docs/bang_chung/cum/04_delta.txt` |
+| A.6.3 | Mọi bảng Delta trên HDFS + nộp `hdfs dfs -du -h /lakehouse/<ma_de_tai>` | Mọi bảng dưới `hdfs://10.68.71.113:8020/lakehouse/bd03_khuyen_nghi/` | `docs/bang_chung/cum/01_hdfs_du_h.txt` |
+| A.6.4 | ≥ 3 màn hình, ≥ 1 thao tác ghi ngược vào Delta | 5 màn hình; ghi trực tiếp: "Chạy lại" → `gold.ket_qua_tai_lap` (`loai='ab_web'`); ghi qua Kafka: impression/click/mua → `gold.nhat_ky_hien_thi` (MERGE) | `tests/test_web.py`, `delta_sql.sh demo` |
+| A.6.5 | ≥ 3 DAG khác lịch, retries, sla, Branch hoặc Sensor | 5 DAG (02:00 hằng ngày, 15 phút, mỗi giờ, 04:00, thủ công); `retries=1`; **Deadline Alerts** thay `sla` (Airflow 3 đã gỡ `sla`) ở cả 5 DAG; BranchPythonOperator, PythonSensor, ShortCircuitOperator | `tests/test_airflow_dags.py`, `docs/bang_chung/kiem_chung_airflow_cuc_bo.md`, `05_airflow.txt` |
+| A.7 | Mốc tiến độ (EDA tuần 2...) | Notebook EDA trên dữ liệu gốc | `notebooks/eda_retailrocket.ipynb` |
+| A.8 Spark | Đúng, phân tán, không kéo dữ liệu về driver | Chỉ đưa về driver bảng nhỏ có chủ đích (KIEN_TRUC.md mục 9); `do_zorder` chọn mẫu trên cụm | KIEN_TRUC.md §9 |
+| A.8 Delta | MERGE, time travel, schema evolution, OPTIMIZE đo lường | MO_HINH §11–12, `do_hieu_nang_zorder` | Báo cáo chương 6 |
+| A.8 HDFS | Phân vùng hợp lý, small files, benchmark | `silver` theo ngày (140 tệp sau sửa lỗi tệp nhỏ), Z-ORDER 200 → 67 → 1,07 tệp đọc | Báo cáo chương 6 |
+| A.8 Web | Đủ màn hình, ghi ngược, phản hồi < 3 s | Middleware đo thời gian, `/api/hieu-nang`, `scripts/do_do_tre_web.py` | `docs/bang_chung/cum/07_do_tre_web.md` |
+| A.8 Airflow | DAG rõ ràng, xử lý lỗi, backfill | retries + callback + nhánh giữ mô hình cũ + tự khởi động lại luồng; backfill DAG 1 (`tu_ngay`/`den_ngay`) và DAG 3 (`airflow backfill create`) | KIEN_TRUC.md §8 |
+| A.9 | `docs/AI_USAGE.md` | Khai báo prompt, phần AI sinh, phần nhóm làm | `docs/AI_USAGE.md` |
+
+## Phần C — Báo cáo, demo, câu hỏi phản biện
+
+| Mục | Yêu cầu | Hiện thực |
+|---|---|---|
+| C.3 | Báo cáo 15–20 trang theo 11 mục | Bản chính theo đúng 11 mục: `bao_cao/BD03_Bao_cao_chinh.docx` (nguồn `bao_cao/noi_dung_chinh/`); bản đầy đủ làm phụ lục kỹ thuật: `BD03_Bao_cao_He_thong_goi_y.docx` |
+| C.4 | Demo 15 phút: Airflow chạy DAG trực tiếp, `hdfs dfs -ls -R`, DESCRIBE HISTORY, VERSION AS OF, producer → bronze, ghi ngược web rồi xác nhận trong Delta | `docs/HUONG_DAN_DEMO.md` mục B', `bao_cao/kich_ban/KICH_BAN_DEMO_19_11.md`, `scripts/demo/` |
+| C.5 | 8 câu hỏi phản biện mẫu | Trả lời kèm vị trí trong mã: `docs/CHUAN_BI_BAO_VE.md` mục "Câu hỏi mẫu C.5" |
+
+---
+
+Ký hiệu trạng thái cho các bảng đề tài 3 bên dưới:
 
 - **T** — có kiểm thử tự động chạy trên Spark local (`pytest`), đã qua.
 - **M** — đã viết mã và kiểm tra cú pháp/logic, nhưng phần chạy thật cần Delta Lake hoặc cụm (chạy `scripts/kiem_tra_cuc_bo.sh` hoặc trên cụm để xác nhận).
@@ -46,10 +81,10 @@ Lý do từng cột thêm: docs/KIEN_TRUC.md §5.
 
 | Job | Yêu cầu | Hiện thực | TT |
 |---|---|---|---|
-| streaming/nap_su_kien.py | Kafka → bronze, checkpoint HDFS | `readStream.format("kafka")`, file sink Parquet `partitionBy("ngay")`, checkpoint `/lake/checkpoints/nap_su_kien_v2` | T (nguồn tệp), C |
+| streaming/nap_su_kien.py | Kafka → bronze, checkpoint HDFS | `readStream.format("kafka")`, file sink Parquet `partitionBy("ngay")`, checkpoint `/lakehouse/bd03_khuyen_nghi/checkpoints/nap_su_kien_v2` | T (nguồn tệp), C |
 | streaming/tinh_thinh_hanh.py | Cửa sổ trượt + watermark 2 phút; `outputMode("update")` + MERGE | `window(kafka_ts, "15 minutes", "1 minute")`, `withWatermark("kafka_ts", "2 minutes")`, `foreachBatch` + `MERGE` | T (cửa sổ, watermark), M (MERGE) |
-| transform/bronze_to_silver.py | Khử trùng, lọc bot, gán trọng số | `loc_bot`, `khu_trung_lap`, `gan_trong_so`; tăng dần theo ngày, `replaceWhere` | T |
-| ml/chuan_bi_ma_tran.py | StringIndexer (lưu index để tái sử dụng), suy giảm thời gian | Nối nhãn bằng `StringIndexerModel.from_labels`, lưu `/lake/models/*_indexer` | T |
+| transform/bronze_to_silver.py | Khử trùng, lọc bot, gán trọng số | `phan_loai` (bỏ trùng mã → bỏ trùng nội dung → lọc bot → nhấp lặp 5 giây → trọng số), dòng bị loại vào `_quarantine.tuong_tac` kèm `ly_do`; tăng dần theo ngày, `replaceWhere`; backfill `--tu-ngay/--den-ngay` | T |
+| ml/chuan_bi_ma_tran.py | StringIndexer (lưu index để tái sử dụng), suy giảm thời gian | Nối nhãn bằng `StringIndexerModel.from_labels`, lưu `/lakehouse/bd03_khuyen_nghi/models/*_indexer` | T |
 | ml/huan_luyen_als.py | ALS implicit, tuning, top-20 bằng `recommendForAllUsers` | Tuning 27/9 tổ hợp; top-20 sinh ở `ml/sinh_goi_y_toan_bo.py` bằng `recommendForUserSubset` cho user hoạt động 30 ngày (phương án của chính mục 3.10) | T |
 | ml/tron_goi_y.py | Trộn ALS + thịnh hành + phổ biến danh mục; cold start | Mẫu khối A/B, 3 chiến lược cold start, item mới 20% cuối, v2 lọc tầm giá | T |
 | transform/tinh_ket_qua_ab.py | Tổng hợp impression log, z-test hai tỷ lệ | `common/ab.py`, `common/thong_ke.py`, đọc CDF | T (logic), M (CDF) |

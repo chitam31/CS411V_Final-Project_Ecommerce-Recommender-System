@@ -202,3 +202,27 @@ def test_loc_tam_gia_tren_test_chi_giu_mon_trong_tam(spark):
     assert ds and all(len(v) <= 10 for v in ds.values())
     co_tam_gia = [v for v in ds.values() if len(v) == 10 and all(i % 2 == 0 for i in v)]
     assert co_tam_gia, "phải có user được lọc chỉ còn item trong tầm giá"
+
+
+def test_phan_tich_loi_theo_nhom(spark):
+    """kiem_tra/phan_tich_loi: NDCG từng người, gom theo số tương tác / độ phổ biến / số danh mục."""
+    from kiem_tra.phan_tich_loi import dac_trung_nguoi, ndcg_tung_nguoi, phan_tich
+
+    thuc_te = spark.createDataFrame([(1, [10]), (2, [20]), (3, [30, 31])], "user_idx int, thuc_te array<int>")
+    ds = {
+        "als": spark.createDataFrame([(1, [10, 11]), (2, [99]), (3, [31])], "user_idx int, ds array<int>"),
+        "b1": spark.createDataFrame([(u, [10]) for u in (1, 2, 3)], "user_idx int, ds array<int>"),
+        "b2": spark.createDataFrame([(1, [11]), (2, [20]), (3, [30])], "user_idx int, ds array<int>"),
+    }
+    train = spark.createDataFrame([(1, 10, 1.0)] * 3 + [(2, 20, 1.0)] * 12 + [(3, 30, 1.0)] * 60,
+                                  "user_idx int, item_idx int, diem double")
+    pho_bien = spark.createDataFrame([(10, 50), (20, 1), (30, 1), (31, 1), (11, 2)], "item_idx int, so_nguoi long")
+    dm = spark.createDataFrame([(10, "a"), (20, "b"), (30, "c")], "item_idx int, ma_danh_muc string")
+    df = ndcg_tung_nguoi(thuc_te, ds, 10).join(dac_trung_nguoi(train, thuc_te, pho_bien, dm), "user_idx")
+    kq = phan_tich(df)
+    assert kq["tong"]["so_nguoi"] == 3
+    assert kq["tong"]["ty_le_als_thua_b2"] == pytest.approx(1 / 3, abs=1e-4)   # user 2: ALS 0, B2 1
+    assert [d["nhom_tuong_tac"] for d in kq["theo_so_tuong_tac"]] == ["3-4", "10-19", ">=50"]
+    assert kq["theo_so_tuong_tac"][0]["ndcg_als"] == 1.0 and kq["theo_so_tuong_tac"][1]["ndcg_als"] == 0.0
+    assert {d["nhom_pho_bien_test"] for d in kq["theo_pho_bien_test"]} == {"dau (>=50% SP test pho bien)",
+                                                                           "duoi dai (0% SP test pho bien)"}

@@ -160,6 +160,29 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 
 ---
 
+### 15/11/2026: đối chiếu đề cương đồ án và đợt sửa
+
+Đối chiếu toàn bộ với `de_cuong_do_an_big_data.pdf` (Phần A quy định chung, Phần C phụ lục) thấy các mục đề tài 3
+(3.1–3.11) đã đủ, nhưng Phần A còn thiếu hoặc lệch. Đợt sửa (trừ A.2 vai trò nhóm):
+
+| Mục | Thiếu / lệch | Đã sửa |
+|---|---|---|
+| A.4, A.6.3 | Gốc `/lake`, không có `_quarantine`, chưa có output `du -h` | Gốc `/lakehouse/bd03_khuyen_nghi` trong `cau_hinh.py`; `scripts/cum/chuyen_lakehouse.sh` + `.py` (mv, viết lại `_spark_metadata`, hoàn tác) và chốt an toàn trong `submit.sh`; `_quarantine.tuong_tac` do `bronze_to_silver` ghi kèm `ly_do`; `scripts/thu_bang_chung.sh` thu `du -h` |
+| A.6.2 | DESCRIBE HISTORY chưa có trong demo/báo cáo | `scripts/demo/delta_sql.sh` (HISTORY, VERSION AS OF, xác nhận ghi ngược), `jobs/kiem_tra/chay_sql.py` |
+| A.6.4 | Ghi ngược Delta chỉ gián tiếp qua Kafka | Thêm ghi trực tiếp: "Chạy lại" → `gold.ket_qua_tai_lap` (`loai='ab_web'`) |
+| A.6.5 | Không có `sla` (Airflow 3 đã gỡ) | Deadline Alerts cho 5 DAG (`bd03_chung.han_chot`), thử trên Airflow 3.3.1 thật |
+| A.8 Airflow | Chưa có backfill | DAG 1 `tu_ngay`/`den_ngay`; DAG 3 `airflow backfill create` + `cong_backfill`; `tinh_ket_qua_ab --tu-ngay` |
+| A.8 Web | Chưa đo < 3 s | Middleware + `/api/hieu-nang`, `scripts/do_do_tre_web.py` |
+| A.8 Spark | `do_zorder` collect toàn bộ user | `chon_user_mau` sắp theo băm trên cụm; KIEN_TRUC §9 liệt kê mọi chỗ đưa dữ liệu về driver |
+| A.3 | Biểu đồ SVG tự viết thay Chart.js | Chart.js 4.6.1 đóng gói trong `web/static/vendor/` |
+| A.5 | Thiếu `conf/`, `notebooks/`, bảng ánh xạ | `conf/`, `notebooks/eda_retailrocket.ipynb` + `jobs/kiem_tra/eda.py`, README mục 2.1 |
+| A.9 | Thiếu `docs/AI_USAGE.md` | Đã viết |
+| C.3 | Thiếu phân tích lỗi, backfill, hiệu năng web, phân công; báo cáo dài hơn 15–20 trang | `jobs/kiem_tra/phan_tich_loi.py`; bản báo cáo chính theo 11 mục C.3 |
+| C.4, C.5 | Demo chưa có chạy DAG trực tiếp, `ls -R`, HISTORY; chưa có đáp án 8 câu mẫu | HUONG_DAN_DEMO mục B', kịch bản 19/11; CHUAN_BI_BAO_VE mục 13 |
+| Q4 C.5 | `huan_luyen_als`, `danh_gia` append: retry trong cùng lượt có thể nhân đôi dòng | `replaceWhere ma_chay = ...` |
+
+Việc nhóm cần chạy trên cụm: `chuyen_lakehouse.sh --chay` từ laptop, rồi `thu_bang_chung.sh` trên master (TRIEN_KHAI_CUM mục 8b, 8c).
+
 ## 4. Lỗi tìm thấy khi phát triển và cách sửa
 
 | # | Lỗi | Phát hiện nhờ | Sửa |

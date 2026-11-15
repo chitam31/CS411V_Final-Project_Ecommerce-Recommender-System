@@ -169,7 +169,7 @@ def main():
         lich_su["phien_ban_mo_hinh"], lich_su["rank"], lich_su["reg_param"], lich_su["alpha"], phien_ban), flush=True)
 
     # Ba nguồn ứng viên.
-    mo_hinh = ALSModel.load(lich_su["duong_dan_mo_hinh"])
+    mo_hinh = ALSModel.load(ch.duong_dan_mo_hinh_hien_tai(lich_su["duong_dan_mo_hinh"]))
     als = mo_hinh.recommendForUserSubset(nguoi, args.so_ung_vien)
     dong_xuat = ung_vien_dong_xuat_hien(spark, silver_train, train, nguoi)
     danh_muc = baseline_danh_muc(spark, train, nguoi, pho_bien, bang_danh_muc_item(spark, ghi_chu), K) \

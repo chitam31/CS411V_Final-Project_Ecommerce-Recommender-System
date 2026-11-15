@@ -1,7 +1,7 @@
 """transform/nhap_danh_muc.py - nạp thuộc tính sản phẩm RetailRocket vào silver.san_pham.
 
 Job chạy một lần (hoặc khi cập nhật catalog), cần có trước bước nap_su_kien để bronze
-có ma_danh_muc. Đầu vào là các CSV gốc đã hdfs dfs -put vào /lake/landing/retailrocket/.
+có ma_danh_muc. Đầu vào là các CSV gốc đã hdfs dfs -put vào /lakehouse/bd03_khuyen_nghi/landing/retailrocket/.
 """
 import argparse
 
