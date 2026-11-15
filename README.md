@@ -192,8 +192,6 @@ Bảng đối chiếu đầy đủ từng yêu cầu: [docs/DOI_CHIEU_YEU_CAU.md
 | Hạ tầng cụm | Đã bật 10/11/2026: 5 DataNode (1,93 TB trống), 5 Spark worker (34 lõi, 13 GB RAM), Kafka 2 topic. Mạng Wi-Fi phòng labsit chặn các máy nói chuyện trực tiếp nên ZeroTier đi đường chuyển tiếp, xem NHAT_KY.md |
 | Toàn bộ pipeline với số liệu thật của RetailRocket | **Chưa chạy.** Nhóm chạy theo docs/TRIEN_KHAI_CUM.md và điền kết quả vào NHAT_KY.md |
 
-Tài liệu này không chứa số liệu thí nghiệm nào. Mọi con số (NDCG, coverage, p-value, thời gian ZORDER...) phải lấy từ lần chạy thật trên cụm.
-
 ---
 
 ## 6. Tài liệu
