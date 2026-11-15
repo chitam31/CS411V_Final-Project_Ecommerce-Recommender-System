@@ -131,24 +131,31 @@ Các job luồng dùng cùng đường đi nhưng với `CHAY_NEN=1`, khi đó d
 
 ### Tổ chức trên HDFS
 
-Mọi dữ liệu lưu lâu dài nằm dưới `/lake` trên HDFS:
+Mọi dữ liệu lưu lâu dài nằm dưới gốc theo quy ước mục A.4 của đề cương, `hdfs:///lakehouse/bd03_khuyen_nghi/`:
 
 ```
-/lake
+/lakehouse/bd03_khuyen_nghi
 ├── landing/retailrocket/        tệp CSV gốc
-├── bronze/su_kien_v2/           Parquet, ngay=YYYY-MM-DD/, _spark_metadata
+├── bronze/su_kien/              Parquet, ngay=YYYY-MM-DD/, _spark_metadata (append-only)
 ├── silver/tuong_tac/            Delta, phân vùng theo ngay
 ├── silver/san_pham/             Delta
 ├── features/ma_tran_tuong_tac/  Delta
 ├── gold/<bảng>/                 Delta (12 bảng)
 ├── checkpoints/<luồng>/         checkpoint của Structured Streaming
-└── models/
-    ├── user_indexer/            StringIndexerModel, nhãn chỉ được thêm vào
-    ├── item_indexer/            StringIndexerModel, nhãn chỉ được thêm vào
-    ├── als/<run_id>/            mô hình tốt nhất khi tinh chỉnh (khớp trên train)
-    └── als/<run_id>_phuc_vu/    mô hình phục vụ (khớp lại trên train + test)
+├── models/
+│   ├── user_indexer/            StringIndexerModel, nhãn chỉ được thêm vào
+│   ├── item_indexer/            StringIndexerModel, nhãn chỉ được thêm vào
+│   ├── als/<run_id>/            mô hình tốt nhất khi tinh chỉnh (khớp trên train)
+│   └── als/<run_id>_phuc_vu/    mô hình phục vụ (khớp lại trên train + test)
+└── _quarantine/tuong_tac/       Delta, theo ngay: mọi dòng bị loại khỏi silver + lý do
 ```
-Bronze được ghi vào một thư mục mới, `su_kien_v2`, vì thư mục bronze trước đây của nhóm có lược đồ khác và nhật ký file sink riêng; ghi vào đó sẽ khiến file sink bỏ qua những batch mà nó tưởng đã commit. Dữ liệu cũ được giữ nguyên.
+Từ 9 đến 15 tháng 11, hồ dữ liệu nằm ở `/lake`, với bronze ở `/lake/bronze/su_kien_v2` vì thư mục bronze cũ của nhóm có lược đồ khác. Ngày 15 tháng 11, khi đối chiếu với đề cương, nhóm chuyển sang gốc chuẩn bằng `scripts/cum/chuyen_lakehouse.sh`. Việc chuyển chỉ dùng `hdfs dfs -mv`, tức là đổi tên trên NameNode, không chép lại khối dữ liệu nào:
+
+- Bảng Delta lưu đường dẫn tương đối của tệp dữ liệu trong `_delta_log`, nên lịch sử phiên bản và `VERSION AS OF` vẫn còn nguyên sau khi chuyển.
+- Checkpoint streaming chỉ lưu offset Kafka và trạng thái RocksDB theo đường dẫn tương đối.
+- Riêng file sink Parquet của bronze ghi đường dẫn tuyệt đối của từng tệp vào `_spark_metadata`, nên script viết lại tiền tố đường dẫn trong các tệp đó.
+
+Quy trình chuyển, gồm cả việc luồng chạy tiếp không xử lý lại lô cũ và hoàn tác, được kiểm thử với Spark thật (`tests/test_chuyen_lakehouse.py`).
 
 ### Lược đồ bảng
 
@@ -158,6 +165,7 @@ Table: Các bảng chính, định dạng và khóa {#tab:bang w=23,13,34,30}
 | Bảng | Định dạng | Cột (theo đặc tả) | Cột thêm và lý do |
 |---|---|---|---|
 | `bronze.su_kien` | Parquet, theo `ngay` | `ma_su_kien, thoi_diem, ma_nguoi_dung, ma_phien, ma_san_pham, loai_su_kien, ma_danh_muc, thiet_bi, ngay` | `ma_giao_dich` (mã giao dịch), `kafka_ts` (thời gian broker, dùng cho thịnh hành và đo độ trễ), `_nguon` (nguồn), `_ingest_ts` (mốc xử lý tăng dần), `_schema_ver` |
+| `_quarantine.tuong_tac` | Delta, theo `ngay` | (mục A.4: bản ghi lỗi bị loại khỏi silver) | Mọi cột của bronze + `ly_do` + `_cach_ly_luc` |
 | `silver.tuong_tac` | Delta, theo `ngay` | `ma_nguoi_dung, ma_san_pham, thoi_diem, loai_su_kien, trong_so, ngay` | `_nguon` (để loại cú nhấp web khỏi train/test); `gia_san_pham, xep_hang_sao` sau tiến hóa lược đồ |
 | `silver.san_pham` | Delta | (không có trong đặc tả) | `ma_san_pham, ma_danh_muc, danh_muc_cha, gia_san_pham, con_hang`; cần cho danh mục, baseline 2, khởi đầu lạnh và sản phẩm mới |
 | `features.ma_tran_tuong_tac` | Delta | `user_idx, item_idx, diem` | `tap` (`train`/`test`), để một phiên bản chứa đủ mọi thứ cần cho việc chạy lại huấn luyện *và* đánh giá |

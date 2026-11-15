@@ -20,6 +20,26 @@ Table: Khối lượng dữ liệu ở từng giai đoạn của pipeline {#tab:
 
 Ma trận cực kỳ thưa, và chỉ 9.467 trong 179.999 người dùng huấn luyện có tương tác kiểm tra với sản phẩm đã biết: phần lớn khách của RetailRocket chỉ xuất hiện trong một lượt truy cập ngắn. Điều này định hình mọi kết quả dưới đây: giá trị tuyệt đối của các chỉ số đều thấp với mọi phương pháp, và tập kiểm tra chứa nhiều sản phẩm hiếm gặp trong tập huấn luyện.
 
+## Khảo sát và làm sạch dữ liệu {#sec:res-lam-sach}
+
+**Khảo sát dữ liệu gốc.** `jobs/kiem_tra/eda.py` tính trên cụm, trực tiếp trên bốn tệp CSV gốc của Kaggle (chưa qua bronze, chưa có người dùng tổng hợp), các bảng sau:
+
+- phân bố loại sự kiện và phễu xem → thêm giỏ → mua;
+- số sự kiện theo ngày và theo giờ;
+- phân bố hoạt động theo người dùng và theo sản phẩm (đuôi dài);
+- dòng trùng, nhấp lặp trong 5 giây, người dùng giống bot, giá trị thiếu;
+- độ phủ của thuộc tính danh mục và giá.
+
+`notebooks/eda_retailrocket.ipynb` vẽ các bảng đó và tự rút ra hệ quả cho thiết kế từ chính số liệu: chọn ALS phản hồi ngầm, lọc ≥ 3 tương tác, cần khởi đầu lạnh, đo độ phủ và độ mới lạ, lọc bot, phân vùng theo ngày.
+
+> [!TODO] Chèn bảng tổng quan EDA từ `docs/bang_chung/cum/eda.json` (số sự kiện, người dùng, sản phẩm, mật độ, tỷ lệ người dùng chỉ có 1 sự kiện, phần sự kiện của 1 % sản phẩm phổ biến nhất, số bot) sau khi chạy `scripts/thu_bang_chung.sh`.
+
+**Thống kê làm sạch.** Bronze có 2.894.238 sự kiện: 2.756.101 sự kiện gốc và 138.137 sự kiện của người dùng mới tổng hợp. Silver giữ 2.882.479 dòng, tức **11.759 dòng (0,41 %) bị loại**.
+
+Từ ngày 15 tháng 11, mỗi dòng bị loại nằm trong `_quarantine.tuong_tac` kèm lý do, theo đúng thứ tự các bước của @tab:lam-sach. Vì vậy tổng số dòng trong silver và trong quarantine bằng đúng số dòng bronze.
+
+> [!TODO] Chèn bảng số dòng bị loại theo `ly_do` (thieu_truong, trung_ma_su_kien, trung_noi_dung, bot, nhap_lap_5_giay, loai_su_kien_khong_dung) từ mục F của `docs/bang_chung/cum/04_delta.txt`.
+
 ## Tinh chỉnh siêu tham số {#sec:res-tuning}
 
 @tab:tuning liệt kê 27 tổ hợp của lưới đầy đủ theo thứ tự chạy, và @fig:tuning trình bày NDCG@10 dưới dạng mỗi rank một bản đồ nhiệt. Mô hình được chọn là **rank = 50, regParam = 1,0, alpha = 40** (in đậm), với NDCG@10 = 0,0680. Huấn luyện cộng đánh giá mất khoảng 75 giây cho mỗi tổ hợp ở rank 10, 160 giây ở rank 30 và 290 giây ở rank 50.
@@ -126,6 +146,28 @@ Table: Số sản phẩm khác nhau trong bảng gợi ý đang phục vụ, the
 | Bán chạy theo danh mục (người dùng ít tương tác) | 2.577.372 | 9.927 |
 | ALS đã xếp hạng lại (8.592 người dùng hoạt động) | 123.524 | 8.612 |
 | **Tổng (265.043 người dùng, 5.300.860 dòng)** | | **15.582** |
+
+## Phân tích lỗi: khi nào ALS thua baseline {#sec:res-loi}
+
+Trên toàn tập kiểm tra, ALS hơn cả hai baseline ở bốn chỉ số xếp hạng (@tab:phuong-phap). Có ba chỗ ALS kém hơn hoặc không áp dụng được.
+
+**Độ phủ và độ mới lạ.** Baseline 2 (bán chạy trong danh mục người dùng xem nhiều nhất) có độ phủ 5,28 % và độ mới lạ 11,88, đều cao hơn ALS thuần (3,44 %; 10,86). Nguyên nhân là ALS phản hồi ngầm với alpha = 40 dồn 99,2 % số ô vào 10 % sản phẩm phổ biến nhất (@fig:pho-bien). Baseline 2 thì mặc nhiên trải gợi ý ra mọi danh mục mà người dùng đã xem. Xếp hạng lại theo độ mới lạ (@sec:res-coverage) đảo được thứ tự này: bản đang phục vụ đạt độ phủ 6,47 %, vượt baseline 2.
+
+**Theo nhóm người dùng.** `jobs/kiem_tra/phan_tich_loi.py` tính NDCG@10 của từng người trong 9.467 người dùng kiểm tra cho ALS và hai baseline. Kết quả được gom theo ba trục:
+
+- số tương tác trong train (3–4, 5–9, 10–19, 20–49, ≥ 50);
+- mức phổ biến của các sản phẩm mà người dùng thật sự tương tác trong tháng kiểm tra;
+- số danh mục người dùng đã xem.
+
+Mỗi nhóm ghi tỷ lệ người dùng mà ALS thua baseline 2. Giả thuyết cần kiểm tra:
+
+- ALS yếu ở người dùng ít tương tác, vì nhân tố ẩn của họ học từ rất ít dữ liệu.
+- ALS yếu ở người dùng chỉ xem một danh mục, nơi baseline 2 vốn đã gần đúng.
+- Khi sản phẩm cần đoán nằm ở đuôi dài, cả ba phương pháp đều gần 0.
+
+> [!TODO] Chèn bảng và biểu đồ phân tích lỗi từ `docs/bang_chung/cum/phan_tich_loi.json` (NDCG@10 trung bình của ALS, baseline 1, baseline 2 và tỷ lệ ALS thua baseline 2 theo từng nhóm), rồi kết luận giả thuyết nào đúng.
+
+**Người dùng mới và sản phẩm mới.** ALS không chấm điểm được người dùng hay sản phẩm không có trong train. Đó là giới hạn cấu trúc của phân rã ma trận, và hệ thống xử lý bằng ba chiến lược khởi đầu lạnh (@tab:cold-start).
 
 ## Mô hình phiên bản 2 (lọc theo khoảng giá) {#sec:res-v2}
 
@@ -315,6 +357,44 @@ Table: Trộn ứng viên đồng xuất hiện và ứng viên theo danh mục 
 - **Điểm tối ưu nằm ở biên của khoảng đã thử.** Ba ô đồng xuất hiện là giá trị lớn nhất đã thử, nên bốn hoặc năm ô có thể nâng độ phủ thêm nữa; mức tăng NDCG chững lại sau hai ô.
 - **Tổ hợp này chưa được triển khai.** Hệ thống phục vụ vẫn lấp các ô ALS chỉ từ ALS (6,47 %). Triển khai tổ hợp nghĩa là thêm một bước trong job trộn trước khi áp mẫu A/B; việc này không được làm khi chỉ còn một tuần trước buổi bảo vệ vì nó sẽ thay đổi danh sách phục vụ, thử nghiệm A/B và các ảnh chụp màn hình của báo cáo này. Vì vậy ngưỡng độ phủ của tiêu chí 2 đạt ở chế độ offline, trên cùng người dùng và cùng định nghĩa, nhưng chưa đạt trong vận hành.
 
+## Điều phối: Deadline Alert và backfill {#sec:res-airflow}
+
+Hai tính năng được thêm sau khi đối chiếu với đề cương: `sla` thay bằng Deadline Alert, và backfill. Cả hai được chạy thử trên chính Airflow 3.3.1, với đúng mô-đun `bd03_chung.py` của dự án, trước khi đưa lên cụm (`docs/bang_chung/kiem_chung_airflow_cuc_bo.md`).
+
+- **Deadline Alert.** Một DAG thử đặt hạn 1 phút, còn task của nó ngủ 150 giây. Lượt chạy vào hàng đợi lúc 10:09:28, hạn chót là 10:10:28, và scheduler gọi `canh_bao_tre_han` lúc 10:10:29, khi task vẫn đang chạy. Dòng cảnh báo được ghi vào `logs/canh_bao.log`. SLA cũ của Airflow 2 chỉ được kiểm tra khi lượt chạy kết thúc, tức sau 150 giây.
+- **Backfill DAG 3.** `airflow backfill create` cho năm giờ tạo năm lượt `backfill__`. Chỉ lượt 00:00 UTC truyền `--tu-ngay 2026-11-12` cho job, bốn lượt còn lại bị `cong_backfill` bỏ qua; lượt theo lịch vẫn chạy tăng dần, không tham số.
+
+Bảy kiểm thử trong `tests/test_airflow_dags.py` nạp năm DAG thật bằng DagBag và kiểm tra:
+
+- mỗi DAG có Deadline Alert đúng hạn và đúng callback;
+- năm DAG tuần tự hóa được kèm deadline;
+- retries và callback lỗi đúng như thiết kế;
+- tham số backfill dựng đúng lệnh `spark-submit`.
+
+> [!TODO] Chèn danh sách 5 DAG kèm hạn Deadline Alert lấy trên cụm từ `docs/bang_chung/cum/05_airflow.txt`.
+
+## Hiệu năng ứng dụng web {#sec:res-web}
+
+Đề cương yêu cầu web phản hồi dưới 3 giây (mục A.8). Có hai cách đo:
+
+- **Phía máy chủ.** Middleware ghi thời gian xử lý của mọi yêu cầu theo mẫu route; `GET /api/hieu-nang` trả trung vị, p95, giá trị lớn nhất và tỷ lệ dưới 3 giây.
+- **Phía máy khách.** `scripts/do_do_tre_web.py` gọi lần lượt 20 lần mỗi nhóm yêu cầu đọc từ máy master: trang chủ, gợi ý của người dùng quen và người dùng mới, thịnh hành, trang sản phẩm, thịnh hành theo sản phẩm (không qua bộ đệm), ba trang báo cáo. Script không ghi lượt hiển thị nào, để không làm bẩn số liệu A/B.
+
+Bộ đệm có hạn sống giữ phần lớn yêu cầu dưới vài chục mili giây (@tab:bo-dem).
+
+Table: Hạn sống bộ đệm của ứng dụng web {#tab:bo-dem w=60,40}
+| Dữ liệu | Hạn sống bộ đệm |
+|---|---|
+| Thịnh hành | 10 giây |
+| Gợi ý theo người dùng | 30 giây |
+| Bảng nhỏ | 60 giây |
+| Sản phẩm liên quan | 600 giây |
+| Bảng lớn | 3.600 giây |
+
+Yêu cầu đầu tiên sau khi bộ đệm hết hạn mới phải chạy một truy vấn Spark cục bộ; truy vấn lấy gợi ý theo người dùng chính là truy vấn được đo Z-ORDER ở @tab:zorder (trung vị 0,98 giây sau Z-ORDER).
+
+> [!TODO] Chèn bảng thời gian phản hồi (lần đầu, trung vị, p95, lớn nhất, tỷ lệ dưới 3 giây theo nhóm yêu cầu) từ `docs/bang_chung/cum/07_do_tre_web.md`.
+
 ## Xử lý luồng và vận hành {#sec:res-streaming}
 
 Ngày 10 tháng 11, ba job luồng được khởi động trên cụm và producer phát lại 48 ngày cuối của dữ liệu (1 tháng 8 đến 18 tháng 9 năm 2015) lần thứ hai: 857.072 sự kiện trong khoảng 24 phút. Nhờ khử trùng lặp theo nội dung (@tab:lam-sach), các bản trùng này không làm thay đổi silver. Phép kiểm tra mà DAG giám sát luồng dùng báo bảng thịnh hành đang hoạt động, với 2.203.504 dòng (cửa sổ, sản phẩm) có cửa sổ kết thúc trong 15 phút gần nhất. Với Airflow, ba driver luồng và một job tái lập chạy cùng lúc, máy master vẫn còn 1,8 GB bộ nhớ khả dụng (@fig:ram).
@@ -357,3 +437,15 @@ Table: Tình trạng các tiêu chí nghiệm thu {#tab:ket-qua-nghiem-thu w=5,2
 Bấm vào một sản phẩm được gợi ý sẽ mở trang sản phẩm (@fig:san-pham-web): trang ghi lượt nhấp gắn với lượt hiển thị mà nó đến từ đó (`mh` trong địa chỉ, hiển thị là "đến từ impression"), để pipeline A/B có thể nối lượt nhấp với lượt hiển thị, và hiển thị dòng mới nhất của sản phẩm trong bảng thịnh hành cùng các sản phẩm liên quan từ `gold.san_pham_lien_quan`: những sản phẩm mà cùng người dùng đã tương tác trong cùng ngày, xếp theo độ tương tự cosine của số người dùng.
 
 ![Trang sản phẩm mở từ ô 6 của @fig:trang-chu-a: mã lượt hiển thị của cú nhấp, trạng thái trong bảng thịnh hành và các sản phẩm liên quan](hinh/s06_san_pham_web.png){#fig:san-pham-web w=14.5}
+
+
+**Đối chiếu yêu cầu chung của đề cương.** @tab:yeu-cau-chung tóm tắt năm yêu cầu bắt buộc của mục A.6.
+
+Table: Năm yêu cầu bắt buộc của mục A.6 đề cương {#tab:yeu-cau-chung w=8,30,62}
+| Mục | Yêu cầu | Bằng chứng |
+|---|---|---|
+| A.6.1 | Job lô, mô hình MLlib, luồng chạy ≥ 30 phút khi demo | 8 bước của DAG 1; ALS (@tab:tuning); 3 luồng chạy liên tục từ 10 tháng 11 (thời gian chạy trên Spark UI, `06_streaming.txt`) |
+| A.6.2 | MERGE INTO, DESCRIBE HISTORY, VERSION AS OF, OPTIMIZE có số trước/sau | @tab:delta; `scripts/demo/delta_sql.sh` (`04_delta.txt`); @tab:tai-lap; @tab:zorder |
+| A.6.3 | Mọi bảng Delta trên HDFS, nộp `hdfs dfs -du -h /lakehouse/bd03_khuyen_nghi` | `docs/bang_chung/cum/01_hdfs_du_h.txt` |
+| A.6.4 | ≥ 3 màn hình, ≥ 1 thao tác ghi ngược vào Delta | 5 màn hình (@tab:web); "Chạy lại" → `gold.ket_qua_tai_lap`; lượt hiển thị, nhấp, mua → MERGE `gold.nhat_ky_hien_thi` |
+| A.6.5 | ≥ 3 DAG khác lịch, retries, sla, nhánh hoặc sensor | 5 DAG (@tab:dags); retries + callback; Deadline Alerts (@sec:res-airflow); BranchPythonOperator, PythonSensor, ShortCircuitOperator |

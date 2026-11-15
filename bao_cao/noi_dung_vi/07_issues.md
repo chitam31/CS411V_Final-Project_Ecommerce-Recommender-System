@@ -96,3 +96,14 @@ Lượt chạy theo lịch đầu tiên của DAG 1 trên dữ liệu thật (đ
 - **Tái lập cần nhiều hơn time travel.** Nó còn cần tập đáp án nằm trong cùng phiên bản bảng, indexer ổn định, hạt giống cố định, tham số được ghi lại và thời gian lưu giữ dài hơn khoảng thời gian cần tái lập.
 - **Mô hình đương nhiệm và mô hình thách đấu phải so được với nhau.** Một cổng triển khai tự động chỉ tốt bằng các ứng viên mà nó thấy: nếu lưới huấn luyện lại không tái tạo được cấu hình đang phục vụ, cổng sẽ âm thầm đóng băng mô hình.
 - **Vận hành hệ thống từ xa theo kiểu bất đồng bộ.** Các lệnh sống lâu hơn một kết nối mạng thuộc về `tmux`, với đầu ra ghi vào tệp; một script trạng thái chỉ đọc mà không gây tác dụng phụ đáng được viết sớm.
+- **Đối chiếu với quy định chung ngay từ đầu, không chỉ với đặc tả đề tài.** Đồ án bám sát đặc tả 3.1–3.11, nhưng khi đối chiếu với phần quy định chung của đề cương (15 tháng 11) vẫn còn thiếu nhiều mục:
+  - gốc HDFS chuẩn và bảng `_quarantine`;
+  - minh chứng DESCRIBE HISTORY;
+  - `sla` (Airflow 3 đã gỡ, phải thay bằng Deadline Alerts);
+  - backfill;
+  - số đo độ trễ web;
+  - notebook EDA và khai báo dùng AI.
+
+  Sửa muộn tốn thêm chi phí: chuyển gốc hồ dữ liệu khi hệ thống đang chạy cần một script riêng, có viết lại `_spark_metadata` và có hoàn tác. Một bảng đối chiếu cả hai tài liệu nên được lập ở tuần đầu.
+- **Một thao tác lặp lại phải lũy đẳng ở mọi bảng, kể cả bảng nhật ký.** Bảng tinh chỉnh và lịch sử huấn luyện từng ghi kiểu append. Khi Airflow thử lại một task trong cùng lượt chạy, bảng có thể nhận hai lần cùng một dòng. Nay hai bảng ghi đè đúng các dòng của `ma_chay` đó bằng `replaceWhere`.
+

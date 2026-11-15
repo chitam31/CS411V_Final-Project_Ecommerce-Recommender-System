@@ -51,12 +51,21 @@ Table: Các script vận hành chính {#tab:scripts w=30,70}
 
 **Nạp sự kiện (`nap_su_kien`, luồng).** Job đọc topic, phân tích JSON, bỏ các bản ghi thiếu người dùng, sản phẩm hoặc sự kiện, rồi ánh xạ sang lược đồ bronze của đặc tả (@tab:bang). Mã sự kiện `ma_su_kien` là giá trị băm SHA-256 của topic, phân vùng, offset và nội dung: nó duy nhất và tất định, nên một thông điệp được Kafka gửi lại hoặc đọc lại sau sự cố sẽ có cùng mã và bị loại ở phía sau. Vì RetailRocket không có phiên, mã phiên được suy ra từ người dùng và một khung thời gian 30 phút khi thông điệp không mang sẵn. Danh mục sản phẩm được thêm bằng phép nối trái với `silver.san_pham`. Các dòng được ghi bằng Parquet file sink, phân vùng theo ngày, checkpoint trên HDFS. Cùng job này còn chạy ở chế độ một lần (`--mot-lan`, kích hoạt `availableNow`) để nạp phần tồn đọng và báo số batch, số sự kiện.
 
-**Bronze sang silver (`bronze_to_silver`).** Việc làm sạch áp dụng lần lượt các quy tắc ở @tab:lam-sach. Job chạy tăng dần: nó đọc mốc thời gian nạp của dòng cuối cùng đã xử lý từ `userMetadata` của commit silver gần nhất có mang mốc này, chọn các ngày nhận được dòng mới, tính lại toàn bộ các ngày đó và ghi đè đúng các phân vùng ấy bằng `replaceWhere`. Chạy hai lần cho ra cùng một bảng. Trước khi ghi, các dòng được phân vùng lại theo cột phân vùng, để mỗi ngày được ghi thành một tệp; nếu không, phép shuffle 64 phân vùng sẽ ghi tới 64 tệp tí hon cho mỗi ngày (@sec:issues).
+**Bronze sang silver (`bronze_to_silver`).** Việc làm sạch áp dụng lần lượt các quy tắc ở @tab:lam-sach. Job chạy tăng dần: nó đọc mốc thời gian nạp của dòng cuối cùng đã xử lý từ `userMetadata` của commit silver gần nhất có mang mốc này, chọn các ngày nhận được dòng mới, tính lại toàn bộ các ngày đó và ghi đè đúng các phân vùng ấy bằng `replaceWhere`. Chạy hai lần cho ra cùng một bảng.
+
+Mỗi dòng bronze của các ngày được xử lý rơi vào đúng một trong hai bảng: `silver.tuong_tac`, hoặc `_quarantine.tuong_tac` (mục A.4 của đề cương) kèm cột `ly_do`. Giá trị của `ly_do` là tên bước đã loại dòng đó: `thieu_truong`, `trung_ma_su_kien`, `trung_noi_dung`, `bot`, `nhap_lap_5_giay`, `loai_su_kien_khong_dung`. Quarantine được ghi đè đúng các phân vùng ngày như silver, nên đếm theo `ly_do` chính là bảng thống kê làm sạch (@sec:res-lam-sach).
+
+Trong mỗi nhóm trùng, bản giữ lại được chọn bằng `row_number` theo thời điểm nạp, tức bản nạp sớm nhất, thay cho `dropDuplicates`. Lý do: `dropDuplicates` giữ một dòng tùy ý, và vì silver và quarantine được tính từ cùng một kế hoạch, hai lần tính có thể chọn hai dòng khác nhau.
+
+**Backfill.** Với `--tu-ngay`/`--den-ngay`, job tính lại đúng các ngày trong khoảng đó, bất kể mốc. Commit của lượt backfill ghi `userMetadata = {"backfill": ...}` thay cho mốc, nên lượt tăng dần kế tiếp vẫn xử lý các ngày mới chưa tính.
+
+Trước khi ghi, các dòng được phân vùng lại theo cột phân vùng, để mỗi ngày được ghi thành một tệp; nếu không, phép shuffle 64 phân vùng sẽ ghi tới 64 tệp tí hon cho mỗi ngày (@sec:issues).
 
 Table: Các quy tắc làm sạch từ bronze sang silver {#tab:lam-sach w=24,38,38}
 | Bước | Quy tắc | Lý do |
 |---|---|---|
-| Khử trùng lặp theo mã | `dropDuplicates(ma_su_kien)` | Kafka và file sink có thể gửi một thông điệp hai lần |
+| Thiếu trường | bỏ dòng thiếu người dùng, sản phẩm, thời điểm hoặc loại sự kiện | Không dùng được cho ma trận |
+| Khử trùng lặp theo mã | giữ bản nạp sớm nhất trong mỗi `ma_su_kien` (`row_number`) | Kafka và file sink có thể gửi một thông điệp hai lần |
 | Khử trùng lặp theo nội dung | cùng người dùng, sản phẩm, loại sự kiện và thời điểm (mili giây), làm **trước** bước lọc bot | Phát lại một giai đoạn lần nữa sẽ cho mỗi sự kiện gốc một mã mới (offset mới); thiếu bước này, số sự kiện mỗi giờ tăng gấp đôi và người dùng thật có 251–500 sự kiện mỗi giờ sẽ bị loại như bot |
 | Lọc bot | loại mọi người dùng có ít nhất một giờ vượt **500 sự kiện** | Ngưỡng của đặc tả; bot làm méo độ phổ biến và ma trận |
 | Chống nhấp lặp | bỏ một sự kiện cùng người dùng, sản phẩm và loại trong vòng **5 giây** sau sự kiện trước | Nhấp đúp và tải lại trang |
@@ -179,12 +188,29 @@ Nhiều cơ chế giúp các DAG bền vững trên một cụm nhỏ:
 - **Thử lại và thời gian chờ tối đa.** Các task thử lại một lần; tinh chỉnh có thời gian chờ tối đa bốn giờ và cả DAG là tám giờ. Mọi job đều lũy đẳng, nên thử lại luôn an toàn.
 - **Một ô pool duy nhất vào ban đêm.** Vì mọi driver chạy trên máy master, pool mặc định bị giới hạn một ô trong đêm, khi pipeline hằng ngày, job A/B hằng giờ và bảo trì có thể chồng lên nhau.
 - **Cảnh báo.** Một hàm gọi lại khi lỗi ghi thêm một dòng vào `logs/canh_bao.log` và vào nhật ký task; DAG giám sát luồng dùng cùng tệp này.
+- **SLA bằng Deadline Alerts.** Đề cương (mục A.6.5) yêu cầu `sla`. Airflow 3.0 đã gỡ `sla` và `sla_miss_callback`, và từ bản 3.1 thay bằng Deadline Alerts. Mỗi DAG khai báo `deadline=han_chot(phút)` với mốc là lúc lượt chạy vào hàng đợi; mốc này có ở mọi kiểu lượt chạy, kể cả chạy tay. Hạn của từng DAG:
+  - DAG 1: 7 giờ, tức lượt 02:00 phải xong trước 09:00;
+  - DAG 2: 10 phút;
+  - DAG 3: 30 phút;
+  - DAG 4: 90 phút;
+  - DAG 5: 3 giờ.
+
+  Quá hạn mà lượt chạy chưa xong thì scheduler gọi `canh_bao_tre_han` **ngay lúc đó**, khác với SLA cũ chỉ được kiểm tra khi lượt chạy kết thúc. Callback là `SyncCallback`, chạy trong executor, vì triggerer mặc định không bật trên master. `dagrun_timeout` và `execution_timeout` vẫn là giới hạn cứng.
+- **Backfill.**
+  - DAG 1 nhận `tu_ngay`/`den_ngay` (ngày dữ liệu) qua cấu hình lượt chạy. Khi có hai tham số này, sensor bỏ qua chờ và `bronze_to_silver` tính lại đúng khoảng ngày đó.
+  - DAG 3 dùng lệnh chuẩn `airflow backfill create --dag-id kn_tinh_ab --from-date … --to-date … --reprocess-behavior completed`. DAG chạy mỗi giờ nên mỗi ngày có 24 lượt. Cổng `cong_backfill` (`ShortCircuitOperator`) chỉ cho lượt 00:00 UTC chạy, và lượt đó tính lại cả ngày (`--tu-ngay`). 23 lượt còn lại bị bỏ qua.
+  - MERGE theo ngày và nhóm nên chạy lại không nhân đôi dòng.
 
 Hai hành vi của Airflow 3 đã được rút ra trên cụm. Một DAG bị tạm dừng khi mới tạo, và một lượt chạy thủ công của DAG đang tạm dừng sẽ nằm mãi trong hàng đợi; vì vậy `kn_tai_lap` phải được bỏ tạm dừng dù không có lịch, nếu không nút "Chạy lại mô hình" của ứng dụng web sẽ không có tác dụng. Và khi bỏ tạm dừng một DAG có lịch, Airflow lập tức tạo một lượt chạy cho mốc lịch gần nhất trong quá khứ: bật ba DAG hằng đêm lúc 23:21 đã khởi động cả ba cùng lúc thay vì lúc 02:00 và 04:00.
 
 ## Ứng dụng web {#sec:impl-web}
 
-Ứng dụng web đóng vai sàn thương mại, đúng như mục 3.8 của đặc tả yêu cầu, để có thể sinh lượt hiển thị và cú nhấp thật. Đây là một ứng dụng FastAPI với template Jinja2 và một ít JavaScript, chạy trên labsoe-18 (máy chủ đầu tiên, Ctam, được giữ làm dự phòng, sự cố 26). Ứng dụng đọc bảng Delta trực tiếp từ HDFS bằng một phiên Spark cục bộ (`local[2]`) trong chính tiến trình, không lấy lõi của cụm, và không ghi gì vào Delta: mọi sự kiện đều đi vào Kafka (@tab:web).
+Ứng dụng web đóng vai sàn thương mại, đúng như mục 3.8 của đặc tả yêu cầu, để có thể sinh lượt hiển thị và cú nhấp thật. Đây là một ứng dụng FastAPI với template Jinja2 và một ít JavaScript, chạy trên labsoe-18 (máy chủ đầu tiên, Ctam, được giữ làm dự phòng, sự cố 26). Ứng dụng đọc bảng Delta trực tiếp từ HDFS bằng một phiên Spark cục bộ (`local[2]`) trong chính tiến trình, không lấy lõi của cụm (@tab:web). Ứng dụng ghi ngược vào Delta theo hai đường (mục A.6.4 của đề cương):
+
+- **Trực tiếp.** Nút "Chạy lại" ở màn hình Tái lập, sau khi trả kết quả cho trình duyệt, ghi nền một dòng `loai = 'ab_web'` vào `gold.ket_qua_tai_lap` bằng chính phiên Spark + Delta của ứng dụng. Phép ghi là append nên không xung đột với commit của DAG 5. Ứng dụng chỉ ghi khi bảng đã có ở gốc hồ dữ liệu hiện tại.
+- **Qua Kafka.** Mỗi lượt hiển thị, cú nhấp hay lượt mua đi vào topic `hien-thi`, rồi luồng `ghi_hien_thi` MERGE vào `gold.nhat_ky_hien_thi`.
+
+Ứng dụng đo thời gian xử lý mọi yêu cầu bằng một middleware: mỗi phản hồi mang header `X-Thoi-Gian-Xu-Ly-Ms`, và `GET /api/hieu-nang` trả trung vị, p95 và tỷ lệ dưới 3 giây theo từng API (@sec:res-web). Biểu đồ vẽ bằng Chart.js 4.6.1, đóng gói sẵn trong ứng dụng để chạy được không cần Internet.
 
 Table: Các màn hình và API của ứng dụng web {#tab:web w=20,45,35}
 | Màn hình | Nội dung | API |
@@ -193,7 +219,7 @@ Table: Các màn hình và API của ứng dụng web {#tab:web w=20,45,35}
 | Trang sản phẩm | Chi tiết sản phẩm, sản phẩm liên quan, số đếm thịnh hành hiện tại của sản phẩm; các nút Xem, Thêm vào giỏ, Mua đẩy sự kiện vào Kafka | `POST /api/su-kien` |
 | Bảng điều khiển A/B | CTR và tỉ lệ chuyển đổi theo nhóm, biểu đồ theo ngày, p-value, kiểm định gộp, cỡ mẫu cần thiết, tỉ lệ lưu lượng mô phỏng, kết luận | `GET /api/ab/ket-qua` |
 | Chất lượng mô hình | Chỉ số theo phiên bản mô hình, so sánh với baseline và các biến thể xếp hạng lại, bảng tinh chỉnh, biểu đồ phân bố độ phổ biến | `GET /api/mo-hinh/chi-so` |
-| Tái lập | Chọn một kết quả A/B trong quá khứ, xem phiên bản Delta của nó, chạy lại phép tổng hợp trên phiên bản đó và so cũ với mới; kích hoạt DAG 5 | `POST /api/tai-lap/{ngay}`, `POST /api/tai-lap-mo-hinh` |
+| Tái lập | Chọn một kết quả A/B trong quá khứ, xem phiên bản Delta của nó, chạy lại phép tổng hợp trên phiên bản đó và so cũ với mới (ghi kết quả vào `gold.ket_qua_tai_lap`); kích hoạt DAG 5 | `POST /api/tai-lap/{ngay}`, `POST /api/tai-lap-mo-hinh` |
 
 Các endpoint phụ trả về sản phẩm thịnh hành (`/api/thinh-hanh`, và theo từng sản phẩm để đo độ trễ), danh sách người dùng mẫu cho phần minh họa và một endpoint kiểm tra sức khỏe cho biết chế độ dữ liệu và Kafka client đang dùng. Ứng dụng có hai chế độ dữ liệu: `delta`, mặc định, đọc từ cụm; `gia` phục vụ dữ liệu sinh sẵn để có thể phát triển giao diện mà không cần cụm.
 
@@ -229,20 +255,22 @@ Tái lập một thí nghiệm cần cùng dữ liệu, cùng mã nguồn và c�
 
 ## Kiểm thử và bảo đảm chất lượng {#sec:impl-test}
 
-Kho mã chứa 109 kiểm thử tự động (107 chạy trong môi trường chuẩn; hai bị bỏ qua khi chưa cài Airflow hoặc SciPy). Chúng chạy bằng `pytest` trên một phiên Spark cục bộ thật, nên kiểm tra đúng mã DataFrame chạy trên cụm (@tab:tests). Các script hạ tầng được kiểm thử bằng cách đặt các lệnh giả `ssh`, `docker`, `curl`, `getent` hoặc `ping` lên đầu `PATH` rồi kiểm tra script làm gì với chúng.
+Kho mã chứa 139 kiểm thử tự động (8 kiểm thử về DAG cần cài Airflow 3.3.1 theo `requirements-airflow.txt`, một kiểm thử cần SciPy; thiếu thư viện thì được bỏ qua). Chúng chạy bằng `pytest` trên một phiên Spark cục bộ thật, nên kiểm tra đúng mã DataFrame chạy trên cụm (@tab:tests). Các script hạ tầng được kiểm thử bằng cách đặt các lệnh giả `ssh`, `docker`, `curl`, `getent` hoặc `ping` lên đầu `PATH` rồi kiểm tra script làm gì với chúng.
 
 Table: Kiểm thử tự động theo lĩnh vực {#tab:tests w=27,8,65}
 | Tệp kiểm thử | Số KT | Nội dung kiểm tra |
 |---|---|---|
-| `test_bronze_to_silver.py` | 7 | Ngưỡng lọc bot, chống nhấp lặp 5 giây, trọng số, làm sạch đầy đủ, khử trùng lặp khi phát lại, mỗi ngày một tệp |
-| `test_ml.py` | 12 | Chia theo thời gian, suy giảm, indexer chỉ thêm nhãn, ALS thắng các baseline trên dữ liệu có cấu trúc, hai lần huấn luyện cho chỉ số giống hệt, lọc giá của v2, cấu hình phục vụ được thêm vào lưới |
+| `test_bronze_to_silver.py`, `test_backfill.py` | 11 | Ngưỡng lọc bot, chống nhấp lặp 5 giây, trọng số, làm sạch đầy đủ, khử trùng lặp khi phát lại, mỗi ngày một tệp; mỗi dòng bronze vào đúng silver hoặc quarantine kèm lý do, chọn bản nạp sớm nhất; chọn ngày backfill không đổi mốc |
+| `test_ml.py` | 13 | Chia theo thời gian, suy giảm, indexer chỉ thêm nhãn, ALS thắng các baseline trên dữ liệu có cấu trúc, hai lần huấn luyện cho chỉ số giống hệt, lọc giá của v2, cấu hình phục vụ được thêm vào lưới, phân tích lỗi theo nhóm người dùng |
 | `test_chi_so.py` | 4 | Chỉ số xếp hạng so với `RankingMetrics` của Spark, độ phủ và độ mới lạ |
 | `test_tron.py` | 11 | Mẫu A/B, phân nhóm ổn định, chiến lược khởi đầu lạnh, vị trí sản phẩm mới, xếp hạng lại, bù thịnh hành |
 | `test_ab_va_tron.py`, `test_thong_ke.py` | 12 | Tổng hợp A/B, kiểm định z và cỡ mẫu so với giá trị tham chiếu, kiểm định bền vững theo cụm, bootstrap theo người dùng và hệ số thiết kế |
 | `test_streaming.py` | 8 | Chuẩn hóa sự kiện, cửa sổ và watermark, điểm thịnh hành, tổng hợp lượt hiển thị, tóm tắt tiến độ chạy một lần |
-| `test_web.py` | 12 | Mọi màn hình và API ở chế độ mô phỏng, Kafka client giả, hình minh họa luôn khớp ngành hàng trên thẻ, người dùng khởi đầu lạnh hiển thị ngoài thử nghiệm |
+| `test_web.py` | 15 | Mọi màn hình và API ở chế độ mô phỏng, Kafka client giả, hình minh họa luôn khớp ngành hàng trên thẻ, người dùng khởi đầu lạnh hiển thị ngoài thử nghiệm; ghi ngược kết quả tái lập, đo thời gian phản hồi, Chart.js đóng gói sẵn |
 | `test_xuat_ket_qua.py`, `test_xung_dot_delta.py` | 9 | Xuất kết quả, A/B gộp, chỉ thử lại khi xung đột Delta, bảo trì giữ lần triển khai gần nhất |
 | `test_thi_nghiem_bo_sung.py` | 11 | Các thí nghiệm bổ sung: chia validation theo ngày, tập đáp án giới hạn trong người dùng và sản phẩm huấn luyện, đọc indexer đã lưu mà không ghi, tính chỉ số cho nhiều kỳ trong một lượt, job A/B theo người dùng, ghép nguồn ứng viên và quy tắc chọn công bố trước, đồng xuất hiện chỉ từ dữ liệu huấn luyện |
-| `test_ha_tang.py` | 23 | Lược đồ bảng, vai trò trong script khởi động, khởi động một vai trò và build ảnh, MTU của ZeroTier, dừng luồng kèm dừng driver, bỏ qua sensor cho lượt chạy thủ công, điều khiển SSH và phân phối mã (kể cả thử lại), đo mạng, lượt chạy đầu có thể tiếp tục, script chép và dọn dữ liệu, cấu hình Airflow, script trạng thái, cấu trúc DAG |
+| `test_ha_tang.py` | 30 | Lược đồ bảng, vai trò trong script khởi động, khởi động một vai trò và build ảnh, MTU của ZeroTier, dừng luồng kèm dừng driver, bỏ qua sensor cho lượt chạy thủ công, điều khiển SSH và phân phối mã (kể cả thử lại), đo mạng, lượt chạy đầu có thể tiếp tục, script chép và dọn dữ liệu, cấu hình Airflow, script trạng thái, cấu trúc DAG; chốt an toàn của submit.sh, script demo Delta SQL và cây HDFS, chọn người dùng mẫu của Z-ORDER trên cụm, `conf/spark-defaults.conf` khớp submit.sh, EDA trên dữ liệu mẫu |
+| `test_chuyen_lakehouse.py` | 8 | Kế hoạch chuyển gốc chỉ gồm dữ liệu dự án, viết lại `_spark_metadata` giữ scheme và host, ghi đè an toàn, dời bronze thật rồi luồng chạy tiếp không xử lý lại và hoàn tác |
+| `test_airflow_dags.py` | 7 | Năm DAG nạp và tuần tự hóa được với Deadline Alert, retries và callback, cổng backfill của DAG 3, tham số backfill của DAG 1 và DAG 3 dựng đúng lệnh |
 
 Mọi lỗi phát hiện trong quá trình phát triển hoặc trên cụm đều được viết một kiểm thử hồi quy trước khi sửa; @sec:issues liệt kê các lỗi đó.

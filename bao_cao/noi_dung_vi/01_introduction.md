@@ -47,7 +47,7 @@ Table: Danh mục nghiệm thu của đề bài (mục 3.11) {#tab:nghiem-thu w=
 
 ## Phạm vi {#sec:scope}
 
-**Trong phạm vi.** Đồ án bao trọn đường đi từ sự kiện thô đến gợi ý hiển thị trên trang web: Kafka producer, ba job luồng, pipeline theo lô (làm sạch, thống kê, sản phẩm liên quan, chuẩn bị ma trận, tinh chỉnh, đánh giá, sinh danh sách phục vụ, trộn, công bố), pipeline A/B (ghi lượt hiển thị, lưu lượng mô phỏng, tổng hợp và kiểm định), bảo trì Delta Lake, năm DAG Airflow, ứng dụng web, các script triển khai cụm, và bộ kiểm thử tự động gồm 109 kiểm thử chạy trên một phiên Spark cục bộ.
+**Trong phạm vi.** Đồ án bao trọn đường đi từ sự kiện thô đến gợi ý hiển thị trên trang web: Kafka producer, ba job luồng, pipeline theo lô (làm sạch, thống kê, sản phẩm liên quan, chuẩn bị ma trận, tinh chỉnh, đánh giá, sinh danh sách phục vụ, trộn, công bố), pipeline A/B (ghi lượt hiển thị, lưu lượng mô phỏng, tổng hợp và kiểm định), bảo trì Delta Lake, năm DAG Airflow, ứng dụng web, các script triển khai cụm, và bộ kiểm thử tự động gồm 139 kiểm thử chạy trên một phiên Spark cục bộ.
 
 **Ngoài phạm vi.** Đồ án không xử lý tài khoản người dùng, thanh toán hay trình biên tập danh mục sản phẩm; ứng dụng web chỉ mô phỏng các trang mua sắm cần thiết để sinh sự kiện và lượt hiển thị sát thực tế. Không thử các mô hình gợi ý học sâu hay cập nhật mô hình trực tuyến (tăng dần): ALS được huấn luyện lại theo lô mỗi đêm, đúng như đặc tả yêu cầu. Không dùng dịch vụ đám mây nào; toàn bộ hệ thống chạy trên các máy phòng thí nghiệm.
 

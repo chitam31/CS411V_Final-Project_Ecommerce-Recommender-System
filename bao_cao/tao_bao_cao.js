@@ -2,6 +2,8 @@
 //
 //   node tao_bao_cao.js            -> BD03_Recommender_System_Report.docx   (tiếng Anh, noi_dung/)
 //   node tao_bao_cao.js vi         -> BD03_Bao_cao_He_thong_goi_y.docx       (tiếng Việt, noi_dung_vi/)
+//   node tao_bao_cao.js chinh      -> BD03_Bao_cao_chinh.docx                (bản chính 15–20 trang theo mục C.3
+//                                                                            của đề cương, noi_dung_chinh/)
 //
 // Cú pháp hỗ trợ (đủ cho báo cáo, không phải Markdown đầy đủ):
 //   # Title {#sec:id}            chương (tự đánh số 1, 2, ...; "# !Title" không đánh số; "# @A Title" phụ lục A)
@@ -33,7 +35,8 @@ const RONG_CHU = RONG_TRANG - LE_TRAI - LE_PHAI;   // 9072 DXA = 16 cm
 const PX_CM = 37.795;                // docx-js tính ảnh theo px ở 96 dpi
 
 // ------------------------------------------------------------------ ngôn ngữ
-const VI = process.argv.includes("vi");
+const CHINH = process.argv.includes("chinh");
+const VI = CHINH || process.argv.includes("vi");
 const L = VI ? {
   thuMuc: "noi_dung_vi", ra: "BD03_Bao_cao_He_thong_goi_y.docx",
   chuong: "Chương ", muc: "Mục ", hinh: "Hình ", bang: "Bảng ", ct: "Công thức ", phuLuc: "Phụ lục ",
@@ -57,6 +60,11 @@ const L = VI ? {
 };
 
 // ------------------------------------------------------------------ đọc nội dung
+if (CHINH) Object.assign(L, {
+  thuMuc: "noi_dung_chinh", ra: "BD03_Bao_cao_chinh.docx", loai: "BÁO CÁO ĐỒ ÁN CUỐI KỲ",
+  dauTrang: "Hệ thống gợi ý sản phẩm thương mại điện tử – Báo cáo chính",
+  tieuDeTep: "Hệ thống gợi ý sản phẩm thương mại điện tử – Báo cáo chính (CS411V Dữ liệu lớn)",
+});
 const tep = fs.readdirSync(path.join(GOC, L.thuMuc)).filter((t) => /^\d\d_.*\.md$/.test(t)).sort();
 const nguon = tep.map((t) => ({ ten: t, dong: fs.readFileSync(path.join(GOC, L.thuMuc, t), "utf8").split(/\r?\n/) }));
 
@@ -227,7 +235,9 @@ function dung(dongs) {
       } else if (cap === 2) { m2 += 1; m3 = 0; so = tienTo() + "." + m2 + "  "; }
       else if (cap === 3) { m3 += 1; so = tienTo() + "." + m2 + "." + m3 + "  "; }
       const muc = [HeadingLevel.HEADING_1, HeadingLevel.HEADING_2, HeadingLevel.HEADING_3, HeadingLevel.HEADING_4][cap - 1];
-      ra.push(new Paragraph({ heading: muc, pageBreakBefore: cap === 1 && !tieuDeDau, children: [new TextRun({ text: so + t })] }));
+      // báo cáo chính (giới hạn trang): chương nối tiếp, chỉ ngắt trang trước chương 1 và phụ lục A
+      const ngatTrang = cap === 1 && !tieuDeDau && (!CHINH || (phuLuc ? phuLuc === "A" : chuong === 1));
+      ra.push(new Paragraph({ heading: muc, pageBreakBefore: ngatTrang, children: [new TextRun({ text: so + t })] }));
       tieuDeDau = false;
       i++; continue;
     }
@@ -370,13 +380,16 @@ const sauMucLuc = [].concat(...nguon.filter((f) => f.ten.startsWith("00_b")).map
 const chinh = nguon.filter((f) => !f.ten.startsWith("00_"));
 phanDau.push(...dung(truocMucLuc));
 phanDau.push(tieuDeKhongSo(L.mucLuc));
-phanDau.push(new TableOfContents(L.mucLuc, { hyperlink: true, headingStyleRange: "1-3" }));
-phanDau.push(tieuDeKhongSo(L.dsHinh));
-phanDau.push(new TableOfContents(L.dsHinh, { hyperlink: true, stylesWithLevels: [new StyleLevel("Figure Caption", 1)] }));
-phanDau.push(tieuDeKhongSo(L.dsBang));
-phanDau.push(new TableOfContents(L.dsBang, { hyperlink: true, stylesWithLevels: [new StyleLevel("Table Caption", 1)] }));
+phanDau.push(new TableOfContents(L.mucLuc, { hyperlink: true, headingStyleRange: CHINH ? "1-2" : "1-3" }));
+// Bản chính (15–20 trang) bỏ danh mục hình/bảng để dành trang cho nội dung.
+if (!CHINH) {
+  phanDau.push(tieuDeKhongSo(L.dsHinh));
+  phanDau.push(new TableOfContents(L.dsHinh, { hyperlink: true, stylesWithLevels: [new StyleLevel("Figure Caption", 1)] }));
+  phanDau.push(tieuDeKhongSo(L.dsBang));
+  phanDau.push(new TableOfContents(L.dsBang, { hyperlink: true, stylesWithLevels: [new StyleLevel("Table Caption", 1)] }));
+}
 const sau = dung(sauMucLuc);
-phanDau.push(new Paragraph({ children: [new PageBreak()] }), ...sau);
+if (sau.length) phanDau.push(new Paragraph({ children: [new PageBreak()] }), ...sau);
 
 const than = dung([].concat(...chinh.map((f) => f.dong.concat([""]))));
 // chương đầu tiên không cần ngắt trang vì đã sang phần mới

@@ -16,6 +16,16 @@
 
 Trên hệ thống đang chạy, một cú nhấp trên trang web đến bronze khoảng mười giây sau khi Kafka nhận và đến bảng thịnh hành sau 51 giây, trong mục tiêu 90 giây, và một người dùng tạo tại chỗ nhận đúng chiến lược dành cho người dùng hoàn toàn mới. Như vậy cả tám tiêu chí nghiệm thu đều đã được minh họa trên cụm; việc còn lại trước buổi bảo vệ là tập dượt đầy đủ kịch bản minh họa.
 
+Ngày 15 tháng 11, sau khi đối chiếu toàn bộ với đề cương đồ án, nhóm bổ sung các mục còn thiếu của phần quy định chung:
+
+- gốc hồ dữ liệu `/lakehouse/bd03_khuyen_nghi` và bảng `_quarantine` (A.4);
+- minh chứng DESCRIBE HISTORY (A.6.2);
+- thao tác ghi ngược trực tiếp từ web vào Delta (A.6.4);
+- Deadline Alerts thay `sla` (A.6.5);
+- backfill và đo độ trễ web (A.8);
+- notebook EDA (A.5);
+- khai báo sử dụng AI (A.9).
+
 ## Hạn chế
 
 - **Độ phủ trong vận hành chưa đạt mục tiêu.** Không cấu hình ALS nào đạt độ phủ 10 %, vì phần lớn sản phẩm huấn luyện chỉ có một hai tương tác và vector ẩn yếu; danh sách đang phục vụ đạt 6,47 %. Tổ hợp đồng xuất hiện đạt 14,5 % mới chỉ được đánh giá ở chế độ offline.

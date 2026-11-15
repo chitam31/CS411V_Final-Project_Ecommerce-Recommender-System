@@ -5,6 +5,7 @@ Kho mã được tổ chức theo thành phần. Tài liệu tiếng Việt đi 
 ```
 bd03_khuyen_nghi/
 ├── cau_hinh/cum.env       danh bạ cụm: máy, IP, vai trò, số lõi, bộ nhớ
+├── conf/                  spark-defaults.conf, hdfs-site.xml, core-site.xml, .env.example
 ├── jobs/                  các job PySpark, nộp bằng ha_tang/spark/submit.sh
 │   ├── common/            thư viện dùng chung, được nén và gửi tới executor:
 │   │                      cau_hinh, luoc_do, spark_utils, als_lib, chi_so,
@@ -17,26 +18,30 @@ bd03_khuyen_nghi/
 │   │                      san_pham_lien_quan
 │   ├── bao_tri/           toi_uu_delta, do_zorder
 │   └── kiem_tra/          khoi_tao_bang, tai_lap_huan_luyen, tai_lap_ab,
-│                          kiem_tra_thinh_hanh, xuat_ket_qua, thu_xep_lai, ...
+│                          kiem_tra_thinh_hanh, xuat_ket_qua, thu_xep_lai, eda,
+│                          phan_tich_loi, chay_sql, kiem_tra_lakehouse, ...
 ├── producer/              phat_lai_su_kien (phát lại vào Kafka), nguoi_dung_ao
 ├── web/                   ứng dụng FastAPI, dịch vụ, template
 ├── airflow/dags/          5 DAG + mô-đun dùng chung bd03_chung
 ├── ha_tang/               Docker Compose và ảnh theo từng dịch vụ
-├── scripts/               điều khiển cụm, chạy lần đầu, luồng, thí nghiệm
-├── tests/                 109 kiểm thử pytest trên Spark cục bộ
-├── docs/                  kiến trúc, triển khai, minh họa, đối chiếu yêu cầu
+├── scripts/               điều khiển cụm, chạy lần đầu, luồng, thí nghiệm, chuyển gốc lakehouse,
+│                          demo Delta SQL và cây HDFS, thu bằng chứng
+├── notebooks/             eda_retailrocket.ipynb (khảo sát dữ liệu)
+├── tests/                 139 kiểm thử pytest trên Spark cục bộ và Airflow 3.3.1
+├── docs/                  kiến trúc, triển khai, minh họa, đối chiếu yêu cầu, AI_USAGE,
+│                          bang_chung/ (output thu trên cụm), ket_qua_cum/
 └── bao_cao/               báo cáo này: nội dung, hình, trình dựng
 ```
 
 Table: Quy mô mã nguồn theo thành phần {#tab:loc w=30,15,15,40}
 | Thành phần | Số tệp | Số dòng | Nội dung |
 |---|---|---|---|
-| `jobs/` | 38 | 4.975 | Các job luồng, theo lô, học máy, bảo trì và kiểm tra, thư viện dùng chung |
-| `web/` | 18 | 1.893 | Ứng dụng, dịch vụ, lớp hiển thị minh họa, template, tệp tĩnh |
-| `scripts/` | 19 | 1.535 | Điều khiển cụm và các pipeline |
-| `tests/` | 13 | 1.907 | 109 kiểm thử |
-| `ha_tang/` | 14 | 561 | Tệp compose, Dockerfile, XML của Hadoop |
-| `airflow/` | 6 | 359 | Các DAG |
+| `jobs/` | 42 | 5.540 | Các job luồng, theo lô, học máy, bảo trì và kiểm tra, thư viện dùng chung |
+| `web/` | 19 | 2.036 | Ứng dụng, dịch vụ, lớp hiển thị minh họa, template, tệp tĩnh |
+| `scripts/` | 25 | 2.280 | Điều khiển cụm và các pipeline |
+| `tests/` | 16 | 2.436 | 139 kiểm thử |
+| `ha_tang/` | 12 | 564 | Tệp compose, Dockerfile, XML của Hadoop |
+| `airflow/` | 6 | 451 | Các DAG |
 | `producer/` | 2 | 241 | Phát lại vào Kafka và người dùng ảo |
 
 # @B Sổ tay triển khai và vận hành {#sec:app-runbook}
@@ -69,7 +74,7 @@ bash scripts/cum/do_mang.sh                 # đường ZeroTier trực tiếp h
 ```
 # trên laptop: tải từ Kaggle, chép lên máy master và máy Kafka
 bash scripts/cum/chep_du_lieu.sh
-# trên master: đưa các tệp CSV vào /lake/landing trên HDFS
+# trên master: đưa các tệp CSV vào /lakehouse/bd03_khuyen_nghi/landing trên HDFS
 bash scripts/tai_du_lieu.sh ~/du_lieu/retailrocket
 # trên labsit: phát lại sự kiện vào Kafka (trong tmux)
 python3 producer/phat_lai_su_kien.py --tep ~/du_lieu/retailrocket/events.csv
@@ -110,6 +115,23 @@ bash ha_tang/spark/submit.sh bao_tri bao_tri/do_zorder.py \
 bash ha_tang/spark/submit.sh nhanh kiem_tra/xuat_ket_qua.py > ~/ket_qua.md
 ```
 
+**Chuyển gốc hồ dữ liệu và thu bằng chứng (15 tháng 11).**
+
+```
+# trên laptop, sau git pull: dừng luồng, đồng bộ mã, hdfs dfs -mv, viết lại _spark_metadata, kiểm tra, bật lại
+bash scripts/cum/chuyen_lakehouse.sh --chay
+# trên master (trong tmux): du -h, cây HDFS, quarantine, DESCRIBE HISTORY, độ trễ web, EDA, phân tích lỗi
+bash scripts/thu_bang_chung.sh
+# demo Delta SQL (Spark local[2] trong container spark-master)
+bash scripts/demo/cay_hdfs.sh
+bash scripts/demo/delta_sql.sh demo <ma_nguoi_dung>
+# backfill
+docker exec bd03-airflow-airflow-scheduler-1 airflow backfill create --dag-id kn_tinh_ab \
+       --from-date 2026-11-10 --to-date 2026-11-12 --reprocess-behavior completed
+docker exec bd03-airflow-airflow-scheduler-1 airflow dags trigger kn_pipeline_hang_ngay \
+       -c '{"tu_ngay": "2015-09-10", "den_ngay": "2015-09-12"}'
+```
+
 **Tắt hệ thống an toàn.** Dừng các luồng (`scripts/luong.sh dung tat_ca`; checkpoint bảo đảm khởi động lại không mất và không trùng dữ liệu), rồi chạy `khoi_dong_may.sh --dung` trên từng máy, các worker trước, master sau cùng. Không bao giờ chạy `docker compose down -v`, lệnh này sẽ xóa các volume của HDFS và Kafka, và không bao giờ dừng container của nhóm khác trên các máy dùng chung.
 
 # @C Kịch bản minh họa {#sec:app-demo}
@@ -127,6 +149,7 @@ Table: Trình tự minh họa {#tab:demo w=5,25,40,30}
 | 6 | Kết quả A/B | Bảng điều khiển A/B: CTR và tỉ lệ chuyển đổi theo nhóm, biểu đồ theo ngày, p-value, kết luận, cỡ mẫu cần thiết, tỉ lệ mô phỏng | @tab:ab |
 | 7 | Tái lập | Màn hình tái lập: chọn một ngày cũ, chạy lại, mọi độ lệch bằng 0; bấm thêm vài sản phẩm rồi chạy lại cùng ngày đó (vẫn giống hệt); kích hoạt DAG 5 cho một phiên bản đặc trưng | @tab:tai-lap |
 | 8 | OPTIMIZE / Z-ORDER | Màn hình chất lượng mô hình, phần cuối: số tệp đọc và độ trễ ở ba pha | @tab:zorder |
+| C.4 | Yêu cầu chung của đề cương | Airflow: trigger trực tiếp `kn_tinh_ab`; terminal: `cay_hdfs.sh` (`hdfs dfs -ls -R`), `delta_sql.sh demo` (DESCRIBE HISTORY, VERSION AS OF); Spark UI: luồng đã chạy ≥ 30 phút; web: nhấp và "Chạy lại" rồi xác nhận dòng mới trong Delta | `docs/bang_chung/cum/` |
 
 # @D Truy vết yêu cầu {#sec:app-trace}
 
@@ -153,3 +176,44 @@ Table: Truy vết từ đặc tả đến phần hiện thực {#tab:truy-vet w=
 | 3.9 | Năm DAG với lịch chạy và cấu trúc theo đặc tả | `airflow/dags/` | T, C |
 | 3.10 | Rủi ro: hết bộ nhớ, lưu lượng, gợi ý chậm, độ phủ thấp | ≥ 3 tương tác, numBlocks; mô phỏng có gắn nhãn; gợi ý theo tập con; phân tích và xếp hạng lại | T, C |
 | 3.11 | Tám hạng mục nghiệm thu | @tab:ket-qua-nghiem-thu | C |
+| A.4 | `hdfs:///lakehouse/<ma_de_tai>/` với `_quarantine` | `cau_hinh.LAKE_DUONG_DAN`, `chuyen_lakehouse.sh`, `_quarantine.tuong_tac` | T, C |
+| A.6.2 | MERGE INTO, DESCRIBE HISTORY, VERSION AS OF, OPTIMIZE có số trước/sau | @tab:delta, `scripts/demo/delta_sql.sh`, @tab:zorder | T, C |
+| A.6.3 | Mọi bảng trên HDFS, nộp `hdfs dfs -du -h` | `docs/bang_chung/cum/01_hdfs_du_h.txt` | C |
+| A.6.4 | Ghi ngược vào Delta từ web | "Chạy lại" → `gold.ket_qua_tai_lap`; Kafka → MERGE `gold.nhat_ky_hien_thi` | T, C |
+| A.6.5 | retries, sla, nhánh hoặc sensor | Deadline Alerts (thay `sla`), BranchPythonOperator, PythonSensor | T |
+| A.8 | Backfill; web < 3 s; không kéo dữ liệu về driver | @sec:res-airflow, @sec:res-web, `docs/KIEN_TRUC.md` mục 9 | T, C |
+| A.9 | `docs/AI_USAGE.md` | @sec:app-ai | – |
+
+# @E Khai báo sử dụng AI {#sec:app-ai}
+
+Nội dung đầy đủ nằm ở `docs/AI_USAGE.md` (mục A.9 của đề cương); phần dưới tóm tắt.
+
+**Công cụ và phạm vi.** Nhóm dùng Claude (Anthropic) từ 9 đến 15 tháng 11 năm 2026, qua claude.ai Projects và Claude Code. AI sinh gần như toàn bộ các thành phần sau:
+
+- mã nguồn, cấu hình, kiểm thử;
+- tài liệu, báo cáo, slide và kịch bản bảo vệ.
+
+Commit do AI tạo có tác giả `Claude` hoặc dòng `Co-Authored-By: Claude`. Trước đợt sửa theo đề cương, 83 trên 87 commit có tác giả `Claude`.
+
+**Phần nhóm thực hiện.**
+
+- Cung cấp đề cương và hạ tầng cụm cũ của nhóm.
+- Dựng mạng ZeroTier và vận hành sáu máy lab.
+- Tải dữ liệu bằng khóa Kaggle trên laptop.
+- Chạy mọi job, luồng và DAG trên cụm thật; gửi log lỗi để AI sửa.
+- Ra quyết định triển khai.
+- Kiểm chứng kết quả, chụp màn hình, trình bày và bảo vệ.
+
+Mọi con số trong báo cáo đến từ các lần chạy thật trên cụm.
+
+**Prompt.** `docs/AI_USAGE.md` mục 3 liệt kê yêu cầu theo từng giai đoạn: các câu chép nguyên văn được đánh dấu, các câu còn lại là tóm tắt. Bản ghi hội thoại đầy đủ được lưu trong dự án Claude của nhóm.
+
+# @F Phân công công việc {#sec:app-phan-cong}
+
+> [!TODO] Nhóm điền bảng phân công theo bốn vai trò của mục A.2 (Data Engineer, ML Engineer, Web Developer, DevOps/Orchestration) và phần đóng góp thực tế của từng thành viên, khớp với lịch sử Git và `docs/AI_USAGE.md`.
+
+Table: Phân công vai trò và đóng góp {#tab:phan-cong w=22,26,52}
+| Thành viên | Vai trò | Đóng góp chính |
+|---|---|---|
+| Lê Chí Tâm (2302220) | | |
+| Lê Nguyễn Quốc Anh (2302283) | | |
