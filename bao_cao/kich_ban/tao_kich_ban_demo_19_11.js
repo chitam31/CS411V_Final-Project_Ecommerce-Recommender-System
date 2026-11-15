@@ -114,26 +114,26 @@ ND.push(giua("Bản tường minh: từng lệnh, từng máy, từng đường 
 ND.push(giua("Đề tài 3 – Hệ thống gợi ý sản phẩm thương mại điện tử (bd03_khuyen_nghi)", { italics: true }, { before: 120 }));
 ND.push(giua("Lê Chí Tâm (2302220) · Lê Nguyễn Quốc Anh (2302283)"));
 ND.push(giua("Giảng viên hướng dẫn: TS. Cao Tiến Dũng"));
-ND.push(giua("Bản ngày 14/11/2026 · buổi demo và thuyết trình trước lớp ngày 19/11/2026 tại phòng lab · mỗi nhóm khoảng 20 phút, demo trước, slide sau · thay cho kịch bản demo ngày 12/11", { color: XAM }, { after: 240 }));
+ND.push(giua("Bản ngày 15/11/2026 · buổi demo và thuyết trình ngày 19/11/2026 tại phòng lab · không giới hạn thời gian, demo trước, slide sau · thay cho kịch bản demo ngày 12/11", { color: XAM }, { after: 240 }));
 
 // ================================================================== CÁCH ĐỌC
 ND.push(muc("Cách đọc kịch bản"));
-ND.push(y("Kịch bản dùng cho buổi **demo và thuyết trình trước lớp ngày 19/11/2026**, học tại **phòng lab**. Mỗi nhóm khoảng **20 phút**: **demo trước, slide sau**. Demo khoảng **10 phút**, đi qua đủ **8 tiêu chí nghiệm thu** trên cụm thật (mục 4); mục 5 là cách giữ đúng giờ."));
+ND.push(y("Kịch bản dùng cho buổi **demo và thuyết trình trước lớp ngày 19/11/2026**, học tại **phòng lab**. Thầy Dũng **không giới hạn thời gian**: **demo trước, slide sau**. Demo khoảng **14 phút**, đi qua đủ **8 tiêu chí nghiệm thu** và các yêu cầu chung của mục **C.4** đề cương (bước 7) trên cụm thật (mục 4); mục 5 chỉ dùng khi Thầy yêu cầu rút ngắn."));
 ND.push(y("Bản này **thay cho** kịch bản demo ngày 12/11. Nội dung demo giữ nguyên; điểm mới là ghi rõ **từng lệnh gõ ở cửa sổ nào, trên máy nào** và **từng đường link mở ở tab nào**."));
-ND.push(y("**T** là giờ nhóm bắt đầu 20 phút của mình (mở đầu bằng demo). Chưa biết nhóm lên lượt mấy thì lấy T = giờ bắt đầu buổi học. T−90 là 90 phút trước T."));
+ND.push(y("**T** là giờ nhóm bắt đầu phần của mình (mở đầu bằng demo). Chưa biết nhóm lên lượt mấy thì lấy T = giờ bắt đầu buổi học. T−90 là 90 phút trước T."));
 ND.push(y("Phân vai: **Tâm** gõ lệnh và bấm máy; **Quốc Anh** nói lời dẫn và nhìn đồng hồ."));
 ND.push(y("**Phụ lục D** là thẻ tóm tắt một trang: in ra và cầm theo ngày 19/11."));
 
-ND.push(muc2("Phân bổ 20 phút của nhóm"));
+ND.push(muc2("Thứ tự phần của nhóm"));
 ND.push(bang(["Phần", "Từ – đến", "Thời lượng", "Ai"], [
   ["Mở đầu (slide 1)", "0:00 – 0:30", "0:30", "Quốc Anh nói"],
-  ["Demo bước 0 → 6 (mục 4)", "0:30 – 9:30", "9:00", "Tâm bấm, Quốc Anh nói"],
-  ["Câu chuyển sang slide", "9:30 – 10:00", "0:30", "Quốc Anh"],
-  ["Slide 2 → hết (kịch bản thuyết trình, bản rút còn 8 phút)", "10:00 – 18:00", "8:00", "Tâm, Quốc Anh"],
-  ["Hỏi đáp / bù giờ trễ", "18:00 – 20:00", "2:00", "Cả hai"],
+  ["Demo bước 0 → 7 (mục 4)", "0:30 – 13:30", "13:00", "Tâm bấm, Quốc Anh nói"],
+  ["Câu chuyển sang slide", "13:30 – 14:00", "0:30", "Quốc Anh"],
+  ["Thuyết trình (kịch bản thuyết trình chi tiết)", "14:00 – ~1:15:00", "~60 phút", "Tâm trình bày toàn bộ"],
+  ["Hỏi đáp", "sau đó", "tùy Thầy", "Cả hai"],
 ], [44, 20, 14, 22]));
 ND.push(sauBang());
-ND.push(doan("Quốc Anh so đồng hồ ở 3 mốc của demo: **3:30** (hết bước 2), **7:00** (hết bước 4), **9:30** (hết bước 6). Trễ thì cắt theo mục 5."));
+ND.push(doan("Quốc Anh so đồng hồ ở 4 mốc của demo: **3:30** (hết bước 2), **7:00** (hết bước 4), **9:30** (hết bước 6), **13:30** (hết bước 7). Các mốc để giữ nhịp; chỉ cắt theo mục 5 khi Thầy yêu cầu rút ngắn."));
 ND.push(muc2("Bốn loại khung trong kịch bản"));
 ND.push(doan("**Khung xám** là **một lệnh** gõ trong Git Bash. Dòng chữ cam ghi cửa sổ và máy đang đứng; dòng chữ Courier bên dưới là lệnh. **Chỉ chép dòng Courier** (bấm ba lần vào dòng lệnh để chọn đúng cả dòng)."));
 L(C1, "bash scripts/luong.sh trang_thai");
@@ -269,6 +269,9 @@ ND.push(mongDoi("RAM master còn trên 1 GB khả dụng. Swap cao là bình th�
 L(C1, "bash scripts/luong.sh trang_thai");
 ND.push(mongDoi("3 luồng đang chạy: `bd03-nap-su-kien`, `bd03-tinh-thinh-hanh`, `bd03-ghi-hien-thi`. Thiếu luồng nào thì chạy lệnh dưới, chờ 1 phút rồi chạy lại lệnh `trang_thai`:", true));
 L(C1, "bash scripts/luong.sh khoi_dong tat_ca");
+ND.push(doan("Kiểm tra gốc lakehouse mới (một lần, sau khi chạy `bash scripts/cum/chuyen_lakehouse.sh --chay` từ laptop):", { keepNext: true }));
+L(C1, "bash scripts/demo/cay_hdfs.sh");
+ND.push(mongDoi("Mọi đường dẫn bắt đầu bằng `/lakehouse/bd03_khuyen_nghi`, có `_quarantine/tuong_tac`. Báo không có thư mục: chưa chuyển gốc."));
 ND.push(doan("Kiểm tra web:", { keepNext: true }));
 L(C1, `curl -s ${WEB}/api/suc-khoe`);
 ND.push(mongDoi("`{\"che_do\":\"delta\",\"kafka\":\"GuiKafka\"}`. Nếu ra `\"che_do\":\"gia\"` (chế độ giả lập, số liệu giả): khởi động lại web bằng lệnh dưới, chờ khoảng 30 giây rồi kiểm tra lại.", true));
@@ -289,7 +292,7 @@ ND.push(y("Ô **Triggerer** màu đỏ là cố ý (không có deferrable operat
 
 ND.push(muc2("2.2 Buổi tập trọn kịch bản ở lab (một buổi trong 15–18/11, khoảng 2 giờ)"));
 batDauSo();
-ND.push(so("Làm mục 1, rồi mục 3 từ mốc **T−45 tới T−5**, rồi mục 4 từ bước 0 tới câu kết. Quốc Anh bấm giờ từng bước."));
+ND.push(so("Làm mục 1, rồi mục 3 từ mốc **T−45 tới T−5**, rồi mục 4 từ bước 0 tới câu kết, cả bước 7 (Trigger `kn_tinh_ab`, `cay_hdfs.sh`, `delta_sql.sh demo`). Quốc Anh bấm giờ từng bước."));
 ND.push(so("Không cần kích hoạt DAG 5 trong buổi tập (bảng tái lập đã có 6 dòng CÓ). Muốn thử thì kích hoạt **trước khi bật bộ phát** và chờ xanh rồi mới tập tiếp."));
 ND.push(so("Quay video **toàn màn hình** làm phương án dự phòng mất mạng: dùng **OBS Studio** (nguồn Display Capture) hoặc **Snipping Tool** của Windows 11 ở chế độ quay video, chọn cả màn hình. **Không dùng Win+Alt+R** (Xbox Game Bar): công cụ này chỉ quay một cửa sổ, sẽ mất phần Git Bash khi chuyển qua lại."));
 ND.push(so("Chụp màn hình tab 1–4 (Spark, HDFS, Kafka UI, Airflow) và 4 trang web; lưu cùng video vào laptop và USB."));
@@ -433,8 +436,8 @@ ND.push(y("Xong: nối máy chiếu, chiếu slide 1 (tiêu đề); trình duy�
 
 // ================================================================== 4. DEMO 10 PHÚT
 ND.push(ngat());
-ND.push(muc("4. Demo 10 phút (bản dùng ngày 19/11)"));
-ND.push(doan("Demo diễn ra **trước** phần slide, trong 20 phút của nhóm. Tâm bấm máy, Quốc Anh nói. Mỗi bước gồm: màn hình (tab và link), thao tác, bằng chứng phải thấy, lời dẫn tiếng Anh (bản ngắn), ý chính tiếng Việt, cách xử lý khi lỗi. Phần ghi (bỏ được) là phần cắt đầu tiên khi trễ giờ."));
+ND.push(muc("4. Demo khoảng 14 phút (bản dùng ngày 19/11)"));
+ND.push(doan("Demo diễn ra **trước** phần slide. Tâm bấm máy, Quốc Anh nói. Mỗi bước gồm: màn hình (tab và link), thao tác, bằng chứng phải thấy, lời dẫn tiếng Anh (bản ngắn), ý chính tiếng Việt, cách xử lý khi lỗi. Phần ghi (bỏ được) là phần cắt đầu tiên khi trễ giờ."));
 ND.push(bang(["B.", "Nội dung", "Tab", "Tiêu chí", "Thời lượng", "Mốc kết thúc"], [
   ["–", "Mở đầu", "slide 1", "–", "0:30", "0:30"],
   ["0", "Hạ tầng đang chạy", "1, 2, 3, 4", "–", "1:00", "1:30"],
@@ -444,7 +447,8 @@ ND.push(bang(["B.", "Nội dung", "Tab", "Tiêu chí", "Thời lượng", "Mốc
   ["4", "Vòng khép kín và thịnh hành ≤ 90 giây", "tab mới, 3", "4, 5", "2:00", "**7:00** ⏱"],
   ["5", "Thí nghiệm A/B", "6, 7", "6", "1:15", "8:15"],
   ["6", "Tái lập bằng VERSION AS OF", "8", "7", "1:15", "**9:30** ⏱"],
-  ["–", "Chuyển sang slide", "slide 2", "–", "0:30", "10:00"],
+  ["7", "Yêu cầu chung C.4: chạy DAG, cây HDFS, HISTORY / VERSION AS OF, luồng ≥ 30 phút, ghi ngược", "4, cửa sổ 1, 1", "C.4", "4:00", "**13:30** ⏱"],
+  ["–", "Chuyển sang slide", "slide 2", "–", "0:30", "14:00"],
 ], [7, 43, 14, 11, 12, 13]));
 ND.push(sauBang());
 
@@ -614,8 +618,41 @@ buoc({
   ],
 });
 
+buoc({
+  tieu: "Bước 7 · Yêu cầu chung của đề cương (mục C.4)", tg: "4:00", tc: "C.4: chạy DAG trực tiếp, cây HDFS, HISTORY / VERSION AS OF, luồng ≥ 30 phút, ghi ngược web → Delta", mh: "tab 4, cửa sổ 1, tab 1", moc: "13:30",
+  lam: [
+    { tab: "tab 4 · DAG kn_tinh_ab", url: "http://10.68.71.113:8088/dags/kn_tinh_ab" },
+    "Bấm nút **Trigger** (▶) → **Trigger**, **một lần**. Mở tab **Code**, chỉ dòng `deadline=han_chot(30)` (Deadline Alerts thay `sla`).",
+    "Trong lúc DAG chạy (2–3 phút), ở cửa sổ 1 in cây hồ dữ liệu:",
+    [C1, "bash scripts/demo/cay_hdfs.sh"],
+    { tab: "tab 1 · Spark Master", url: SPARK },
+    "Chỉ cột **Duration** của 3 luồng `bd03-…` trong **Running Applications**.",
+    "Xác nhận trong Delta (thay mã user tạo ở bước 3; mất 40–60 giây):",
+    [C1, "bash scripts/demo/delta_sql.sh demo moi_xxxxxxxx"],
+    "Quay lại tab 4: lượt vừa kích hoạt **xanh**; bấm task `tinh_ket_qua_ab` → **Logs**, chỉ dòng JSON cuối.",
+  ],
+  thay: [
+    "`cay_hdfs.sh`: `du -h` và cây dưới `/lakehouse/bd03_khuyen_nghi`: `landing`, `bronze`, `silver`, `features`, `gold`, `models`, `checkpoints`, `_quarantine`.",
+    "Spark UI: 3 luồng có Duration **≥ 30 phút** (thường vài giờ).",
+    "`delta_sql.sh demo`: (1) `DESCRIBE HISTORY gold.nhat_ky_hien_thi` có `STREAMING UPDATE`/`MERGE` vài chục giây trước; (2) `VERSION AS OF 1` khác `hien_tai`; (3) dòng `ab_web` mới trong `gold.ket_qua_tai_lap` từ nút Chạy lại ở bước 6; (4) lượt hiển thị của `moi_…`, có dòng `da_click = true`.",
+    "`kn_tinh_ab`: `cong_backfill` → `tinh_ket_qua_ab` xanh; log có `phien_ban_delta_du_lieu`.",
+  ],
+  noi: ["Finally, the general items of the project outline. We trigger the hourly A/B DAG by hand; each DAG carries a deadline alert, which replaces the SLA feature that Airflow 3 removed. While it runs: the lakehouse on HDFS, under slash lakehouse slash bd03, with bronze, silver, gold, models, checkpoints and a quarantine table that keeps every rejected row with its reason. The Spark UI shows our three streams have been running for hours. Now SQL on the terminal: the history of the impression log, written by the stream every thirty seconds; time travel to version one; the row the web just wrote when we pressed “Re-run”; and our new user’s impressions and click, which went from the browser through Kafka into Delta. And the DAG we triggered has finished, green."],
+  yc: [
+    "Gốc đúng A.4: `hdfs:///lakehouse/bd03_khuyen_nghi`, dời từ `/lake` ngày 15/11 bằng `hdfs dfs -mv` (giữ nguyên lịch sử Delta).",
+    "`_quarantine.tuong_tac`: dòng bị loại kèm `ly_do` (6 lý do), 11.759 dòng = 0,41 %.",
+    "Hai đường ghi ngược Delta từ web (A.6.4): qua Kafka → MERGE vào `gold.nhat_ky_hien_thi`; trực tiếp → `gold.ket_qua_tai_lap`.",
+    "`delta_sql.sh` chạy Spark `local[2]` trong container `spark-master`: không lấy lõi của cụm.",
+  ],
+  loi: [
+    "`delta_sql.sh` lỗi hoặc chờ quá 2 phút: Ctrl+C, mở `docs/bang_chung/cum/04_delta.txt` trên laptop (output thu sẵn bằng `thu_bang_chung.sh`).",
+    "`kn_tinh_ab` chưa xanh: chuyển slide, quay lại xem ở phần hỏi đáp. **Không** bấm Trigger lần nữa.",
+    "Bị hỏi output `hdfs dfs -du -h`: có trong `docs/bang_chung/cum/01_hdfs_du_h.txt` (bản nộp theo A.6.3).",
+  ],
+});
+
 ND.push(muc2("Chuyển sang slide (0:30)"));
-ND.push(loi("That was all eight criteria, live on the cluster. Now the slides: how we designed the system, and what these numbers mean."));
+ND.push(loi("That was all eight criteria and the outline’s demo items, live on the cluster. Now the slides: how we designed the system, and what these numbers mean."));
 ND.push(y("Tâm nhấn **Alt+Tab** về slide, sang **slide 2**. Trình duyệt để nguyên để dùng lại khi hỏi đáp."));
 
 // ================================================================== 5. GIỮ ĐÚNG GIỜ
@@ -624,6 +661,7 @@ ND.push(bang(["Mốc", "Phải xong", "Trễ hơn 30 giây thì cắt"], [
   ["3:30", "Bước 2", "Bước 3: bỏ ô item mới (chỉ nói). Bước 4: bỏ Kafka UI"],
   ["7:00", "Bước 4", "Bước 5: chỉ mở tab 7, nói nhóm B bằng lời"],
   ["9:30", "Bước 6", "Bỏ phần huấn luyện ở bước 6, chỉ chỉ cột Lệch = 0"],
+  ["13:30", "Bước 7", "Chạy `delta_sql.sh demo` không kèm mã user (bỏ khối 4)"],
 ], [12, 18, 70]));
 ND.push(sauBang());
 ND.push(y("Vòng khép kín chờ lâu: làm bước 5 trong lúc chờ (bước 4, mục “Nếu lỗi”)."));
@@ -679,6 +717,7 @@ ND.push(muc("8. Những việc KHÔNG làm"));
 [
   "Không kích hoạt DAG 5 sát giờ hoặc trong lúc demo; chỉ kích hoạt **một lần ở T−90**, khi bộ phát chưa chạy. Không chạy job tay nào khác trong lúc DAG 5 chạy (sự cố 31).",
   "Không kích hoạt hay bật lại DAG 1 (`kn_pipeline_hang_ngay`) trước khi nộp bài.",
+  "Không bấm Trigger `kn_tinh_ab` lần thứ hai khi lượt trước chưa xong; không chạy `delta_sql.sh` song song ở hai cửa sổ.",
   "Không mở sẵn hay để lâu tab trang sản phẩm; không mở nhiều tab sản phẩm cùng lúc; không chạy `curl` lặp lại liên tục.",
   "Không chạy `producer/nguoi_dung_ao.py` vào ngày demo: script này ghi thêm traffic `mo_phong_web` và làm số trên bảng A/B thay đổi.",
   "Không dừng hay xóa container của nhóm khác trên labsit-may25 và labsit-may26. Không chạy `docker compose down -v`.",
@@ -733,6 +772,9 @@ ND.push(muc2("Cửa sổ 1 · labsoe-11 (đứng ở ~/bd03_khuyen_nghi)"));
   `curl -s -m 120 ${WEB}/api/thinh-hanh/102605`,
   `python3 scripts/demo_vong_khep_kin.py --web ${WEB} --san-pham 320844 --nguoi-dung moi_xxxxxxxx --so-lan 3`,
   "bash ha_tang/spark/submit.sh nhanh kiem_tra/tim_su_kien_bronze.py --ma-nguoi-dung moi_xxxxxxxx",
+  "bash scripts/demo/cay_hdfs.sh",
+  "bash scripts/demo/delta_sql.sh demo moi_xxxxxxxx",
+  "bash scripts/demo/delta_sql.sh cach_ly",
 ].forEach((s) => L(C1, s));
 ND.push(muc2("Cửa sổ 2 · labsit"));
 [
@@ -800,7 +842,7 @@ ND.push(bang(["Tab", "Link"], [
   ["Sản phẩm", `\`${WEB}/san-pham/102605?u=moi_\`________`],
 ], [17, 83]));
 ND.push(sauBang());
-ND.push(doan("**20 phút:** mở đầu → 0:30 · demo → 9:30 · chuyển slide → 10:00 · slide → 18:00 · hỏi đáp → 20:00 · **so giờ 3:30 / 7:00 / 9:30**"));
+ND.push(doan("**Thứ tự:** mở đầu → 0:30 · demo bước 0–7 → 13:30 · chuyển slide → 14:00 · thuyết trình (Tâm, ~60 phút) · hỏi đáp · **so giờ 3:30 / 7:00 / 9:30 / 13:30**"));
 ND.push(doan("Mã user mới: `moi_`________________ · User có item mới: ________________ · Nhóm lên lúc: ________"));
 
 // ------------------------------------------------------------------ xuất

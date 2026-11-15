@@ -22,7 +22,7 @@ Các ô vàng "To be completed" trong hai bản tiếng Việt chờ số liệu
 | `cap_nhat_muc_luc.py` | Mở `.docx` bằng LibreOffice, cập nhật mục lục, danh mục hình/bảng và xuất PDF |
 | `slide/` | Mã dựng 25 slide thuyết trình (tiếng Anh, có lời ghi chú cho người nói) |
 | `hoi_dap/` | Bộ 49 câu hỏi – đáp dự kiến (tiếng Việt): `node tao_hoi_dap.js` |
-| `kich_ban/` | Kịch bản thuyết trình 20 phút: phân công, thời lượng, lời nói từng slide, lời dẫn demo, phương án rút gọn, danh sách kiểm tra: `node tao_kich_ban.js` |
+| `kich_ban/` | Buổi 19/11 (demo trước, thuyết trình sau, không giới hạn thời gian): `KICH_BAN_DEMO_19_11.md` (bản thực hiện) và `node tao_kich_ban_demo_19_11.js` (bản docx); kịch bản thuyết trình chi tiết `node tao_noi_dung_thuyet_trinh.js`. `tao_kich_ban.js`, `tao_kich_ban_demo.js` là bản cũ (20 phút, 12/11) |
 
 ## Dựng lại
 

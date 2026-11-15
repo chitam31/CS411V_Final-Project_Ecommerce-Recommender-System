@@ -1,7 +1,7 @@
 # Kịch bản demo 19/11/2026 – bản thực hiện
 
 **BD03 · Hệ thống gợi ý sản phẩm TMĐT** · Lê Chí Tâm (2302220) · Lê Nguyễn Quốc Anh (2302283) · GVHD: TS. Cao Tiến Dũng
-Bản 14/11/2026 (demo trước, thuyết trình sau, tại phòng lab, không giới hạn thời gian), rút gọn từ `BD03_Kich_ban_demo_19_11.docx`. Câu hỏi nhanh, số liệu cần thuộc và lý do từng thay đổi: xem bản docx.
+Bản 15/11/2026 (demo trước, thuyết trình sau, tại phòng lab, không giới hạn thời gian), rút gọn từ `BD03_Kich_ban_demo_19_11.docx`. Câu hỏi nhanh, số liệu cần thuộc và lý do từng thay đổi: xem bản docx.
 
 ---
 
@@ -21,9 +21,9 @@ Bản 14/11/2026 (demo trước, thuyết trình sau, tại phòng lab, không g
 | Phần | Thời lượng | Ai |
 |---|---|---|
 | Mở đầu (slide 1) | ~0:30 | Quốc Anh nói |
-| Demo bước 0 → 6 (mục 4) | ~10 phút | Tâm bấm, Quốc Anh nói |
+| Demo bước 0 → 7 (mục 4) | ~14 phút | Tâm bấm, Quốc Anh nói |
 | Câu chuyển sang slide | ~0:30 | Quốc Anh |
-| Thuyết trình (kịch bản thuyết trình chi tiết) | ~50 phút | Tâm, Quốc Anh |
+| Thuyết trình (kịch bản thuyết trình chi tiết) | ~60 phút | Tâm |
 | Hỏi đáp | tùy Thầy | Cả hai |
 
 Thầy Dũng **không giới hạn thời gian**, nên làm **đủ cả các phần ghi (bỏ được)**. Mục 5 (giữ đúng giờ) chỉ dùng khi Thầy yêu cầu rút ngắn.
@@ -56,10 +56,10 @@ SSH treo khi đứng ngoài lab (`banner exchange`, `KEX`): Ctrl+C, chạy lại
 
 | Tab | Trang | Link | Bước |
 |---|---|---|---|
-| 1 | Spark Master | <http://10.68.71.113:8080> | 0 |
+| 1 | Spark Master | <http://10.68.71.113:8080> | 0, 7 |
 | 2 | HDFS · Datanodes | <http://10.68.71.113:9870/dfshealth.html#tab-datanode> | 0 |
 | 3 | Kafka UI | <http://10.68.71.204:8080> → **Topics** → `retailrocket-events` | 0, 4 |
-| 4 | Airflow | <http://10.68.71.113:8088/dags> | 0, 6 |
+| 4 | Airflow | <http://10.68.71.113:8088/dags> | 0, 6, 7 |
 | 5 | Chất lượng mô hình | <http://10.68.71.149:8000/mo-hinh> | 1, 2 |
 | 6 | Trang chủ | <http://10.68.71.149:8000/> | 3, 5 |
 | 7 | Bảng điều khiển A/B | <http://10.68.71.149:8000/ab> | 5 |
@@ -75,6 +75,7 @@ SSH treo khi đứng ngoài lab (`banner exchange`, `KEX`): Ctrl+C, chạy lại
 | Nhóm B / nhóm A (bước 5) | <http://10.68.71.149:8000/?u=270018> · <http://10.68.71.149:8000/?u=1287993> |
 | User có ô 9–10 “Theo danh mục” | `http://10.68.71.149:8000/?u=________` (ghi ở mục 2.3) |
 | DAG 5 trên Airflow | <http://10.68.71.113:8088/dags/kn_tai_lap> |
+| DAG A/B (bước 7) | <http://10.68.71.113:8088/dags/kn_tinh_ab> |
 | Khi dùng đường hầm SSH | đổi `http://10.68.71.149:8000` thành `http://localhost:8001` |
 
 ### Số dùng trong demo
@@ -83,6 +84,7 @@ SSH treo khi đứng ngoài lab (`banner exchange`, `KEX`): Ctrl+C, chạy lại
 - Sản phẩm vòng khép kín: `102605`, dự phòng `320844` (mồi ở T−8).
 - Mô hình đang phục vụ `als_v2_r20261111T190002`: features v4, rank 50, regParam 1,0, alpha 40, NDCG@10 = 0,0680 (trùng số liệu với `als_v2_r20261110T230924` trong báo cáo).
 - Bảng tái lập đã có 6 dòng **CÓ**.
+- Hồ dữ liệu ở `hdfs:///lakehouse/bd03_khuyen_nghi` (dời từ `/lake` ngày 15/11).
 - Airflow hiện giờ Việt Nam; bảng Delta, cửa sổ thịnh hành, Spark UI từng ứng dụng ghi **UTC** (cộng 7 tiếng).
 
 ---
@@ -169,6 +171,14 @@ bash scripts/luong.sh trang_thai
 bash scripts/luong.sh khoi_dong tat_ca
 ```
 
+Kiểm tra gốc lakehouse mới (một lần sau khi chuyển gốc):
+
+**[Cửa sổ 1 · labsoe-11]**
+```bash
+bash scripts/demo/cay_hdfs.sh
+```
+✅ Mọi đường dẫn bắt đầu bằng `/lakehouse/bd03_khuyen_nghi`, có `_quarantine/tuong_tac`. ⚠️ Báo không có thư mục: chưa chạy `bash scripts/cum/chuyen_lakehouse.sh --chay` từ laptop.
+
 Kiểm tra web:
 
 **[Cửa sổ 1 · labsoe-11]**
@@ -196,7 +206,7 @@ Tab 4 Airflow <http://10.68.71.113:8088/dags>, công tắc phải đúng như sa
 
 ### 2.2 Buổi tập ở lab (một buổi, ~2 giờ)
 
-- [ ] Làm mục 1 → mục 3 từ **T−45 tới T−5** → mục 4 bước 0 tới câu kết. Quốc Anh bấm giờ.
+- [ ] Làm mục 1 → mục 3 từ **T−45 tới T−5** → mục 4 bước 0 tới câu kết (cả bước 7: Trigger `kn_tinh_ab`, `cay_hdfs.sh`, `delta_sql.sh demo`). Quốc Anh bấm giờ.
 - [ ] Không cần kích hoạt DAG 5 (muốn thử thì kích hoạt **trước** khi bật bộ phát, chờ xanh).
 - [ ] Quay video **toàn màn hình** bằng **OBS** (Display Capture) hoặc **Snipping Tool** chế độ quay video. **Không dùng Win+Alt+R** (chỉ quay một cửa sổ).
 - [ ] Chụp màn hình tab 1–4 và 4 trang web; lưu cùng video vào laptop + USB.
@@ -377,7 +387,7 @@ curl -s -m 120 http://10.68.71.149:8000/api/thinh-hanh/102605
 
 ---
 
-## 4. Demo 10 phút (bản dùng ngày 19/11)
+## 4. Demo ~14 phút (bản dùng ngày 19/11)
 
 | Phần | Tab | Tiêu chí | Thời lượng | Mốc kết thúc |
 |---|---|---|---|---|
@@ -389,13 +399,14 @@ curl -s -m 120 http://10.68.71.149:8000/api/thinh-hanh/102605
 | Bước 4 · Vòng khép kín | tab mới, 3 | 4, 5 | 2:00 | **7:00** ⏱ |
 | Bước 5 · A/B | 6, 7 | 6 | 1:15 | 8:15 |
 | Bước 6 · Tái lập | 8 | 7 | 1:15 | **9:30** ⏱ |
-| Chuyển sang slide | slide 2 | – | 0:30 | 10:00 |
+| Bước 7 · Yêu cầu chung C.4 | 4, cửa sổ 1, 1 | C.4 | 4:00 | **13:30** ⏱ |
+| Chuyển sang slide | slide 2 | – | 0:30 | 14:00 |
 
 ⏱ = mốc tham khảo nhịp demo. Không giới hạn thời gian nên làm đủ cả phần ghi *(bỏ được)*.
 
 ### Mở đầu (0:30) · slide 1
 
-> Hello everyone. We are Lê Chí Tâm and Lê Nguyễn Quốc Anh, and our topic is a product recommender for e-commerce, built on the RetailRocket clickstream. We will start with a live demo on our six-machine cluster, covering all eight acceptance criteria. After that, the slides explain how the system is designed and what the numbers mean.
+> Hello everyone. We are Lê Chí Tâm and Lê Nguyễn Quốc Anh, and our topic is a product recommender for e-commerce, built on the RetailRocket clickstream. We will start with a live demo on our six-machine cluster, covering all eight acceptance criteria and the general demo items of the project outline. After that, the slides explain how the system is designed and what the numbers mean.
 
 Tâm nhấn **Alt+Tab** sang trình duyệt, tab 1.
 
@@ -513,9 +524,39 @@ bash ha_tang/spark/submit.sh nhanh kiem_tra/tim_su_kien_bronze.py --ma-nguoi-dun
 
 ⏱ **Mốc 9:30.**
 
+### Bước 7 · Yêu cầu chung của đề cương (4:00 · mục C.4)
+
+Bốn việc đề cương C.4 yêu cầu mà 8 tiêu chí chưa phủ: **chạy 1 DAG trực tiếp**, **cây HDFS**, **DESCRIBE HISTORY / VERSION AS OF trên terminal**, **luồng đã chạy ≥ 30 phút**, **ghi ngược từ web rồi xác nhận trong Delta**.
+
+1. Tab 4 <http://10.68.71.113:8088/dags/kn_tinh_ab> → nút **Trigger** (▶) → **Trigger**. Bấm **một lần**. Chỉ tab **Code**: dòng `deadline=han_chot(30)` (Deadline Alerts thay `sla`).
+2. Trong lúc DAG chạy (~2–3 phút), ở cửa sổ 1:
+
+**[Cửa sổ 1 · labsoe-11]**
+```bash
+bash scripts/demo/cay_hdfs.sh
+```
+✅ `du -h` và cây thư mục dưới `/lakehouse/bd03_khuyen_nghi`: `landing`, `bronze`, `silver`, `features`, `gold`, `models`, `checkpoints`, `_quarantine`. Chỉ dòng `_quarantine/tuong_tac`.
+
+3. Tab 1 <http://10.68.71.113:8080> → **Running Applications**: cột **Duration** của 3 luồng `bd03-…` (phải ≥ 30 phút, thường vài giờ).
+4. Xác nhận trong Delta (thay mã user tạo ở bước 3; mất ~40–60 giây vì khởi động Spark local):
+
+**[Cửa sổ 1 · labsoe-11]**
+```bash
+bash scripts/demo/delta_sql.sh demo moi_xxxxxxxx
+```
+✅ Bốn khối: (1) `DESCRIBE HISTORY gold.nhat_ky_hien_thi` có `STREAMING UPDATE`/`MERGE` vài chục giây trước; (2) `VERSION AS OF 1` khác `hien_tai`; (3) dòng `ab_web` mới nhất trong `gold.ket_qua_tai_lap`, đúng ngày vừa bấm **Chạy lại** ở bước 6; (4) các lượt hiển thị của `moi_…`, dòng có `da_click = true` là cú bấm thẻ sản phẩm ở bước 3.
+
+5. Quay lại tab 4: lượt `kn_tinh_ab` vừa kích hoạt **xanh** (`cong_backfill` → `tinh_ket_qua_ab`). Bấm `tinh_ket_qua_ab` → **Logs**: dòng JSON cuối có `phien_ban_delta_du_lieu`.
+
+> Finally, the general items of the project outline. We trigger the hourly A/B DAG by hand; each DAG carries a deadline alert, which replaces the SLA feature that Airflow 3 removed. While it runs: the lakehouse on HDFS, under slash lakehouse slash bd03, with bronze, silver, gold, models, checkpoints and a quarantine table that keeps every rejected row with its reason. The Spark UI shows our three streams have been running for hours. Now SQL on the terminal: the history of the impression log, written by the stream every thirty seconds; time travel to version one; the row the web just wrote when we pressed “Re-run”; and our new user’s impressions and click, which went from the browser through Kafka into Delta. And the DAG we triggered has finished, green.
+
+⚠️ `delta_sql.sh` báo lỗi hoặc chờ quá 2 phút: Ctrl+C, nói “the output is in our evidence folder” và mở `docs/bang_chung/cum/04_delta.txt` trên laptop. `kn_tinh_ab` chưa xanh: chuyển slide, quay lại xem ở phần hỏi đáp. **Không** bấm Trigger lần nữa.
+
+⏱ **Mốc 13:30.**
+
 ### Chuyển sang slide (0:30)
 
-> That was all eight criteria, live on the cluster. Now the slides: how we designed the system, and what these numbers mean.
+> That was all eight criteria and the outline’s demo items, live on the cluster. Now the slides: how we designed the system, and what these numbers mean.
 
 Tâm **Alt+Tab** về slide, sang **slide 2**. Trình duyệt để nguyên (dùng lại khi hỏi đáp).
 
@@ -528,6 +569,7 @@ Tâm **Alt+Tab** về slide, sang **slide 2**. Trình duyệt để nguyên (dù
 | 3:30 | Bước 2 | Bước 3: bỏ ô item mới (chỉ nói) · Bước 4: bỏ Kafka UI |
 | 7:00 | Bước 4 | Bước 5: chỉ mở tab 7, nói nhóm B bằng lời |
 | 9:30 | Bước 6 | Bỏ phần huấn luyện ở bước 6, chỉ chỉ cột Lệch = 0 |
+| 13:30 | Bước 7 | Bỏ khối (4) của `delta_sql.sh` (chạy không có mã user: `delta_sql.sh demo`) |
 
 - Vòng khép kín chờ lâu: làm bước 5 trong lúc chờ (mục 4, bước 4).
 - **Chỉ còn 5 phút** cho demo: bước 1 (1:00) → bước 3 chỉ tạo user mới (0:45) → bước 4 bỏ Kafka UI (1:45) → tab 7 (0:45) → bước 6 chỉ cột Lệch (0:45).
@@ -558,6 +600,7 @@ Tâm **Alt+Tab** về slide, sang **slide 2**. Trình duyệt để nguyên (dù
 ## 7. Không làm
 
 - ❌ Kích hoạt DAG 5 sát giờ hoặc trong demo; chạy job tay khi DAG 5 đang chạy.
+- ❌ Bấm Trigger `kn_tinh_ab` lần thứ hai khi lượt trước chưa xong; chạy `delta_sql.sh` song song hai cửa sổ.
 - ❌ Bật / kích hoạt DAG 1 trước khi nộp bài.
 - ❌ Mở sẵn hoặc để lâu tab sản phẩm; mở nhiều tab sản phẩm; chạy `curl` lặp liên tục.
 - ❌ Chạy `producer/nguoi_dung_ao.py` ngày demo.
@@ -602,6 +645,6 @@ pgrep -f "phat_lai_su_kie[n]" || echo DA_TAT
 | ☐ | T−8 | ____ | Mồi 102605, 320844 | Cửa sổ 1 |
 | ☐ | T−5 | ____ | `thinh-hanh/102605` (< 3) · trending đủ 10 · Message Count tăng | Cửa sổ 1, tab 6, 3 |
 
-**Thứ tự:** mở đầu → demo (~10 phút, làm đủ cả phần “bỏ được”) → chuyển slide → thuyết trình → hỏi đáp
+**Thứ tự:** mở đầu → demo (~14 phút, bước 0–7, làm đủ cả phần “bỏ được”) → chuyển slide → thuyết trình → hỏi đáp
 
 Mã user mới: `moi_________` · User có item mới: ________ · Nhóm lên lúc: ________

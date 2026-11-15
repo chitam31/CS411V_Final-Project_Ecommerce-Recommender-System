@@ -96,7 +96,7 @@ ND.push(giua("Phần trình bày sau demo · không giới hạn thời gian · 
 ND.push(giua("Đề tài 3 – Hệ thống gợi ý sản phẩm thương mại điện tử (bd03_khuyen_nghi)", { italics: true }, { before: 120 }));
 ND.push(giua("Lê Chí Tâm (2302220) · Lê Nguyễn Quốc Anh (2302283)"));
 ND.push(giua("Giảng viên hướng dẫn: TS. Cao Tiến Dũng"));
-ND.push(giua("Bản ngày 14/11/2026 · buổi 19/11/2026 tại phòng lab · theo bộ slide 25 trang (+1 slide dự phòng)", { color: XAM }, { after: 240 }));
+ND.push(giua("Bản ngày 15/11/2026 · buổi 19/11/2026 tại phòng lab · theo bộ slide 25 trang (+1 slide dự phòng)", { color: XAM }, { after: 240 }));
 
 ND.push(muc("Cách dùng tài liệu"));
 ND.push(y("Thứ tự buổi 19/11: **demo** theo `KICH_BAN_DEMO_19_11.md` → **thuyết trình** theo tài liệu này → **hỏi đáp**. Thầy Dũng không giới hạn thời gian, yêu cầu là **làm rõ toàn bộ đồ án**. **Tâm trình bày toàn bộ** phần thuyết trình."));
@@ -164,7 +164,8 @@ ND.push(bang(["Hạng mục", "Số liệu"], [
   ["Z-ORDER", "Bảng 5,3 triệu dòng; tệp đọc 200 → 67 → 1,07; trung vị 10,8 s → 8,3 s → 0,98 s; nhanh 8,4 lần so với chỉ nén"],
   ["Vòng khép kín", "Kafka → bronze 10,3–10,7 giây; bấm → bảng thịnh hành 51 giây (ngưỡng 90)"],
   ["Tái lập", "Lệch 0,000000 (dung sai 10⁻⁶); không làm tròn ~10⁻¹⁵; phiên bản features 0, 3, 4"],
-  ["Vận hành", "31 sự cố; 109 kiểm thử; ~11.500 dòng mã; 5 DAG; 12 bảng gold"],
+  ["Vận hành", "31 sự cố; 139 kiểm thử; ~13.500 dòng mã; 5 DAG; 12 bảng gold"],
+  ["Bổ sung 15/11", "Gốc /lakehouse/bd03_khuyen_nghi; _quarantine 11.759 dòng (0,41 %); Deadline Alerts thay sla; backfill DAG 1 + DAG 3; web đo thời gian xử lý, ghi ngược gold.ket_qua_tai_lap"],
 ], [22, 78]));
 
 // ---- 5. tập và hỏi đáp
@@ -177,6 +178,8 @@ ND.push(y("Câu hỏi sâu hơn: xem bộ hỏi – đáp 52 câu và giáo trì
 ND.push(muc2("Hai câu hỏi cần tự chuẩn bị"));
 ND.push(hoiP("Ai làm phần nào trong đồ án?"));
 ND.push(dapP("Trả lời đúng theo thực tế của nhóm, nêu cụ thể từng phần (hạ tầng cụm, pipeline dữ liệu, streaming, mô hình và đánh giá, A/B, web, báo cáo). Ghi sẵn ở đây trước buổi demo: Tâm: ________________________; Quốc Anh: ________________________."));
+ND.push(hoiP("Nhóm có dùng AI không? Dùng như thế nào?"));
+ND.push(dapP("Có, và đã khai báo đầy đủ theo mục A.9 của đề cương trong `docs/AI_USAGE.md` (tóm tắt ở Phụ lục A của báo cáo chính): công cụ (Claude), thời gian, phạm vi, phần nhóm tự thực hiện và danh sách yêu cầu đã gửi. Commit do AI tạo có tác giả hoặc dòng đồng tác giả Claude trong lịch sử Git. Trả lời đúng thực tế, không giảm nhẹ; nhấn vào phần nhóm làm: vận hành cụm 6 máy, chạy và gỡ lỗi mọi job trên cụm, ra quyết định triển khai, kiểm chứng số liệu."));
 ND.push(hoiP("Nếu làm lại, nhóm sẽ làm khác gì?"));
 ND.push(dapP("Một, tách kỳ validation ngay từ đầu thay vì kiểm tra lại sau. Hai, đưa nguồn ứng viên ngoài ALS (đồng xuất hiện) vào sớm để đạt độ phủ 10 % trong vận hành. Ba, thiết kế A/B với đơn vị là người dùng ngay từ đầu. Bốn, dùng mạng dây hoặc router riêng cho cụm thay Wi-Fi, và tách web khỏi máy worker. Năm, viết sẵn kiểm thử hạ tầng và cách dừng luồng an toàn (dừng cả driver) trước khi lên cụm."));
 

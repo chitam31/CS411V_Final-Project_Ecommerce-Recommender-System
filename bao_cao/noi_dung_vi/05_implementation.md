@@ -1,6 +1,6 @@
 # Hiện thực hệ thống {#sec:impl}
 
-Mã nguồn gồm khoảng 11.500 dòng: 38 tệp job và thư viện PySpark (5.000 dòng), 5 DAG Airflow cùng một mô-đun dùng chung, một ứng dụng web 18 tệp, các Kafka producer, 19 script vận hành, 14 tệp cấu hình Docker và Hadoop, và 13 tệp kiểm thử (Phụ lục A). Chương này đi theo trình tự của pipeline: hạ tầng, các job Spark, điều phối, ứng dụng web, pipeline A/B, khả năng tái lập và kiểm thử.
+Mã nguồn gồm khoảng 13.500 dòng: 42 tệp job và thư viện PySpark (5.540 dòng), 5 DAG Airflow cùng một mô-đun dùng chung, một ứng dụng web 19 tệp, các Kafka producer, 25 script vận hành, 12 tệp cấu hình Docker và Hadoop, và 16 tệp kiểm thử với 139 kiểm thử (Phụ lục A). Chương này đi theo trình tự của pipeline: hạ tầng, các job Spark, điều phối, ứng dụng web, pipeline A/B, khả năng tái lập và kiểm thử.
 
 ## Dựng hạ tầng (Docker) {#sec:impl-infra}
 

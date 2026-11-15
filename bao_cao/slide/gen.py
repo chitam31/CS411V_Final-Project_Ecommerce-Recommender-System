@@ -136,12 +136,12 @@ slide("cover", (
     '<div style="display:flex;flex-direction:column;gap:6px"><p style="font-size:32px;font-weight:600;color:{bg}">Le Chi Tam</p><p style="font-size:24px;color:#C9D4E5">Student code 2302220</p></div>'
     '<div style="display:flex;flex-direction:column;gap:6px"><p style="font-size:32px;font-weight:600;color:{bg}">Le Nguyen Quoc Anh</p><p style="font-size:24px;color:#C9D4E5">Student code 2302283</p></div>'
     '</div>'
-    '<p style="font-size:24px;color:#C9D4E5">Tan Tao University · Defence 18 November 2026 · Supervisor: Cao Tien Dung, PhD</p>'
+    '<p style="font-size:24px;color:#C9D4E5">Tan Tao University · Defence 19 November 2026 · Supervisor: Cao Tien Dung, PhD</p>'
 ).format(la=LIGHT_ACC, h=H, bg=BG),
     "Good morning. We are Le Chi Tam and Le Nguyen Quoc Anh. Our project is Topic 3 of CS411V: a product recommender "
-    "for a simulated e-commerce marketplace. In the next twenty minutes we show how the system is built, what the model "
-    "achieves on real data, and how we proved each of the eight acceptance criteria on a cluster of six laboratory machines. "
-    "After the slides we run a short live demonstration.", nen=NAVY)
+    "for a simulated e-commerce marketplace. We have just shown the system live on a cluster of six laboratory machines; "
+    "these slides explain how it is built, what the model achieves on real data, and how each of the eight acceptance "
+    "criteria was proved.", nen=NAVY)
 # chân trang trên nền tối: sửa màu trong tệp bìa
 p = os.path.join(SL, "cover.html")
 s = open(p, encoding="utf-8").read().replace("color:{}\">BD03".format(MUTED), "color:#9FB0C8\">BD03").replace(
@@ -477,7 +477,7 @@ the = "".join(
         c=CARD, r=RULE, h=H, n=NAVY, t=t, tx=TEXT, m=m, b=BLUE, f=f) for t, m, f in van_de)
 slide("operations", tieu_de("Live system and operations", "Lessons from a shared, constrained cluster") +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px 28px">' + the + "</div>" +
-      '<p style="font-size:26px;color:{m}">31 issues found and fixed, each with a regression test — 109 automated tests in total.</p>'.format(m=MUTED),
+      '<p style="font-size:26px;color:{m}">31 issues found and fixed, each with a regression test — 139 automated tests in total.</p>'.format(m=MUTED),
       "A large part of the work was operations: thirty-one issues, each with a regression test. Four examples. A path-MTU black hole on the home network silently dropped large "
       "packets. Cancelling a Spark application through the Master did not stop its client-mode driver, and the zombie collided "
       "with the new stream on the checkpoint. Our nightly deployment gate could never open, because the nightly grid did not "
