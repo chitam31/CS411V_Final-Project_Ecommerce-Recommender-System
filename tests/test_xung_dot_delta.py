@@ -62,3 +62,15 @@ def test_xoa_goi_y_cu_giu_lan_trien_khai_moi_nhat():
                     "WHERE sinh_luc < timestamp'2026-11-11 09:30:05' - INTERVAL 7 DAYS")
     assert "current_timestamp" not in lenh
     assert lenh_xoa_goi_y_cu("t", None, 7) is None
+
+
+def test_bao_tri_gioi_han_co_tep_bang_goi_y():
+    """Lỗi 16/11: OPTIMIZE hằng đêm dùng cỡ tệp mặc định 1 GB gộp bảng gợi ý (~40 MB) thành một tệp,
+    ZORDER mất tác dụng và web tra một user mất ~9 giây. Bảng gợi ý phải giữ tệp 1 MB như thí nghiệm."""
+    from bao_tri.toi_uu_delta import BANG_TOI_UU, cau_hinh_co_tep
+
+    ch = cau_hinh_co_tep("gold.goi_y_nguoi_dung")
+    assert ch["spark.databricks.delta.optimize.maxFileSize"] == str(1024 * 1024)
+    assert ch["spark.databricks.delta.optimize.minFileSize"] == str(1024 * 1024)
+    assert ("gold.goi_y_nguoi_dung", "ma_nguoi_dung") in BANG_TOI_UU
+    assert cau_hinh_co_tep("silver.tuong_tac") == {}

@@ -279,7 +279,8 @@ class KhoDelta:
                 ket_qua += [{"ma_nguoi_dung": r["ma_nguoi_dung"], "chien_luoc": ten} for r in dong]
             return ket_qua
 
-        return self.dem_bang_nho.lay(("mau", n), tinh)
+        # Quét cả bảng gợi ý (~8 giây trên Spark local): giữ 1 giờ, danh sách mẫu không cần đổi từng phút.
+        return self.dem_lon.lay(("mau", n), tinh)
 
     # ---------------------------------------------------------------- báo cáo
     def _bang_nho(self, ten_bang, sap_xep=None, loc=None):
@@ -299,9 +300,14 @@ class KhoDelta:
         return self._bang_nho("gold.ket_qua_ab", ["ngay", "nhom_ab"])
 
     def lich_su_mo_hinh(self):
-        ds = self._bang_nho("gold.lich_su_huan_luyen", ["thoi_diem"])
-        for d in ds:
-            d["chi_tiet"] = json.loads(d.pop("chi_tiet_json") or "{}")
+        # _bang_nho trả về CHÍNH danh sách trong bộ đệm (60 giây): phải chép từng dòng trước khi sửa.
+        # Bản cũ pop("chi_tiet_json") thẳng trên bộ đệm, nên mọi lần gọi sau trong 60 giây
+        # (tải lại /mo-hinh, /api/mo-hinh/chi-so, /tai-lap) lỗi KeyError -> HTTP 500.
+        ds = []
+        for d in self._bang_nho("gold.lich_su_huan_luyen", ["thoi_diem"]):
+            d = dict(d)
+            d["chi_tiet"] = json.loads(d.pop("chi_tiet_json", None) or "{}")
+            ds.append(d)
         return ds
 
     def tuning(self, ma_chay):

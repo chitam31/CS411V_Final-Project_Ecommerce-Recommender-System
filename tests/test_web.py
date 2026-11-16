@@ -187,3 +187,17 @@ def test_chart_js_dong_goi_san(web):
     assert r.status_code == 200 and "Chart.js v4" in r.text[:200]
     assert "/static/vendor/chart.umd.min.js" in c.get("/ab").text
     assert "new Chart(" in c.get("/static/bieu_do.js").text
+
+
+def test_lich_su_mo_hinh_khong_sua_bo_dem():
+    """Lỗi 16/11 trên cụm: lich_su_mo_hinh pop("chi_tiet_json") thẳng trên danh sách trong bộ đệm,
+    nên tải lại /mo-hinh, /api/mo-hinh/chi-so hay mở /tai-lap trong 60 giây sau đều lỗi 500."""
+    from dich_vu.kho_du_lieu import KhoDelta
+
+    bo_dem = [{"ma_chay": "r1", "thoi_diem": "2026-11-11", "chi_tiet_json": '{"ndcg": 0.08}'}]
+    kho = KhoDelta.__new__(KhoDelta)
+    kho._bang_nho = lambda *a, **k: bo_dem
+    for _ in range(3):
+        ds = kho.lich_su_mo_hinh()
+        assert ds[0]["chi_tiet"] == {"ndcg": 0.08} and "chi_tiet_json" not in ds[0]
+    assert bo_dem[0]["chi_tiet_json"] == '{"ndcg": 0.08}' and "chi_tiet" not in bo_dem[0]
