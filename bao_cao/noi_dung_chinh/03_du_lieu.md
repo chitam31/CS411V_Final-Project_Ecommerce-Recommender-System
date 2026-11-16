@@ -30,16 +30,15 @@ Table: Khảo sát `events.csv` (tính trên cụm, `docs/bang_chung/cum/eda.jso
 | Bot (một giờ > 500 sự kiện) | 0; nhiều nhất 242 sự kiện trong một giờ |
 | Thuộc tính sản phẩm / cây danh mục | 20,3 triệu dòng, 417.053 sản phẩm, 1.104 thuộc tính; 1.669 danh mục, 25 gốc |
 
-![Sự kiện theo ngày, theo giờ UTC và phân bố số sự kiện của mỗi người dùng](hinh/c08_eda.png){#fig:eda w=16}
+![Sự kiện theo ngày, theo giờ UTC và phân bố số sự kiện của mỗi người dùng](hinh/c08_eda.png){#fig:eda w=15}
 
 Các đặc điểm định hình thiết kế:
 
 - **Cực thưa, phản hồi ngầm.** Mật độ chỉ 6,5 × 10^{−6}, và 96,7 % sự kiện là lượt xem. Vì vậy nhóm chọn ALS `implicitPrefs = true` với trọng số xem 1, thêm giỏ 3, mua 5. Sau khi lọc, ma trận huấn luyện có 746.350 cặp trên 179.999 người dùng × 126.230 sản phẩm, mật độ khoảng 3,3 × 10^{−5}.
 - **Đa số khách chỉ ghé một lần.** 85,8 % người dùng có dưới 3 sự kiện. Lọc người dùng có ít nhất 3 tương tác (mục 3.10) giữ 179.999 người để huấn luyện; phần còn lại cần chiến lược khởi đầu lạnh.
 - **Đuôi dài.** 10 % sản phẩm phổ biến nhất nhận 64 % sự kiện, còn một nửa số sản phẩm có không quá 3 sự kiện. Vì vậy phải đo độ phủ, độ mới lạ và thử giảm thiên lệch.
-- **Nhịp ngày, nhịp tuần.** Giờ cao điểm (19–21 giờ UTC, khoảng 185 nghìn sự kiện mỗi giờ) gấp khoảng 11 lần giờ thấp điểm (9–11 giờ UTC). Thứ Ba đông nhất, thứ Bảy vắng nhất. Producer giữ nguyên thứ tự thời gian, nên luồng thịnh hành gặp đúng các đợt tăng giảm này.
+- **Nhịp ngày.** Giờ cao điểm (19–21 giờ UTC) đông gấp khoảng 11 lần giờ thấp điểm; producer giữ nguyên thứ tự thời gian nên luồng thịnh hành gặp đúng các đợt tăng giảm này.
 - **Dữ liệu khá sạch.** Không có bot theo ngưỡng 500 sự kiện/giờ và không thiếu trường. Chỉ có 460 dòng trùng hoàn toàn và 11.759 lượt nhấp lặp trong 5 giây. Các bước khử trùng vẫn cần, vì việc phát lại dữ liệu qua Kafka sinh ra trùng lặp (mục sau).
-- **Giá ẩn danh.** Thuộc tính 790 là giá đã ẩn danh, chỉ dùng để so sánh tương đối.
 
 ## Chất lượng và làm sạch
 

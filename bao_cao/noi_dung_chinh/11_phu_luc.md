@@ -39,4 +39,4 @@ bash scripts/tao_topic.sh && python3 producer/phat_lai_su_kien.py --tep ~/du_lie
 bash scripts/cum/kiem_tra_cum.sh && bash scripts/thu_bang_chung.sh
 ```
 
-Kiểm thử: `pytest` (141 kiểm thử, gồm 8 kiểm thử DAG cần `requirements-airflow.txt`).
+Kiểm thử: `pytest` (143 kiểm thử, gồm 8 kiểm thử DAG cần `requirements-airflow.txt`).

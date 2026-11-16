@@ -30,6 +30,7 @@ Table: Hạn sống bộ đệm của web {#tab:bo-dem w=60,40}
 | Thịnh hành | 10 giây |
 | Gợi ý theo người dùng | 30 giây |
 | Bảng nhỏ | 60 giây |
+| Bảng báo cáo chỉ đổi mỗi đêm | 600 giây |
 | Sản phẩm liên quan | 600 giây |
 | Bảng lớn | 3.600 giây |
 
@@ -40,6 +41,17 @@ Table: Hạn sống bộ đệm của web {#tab:bo-dem w=60,40}
 - **Gợi ý cho người dùng quen chậm:** trung vị 8,9 giây, chỉ 1/20 yêu cầu dưới 3 giây. Nguyên nhân là OPTIMIZE ZORDER hằng đêm dùng cỡ tệp mặc định 1 GB, gộp bảng gợi ý (38 MB) thành một tệp; data skipping không loại được tệp nào, nên mỗi lần tra một người dùng phải đọc cả bảng. Thí nghiệm ở @tab:zorder đặt cỡ tệp 1 MB nên không gặp hiện tượng này. Sửa: DAG 4 giới hạn 1 MB cho riêng bảng này.
 - **`/mo-hinh`, `/api/mo-hinh/chi-so`, `/tai-lap` lỗi 500** nếu gọi lại trong 60 giây: một hàm bỏ cột ngay trên dữ liệu nằm trong bộ đệm. Sửa: chép trước khi biến đổi, kèm kiểm thử hồi quy.
 
-Các yêu cầu khác đạt mục tiêu ngay từ lần đo này: trang chủ, thịnh hành, gợi ý cho người dùng mới, `/api/ab/ket-qua` có trung vị 16–18 ms. Trang sản phẩm và `/ab` chỉ chậm ở lần đầu sau khi bộ đệm hết hạn (3,8 và 2,7 giây).
+Sau khi sửa và OPTIMIZE lại bảng gợi ý (1 tệp → 36 tệp), lần đo lại cùng ngày cho kết quả ở @tab:web.
 
-> [!TODO] Chèn số đo lại sau khi sửa (`python3 scripts/do_do_tre_web.py`).
+Table: Thời gian phản hồi trước và sau khi sửa, 20 yêu cầu mỗi nhóm (16/11/2026) {#tab:web w=34,26,40}
+| Nhóm yêu cầu | Trước: trung vị, dưới 3 s | Sau: lần đầu / trung vị / p95, dưới 3 s |
+|---|---|---|
+| Gợi ý, người dùng quen | 8.907 ms, 1/20 | 426 / 28 / 531 ms, **20/20** |
+| Gợi ý, người dùng mới | 17 ms, 20/20 | 402 / 22 / 407 ms, 20/20 |
+| Trang chủ, thịnh hành, `/api/ab/ket-qua` | 16–18 ms, 20/20 | 16–21 ms, 20/20 |
+| Trang sản phẩm | 409 ms, 18/20 | 2.586 / 338 / 2.586 ms, 19/20 |
+| `/mo-hinh` | 19/20 lỗi 500 | 8.529 / 28 / 58 ms, 19/20 |
+| `/api/mo-hinh/chi-so`, `/tai-lap` | 20/20 lỗi 500 | trung vị 22–29 ms, **20/20** |
+| **Toàn bộ 220 yêu cầu** | 161 thành công | **220 thành công, 99,1 % dưới 3 s, p95 457 ms** |
+
+Hai yêu cầu còn trên 3 giây đều là lần đầu sau khi web khởi động: `/mo-hinh` 8,5 giây, một trang sản phẩm 3,4 giây. Sau lần đo này, web chạy trước các truy vấn chậm đó trong một luồng nền lúc khởi động, và giữ ba bảng báo cáo (chỉ đổi mỗi đêm) trong bộ đệm 10 phút. Hai thay đổi này chưa được đo lại trên cụm.

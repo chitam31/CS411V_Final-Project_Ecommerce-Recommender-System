@@ -164,7 +164,7 @@ ND.push(bang(["Hạng mục", "Số liệu"], [
   ["Z-ORDER", "Bảng 5,3 triệu dòng; tệp đọc 200 → 67 → 1,07; trung vị 10,8 s → 8,3 s → 0,98 s; nhanh 8,4 lần so với chỉ nén"],
   ["Vòng khép kín", "Kafka → bronze 10,3–10,7 giây; bấm → bảng thịnh hành 51 giây (ngưỡng 90)"],
   ["Tái lập", "Lệch 0,000000 (dung sai 10⁻⁶); không làm tròn ~10⁻¹⁵; phiên bản features 0, 3, 4"],
-  ["Vận hành", "33 sự cố; 141 kiểm thử; ~13.500 dòng mã; 5 DAG; 12 bảng gold"],
+  ["Vận hành", "33 sự cố; 143 kiểm thử; ~13.500 dòng mã; 5 DAG; 12 bảng gold"],
   ["Bổ sung 15/11", "Gốc /lakehouse/bd03_khuyen_nghi; _quarantine 5.315.672 dòng (5.304.360 trùng nội dung do phát lại + 11.312 nhấp lặp 5 giây); Deadline Alerts thay sla; backfill DAG 1 + DAG 3; web đo thời gian xử lý, ghi ngược gold.ket_qua_tai_lap"],
 ], [22, 78]));
 

@@ -196,8 +196,52 @@ def test_lich_su_mo_hinh_khong_sua_bo_dem():
 
     bo_dem = [{"ma_chay": "r1", "thoi_diem": "2026-11-11", "chi_tiet_json": '{"ndcg": 0.08}'}]
     kho = KhoDelta.__new__(KhoDelta)
+    kho.dem_bao_cao = None
     kho._bang_nho = lambda *a, **k: bo_dem
     for _ in range(3):
         ds = kho.lich_su_mo_hinh()
         assert ds[0]["chi_tiet"] == {"ndcg": 0.08} and "chi_tiet_json" not in ds[0]
     assert bo_dem[0]["chi_tiet_json"] == '{"ndcg": 0.08}' and "chi_tiet" not in bo_dem[0]
+
+
+def test_lam_nong_chay_moi_buoc_va_khong_lam_hong_web():
+    """Làm nóng bộ đệm lúc khởi động: gọi đủ các truy vấn chậm; một bước lỗi không chặn bước sau."""
+    from dich_vu.kho_du_lieu import KhoDelta
+
+    kho = KhoDelta.__new__(KhoDelta)
+    goi = []
+
+    def ghi(ten, kq=None, loi=False):
+        def ham(*a):
+            goi.append(ten)
+            if loi:
+                raise RuntimeError("bảng chưa có")
+            return kq
+        return ham
+
+    kho.nguoi_dung_mau = ghi("mau", loi=True)
+    kho.lich_su_mo_hinh = ghi("lich_su", [{"ma_chay": "r1"}])
+    kho.tuning = ghi("tuning")
+    for ten in ("do_zorder", "ket_qua_ab", "ket_qua_tai_lap", "thinh_hanh", "_danh_muc_san_pham", "_cay_danh_muc"):
+        setattr(kho, ten, ghi(ten))
+    xong = kho.lam_nong(in_ra=lambda *a: None)
+    assert "nguoi_dung_mau" not in xong and len(xong) == 8
+    assert goi[0] == "mau" and "tuning" in goi and goi[-1] == "_cay_danh_muc"
+
+
+def test_lam_nong_chi_khi_may_chu_khoi_dong():
+    """Tạo app (kể cả lúc import web/app.py) không được chạy làm nóng, vì làm nóng mở phiên Spark;
+    chỉ sự kiện startup của máy chủ mới chạy. Kho giả không có lam_nong thì không có gì chạy."""
+    import threading
+
+    da_goi = threading.Event()
+
+    class KhoCoLamNong(KhoGia):
+        def lam_nong(self):
+            da_goi.set()
+
+    app = create_app(kho=KhoCoLamNong(), gui=GuiBoNho())
+    assert not da_goi.wait(0.3)
+    with TestClient(app):
+        assert da_goi.wait(5)
+    create_app(kho=KhoGia(), gui=GuiBoNho())

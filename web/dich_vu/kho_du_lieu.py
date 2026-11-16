@@ -86,6 +86,9 @@ class KhoDelta:
         self.dem_goi_y = BoDem(30, 5000)
         self.dem_lien_quan = BoDem(600, 5000)
         self.dem_bang_nho = BoDem(60, 50)
+        # Bảng chỉ đổi khi DAG hằng đêm chạy (lịch sử huấn luyện, tinh chỉnh, số đo Z-ORDER): 10 phút.
+        # Lần đọc đầu mất ~8 giây (nạp nhật ký Delta của 3 bảng), nên 60 giây là quá ngắn cho /mo-hinh.
+        self.dem_bao_cao = BoDem(600, 50)
         self.dem_lon = BoDem(3600, 4)
 
     # ---------------------------------------------------------------- Spark
@@ -283,7 +286,7 @@ class KhoDelta:
         return self.dem_lon.lay(("mau", n), tinh)
 
     # ---------------------------------------------------------------- báo cáo
-    def _bang_nho(self, ten_bang, sap_xep=None, loc=None):
+    def _bang_nho(self, ten_bang, sap_xep=None, loc=None, bo_dem=None):
         def tinh():
             if not self._co_bang(ten_bang):
                 return []
@@ -294,7 +297,7 @@ class KhoDelta:
                 df = df.orderBy(*sap_xep)
             return [_dong(r) for r in df.collect()]
 
-        return self.dem_bang_nho.lay((ten_bang, str(sap_xep), str(loc)), tinh)
+        return (bo_dem or self.dem_bang_nho).lay((ten_bang, str(sap_xep), str(loc)), tinh)
 
     def ket_qua_ab(self):
         return self._bang_nho("gold.ket_qua_ab", ["ngay", "nhom_ab"])
@@ -304,7 +307,7 @@ class KhoDelta:
         # Bản cũ pop("chi_tiet_json") thẳng trên bộ đệm, nên mọi lần gọi sau trong 60 giây
         # (tải lại /mo-hinh, /api/mo-hinh/chi-so, /tai-lap) lỗi KeyError -> HTTP 500.
         ds = []
-        for d in self._bang_nho("gold.lich_su_huan_luyen", ["thoi_diem"]):
+        for d in self._bang_nho("gold.lich_su_huan_luyen", ["thoi_diem"], bo_dem=self.dem_bao_cao):
             d = dict(d)
             d["chi_tiet"] = json.loads(d.pop("chi_tiet_json", None) or "{}")
             ds.append(d)
@@ -313,13 +316,14 @@ class KhoDelta:
     def tuning(self, ma_chay):
         from pyspark.sql import functions as F
 
-        return self._bang_nho("gold.ket_qua_tuning", ["rank", "reg_param", "alpha"], F.col("ma_chay") == ma_chay)
+        return self._bang_nho("gold.ket_qua_tuning", ["rank", "reg_param", "alpha"], F.col("ma_chay") == ma_chay,
+                              bo_dem=self.dem_bao_cao)
 
     def ket_qua_tai_lap(self):
         return self._bang_nho("gold.ket_qua_tai_lap", ["thoi_diem"])
 
     def do_zorder(self):
-        return self._bang_nho("gold.do_hieu_nang_zorder", ["thoi_diem"])
+        return self._bang_nho("gold.do_hieu_nang_zorder", ["thoi_diem"], bo_dem=self.dem_bao_cao)
 
     def tai_lap_ab(self, ngay):
         """Chạy lại A/B của một ngày trên đúng phiên bản Delta đã ghi, so với kết quả cũ."""
@@ -367,8 +371,36 @@ class KhoDelta:
         return phien_ban_moi_nhat(self.spark, "gold.ket_qua_tai_lap")
 
     def xoa_bo_dem(self):
-        for bd in (self.dem_thinh_hanh, self.dem_goi_y, self.dem_lien_quan, self.dem_bang_nho, self.dem_lon):
+        for bd in (self.dem_thinh_hanh, self.dem_goi_y, self.dem_lien_quan, self.dem_bang_nho, self.dem_bao_cao,
+                   self.dem_lon):
             bd.xoa()
+
+    def lam_nong(self, in_ra=logging.getLogger("web").info):
+        """Chạy trước các truy vấn chậm nhất khi web vừa khởi động (luồng nền), để người đầu tiên mở
+        trang chủ, /mo-hinh, /tai-lap, /ab hay trang sản phẩm không phải chờ 8-20 giây
+        (đo trên cụm 16/11: danh sách người dùng mẫu 19,4 s, /mo-hinh 8,5 s lần đầu).
+        Lỗi ở bước nào chỉ ghi log rồi làm bước sau: làm nóng không bao giờ làm hỏng web."""
+        cac_buoc = [
+            ("nguoi_dung_mau", self.nguoi_dung_mau),
+            ("lich_su_mo_hinh", self.lich_su_mo_hinh),
+            ("tuning", lambda: self.tuning((self.lich_su_mo_hinh() or [{}])[-1].get("ma_chay"))),
+            ("do_zorder", self.do_zorder),
+            ("ket_qua_ab", self.ket_qua_ab),
+            ("ket_qua_tai_lap", self.ket_qua_tai_lap),
+            ("thinh_hanh", self.thinh_hanh),
+            ("danh_muc_san_pham", self._danh_muc_san_pham),
+            ("cay_danh_muc", self._cay_danh_muc),
+        ]
+        xong = []
+        for ten, ham in cac_buoc:
+            bat_dau = time.time()
+            try:
+                ham()
+                xong.append(ten)
+                in_ra("Làm nóng %s: %.1f s", ten, time.time() - bat_dau)
+            except Exception:  # noqa: BLE001 - làm nóng chỉ là tối ưu
+                logging.getLogger("web").exception("Làm nóng %s thất bại", ten)
+        return xong
 
 
 def lay_kho(che_do):

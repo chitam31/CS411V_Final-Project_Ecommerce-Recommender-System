@@ -472,6 +472,7 @@ Table: Hạn sống bộ đệm của ứng dụng web {#tab:bo-dem w=60,40}
 | Thịnh hành | 10 giây |
 | Gợi ý theo người dùng | 30 giây |
 | Bảng nhỏ | 60 giây |
+| Bảng báo cáo chỉ đổi mỗi đêm (lịch sử huấn luyện, tinh chỉnh, số đo Z-ORDER) | 600 giây |
 | Sản phẩm liên quan | 600 giây |
 | Bảng lớn | 3.600 giây |
 
@@ -496,7 +497,33 @@ Table: Thời gian phản hồi đo từ máy master, 20 yêu cầu mỗi nhóm,
 - **Lỗi 500 ở hai màn hình báo cáo.** `lich_su_mo_hinh` bỏ cột JSON thô ngay trên danh sách nằm trong bộ đệm 60 giây. Lần gọi đầu đúng, nhưng mọi lần gọi sau trong 60 giây gặp `KeyError`: tải lại `/mo-hinh`, gọi `/api/mo-hinh/chi-so` hay mở `/tai-lap` (dùng chung hàm này) đều lỗi. Trong kịch bản demo, `/tai-lap` được mở ngay sau `/mo-hinh`, nên chắc chắn đã gặp lỗi này. Sửa: chép từng dòng trước khi biến đổi; kiểm thử hồi quy gọi hàm ba lần liên tiếp trên cùng một bộ đệm.
 - **Z-ORDER mất tác dụng trên bảng thật.** `OPTIMIZE ... ZORDER BY` hằng đêm của DAG 4 dùng cỡ tệp tối đa mặc định của Delta là 1 GB. Bảng gợi ý chỉ khoảng 38 MB, nên bị gộp thành **một tệp**: data skipping không loại được tệp nào, và mỗi lần tra một người dùng lại đọc cả 5,3 triệu dòng (trung vị 8,9 giây). Thí nghiệm ở @tab:zorder đặt cỡ tệp 1 MB nên không gặp hiện tượng này. Sửa: `toi_uu_delta.py` giới hạn 1 MB riêng cho bảng gợi ý (khoảng 40 tệp), như thí nghiệm; danh sách người dùng mẫu (quét cả bảng) giữ trong bộ đệm 1 giờ thay cho 60 giây.
 
-> [!TODO] Chèn bảng đo lại sau khi sửa (`python3 scripts/do_do_tre_web.py` sau khi build lại web và chạy `toi_uu_delta.py --chi-bang gold.goi_y_nguoi_dung`).
+**Đo lại sau khi sửa** (cùng ngày, `docs/bang_chung/cum/07b_do_tre_web_sau_sua.md`). Web được build lại với bản sửa, và bảng gợi ý được OPTIMIZE ZORDER lại với giới hạn 1 MB: từ 1 tệp thành 36 tệp. Kết quả ở @tab:web-sau.
+
+Table: Thời gian phản hồi sau khi sửa, 20 yêu cầu mỗi nhóm (16/11/2026) {#tab:web-sau w=36,11,11,11,11,20}
+| Nhóm yêu cầu | Lần đầu (ms) | Trung vị (ms) | p95 (ms) | Lớn nhất (ms) | Dưới 3 s |
+|---|---|---|---|---|---|
+| Trang chủ | 33 | 18 | 30 | 33 | 20/20 |
+| `GET /api/goi-y/{user_id}`, người dùng quen | 426 | **28** | 531 | 586 | **20/20** |
+| `GET /api/goi-y/{user_id}`, người dùng mới | 402 | 22 | 407 | 438 | 20/20 |
+| `GET /api/thinh-hanh` | 49 | 21 | 48 | 49 | 20/20 |
+| Trang sản phẩm | 2.586 | 338 | 2.586 | 3.448 | 19/20 |
+| `GET /api/thinh-hanh/{id}` (không qua bộ đệm) | 409 | 319 | 414 | 432 | 20/20 |
+| Bảng điều khiển A/B `/ab` | 2.433 | 15 | 68 | 2.433 | 20/20 |
+| `GET /api/ab/ket-qua` | 20 | 16 | 43 | 46 | 20/20 |
+| `/mo-hinh` | 8.529 | 28 | 58 | 8.529 | 19/20 |
+| `GET /api/mo-hinh/chi-so` | 29 | 29 | 36 | 76 | **20/20** |
+| `/tai-lap` | 2.663 | 22 | 47 | 2.663 | **20/20** |
+
+Kết quả sau khi sửa:
+
+- **Không còn lỗi.** Cả 220 yêu cầu thành công, 99,1 % dưới 3 giây, p95 toàn bộ 457 ms. Trước khi sửa, chỉ 161/220 yêu cầu thành công.
+- **Gợi ý người dùng quen.** Lần đầu với mỗi người dùng (không trúng bộ đệm) còn khoảng 0,4–0,6 giây, so với 8,9–10,4 giây trước đó, tức nhanh khoảng 17 lần. Trung vị còn 28 ms vì các lần sau trúng bộ đệm. Đây là tác dụng Z-ORDER của @tab:zorder, nay có thật trên bảng phục vụ.
+- **Hai yêu cầu còn trên 3 giây.** Cả hai đều là lần đầu sau khi web khởi động: `/mo-hinh` 8,5 giây (nạp nhật ký Delta của ba bảng) và một trang sản phẩm 3,4 giây. Phía máy chủ còn ghi `/api/nguoi-dung-mau` 19,4 giây, cũng ở lần đầu.
+
+Vì vậy, sau lần đo này, web được bổ sung hai thay đổi. Hai thay đổi này chưa được đo lại trên cụm.
+
+- **Làm nóng bộ đệm.** Ngay khi khởi động, một luồng nền chạy trước các truy vấn chậm đó.
+- **Bộ đệm dài hơn.** Ba bảng chỉ đổi khi DAG hằng đêm chạy được giữ trong bộ đệm 10 phút thay cho 60 giây.
 
 ## Xử lý luồng và vận hành {#sec:res-streaming}
 

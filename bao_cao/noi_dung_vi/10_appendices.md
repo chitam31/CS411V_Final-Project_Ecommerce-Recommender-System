@@ -27,7 +27,7 @@ bd03_khuyen_nghi/
 ├── scripts/               điều khiển cụm, chạy lần đầu, luồng, thí nghiệm, chuyển gốc lakehouse,
 │                          demo Delta SQL và cây HDFS, thu bằng chứng
 ├── notebooks/             eda_retailrocket.ipynb (khảo sát dữ liệu)
-├── tests/                 141 kiểm thử pytest trên Spark cục bộ và Airflow 3.3.1
+├── tests/                 143 kiểm thử pytest trên Spark cục bộ và Airflow 3.3.1
 ├── docs/                  kiến trúc, triển khai, minh họa, đối chiếu yêu cầu, AI_USAGE,
 │                          bang_chung/ (output thu trên cụm), ket_qua_cum/
 └── bao_cao/               báo cáo này: nội dung, hình, trình dựng
@@ -39,7 +39,7 @@ Table: Quy mô mã nguồn theo thành phần {#tab:loc w=30,15,15,40}
 | `jobs/` | 42 | 5.540 | Các job luồng, theo lô, học máy, bảo trì và kiểm tra, thư viện dùng chung |
 | `web/` | 19 | 2.036 | Ứng dụng, dịch vụ, lớp hiển thị minh họa, template, tệp tĩnh |
 | `scripts/` | 25 | 2.280 | Điều khiển cụm và các pipeline |
-| `tests/` | 16 | 2.436 | 141 kiểm thử |
+| `tests/` | 16 | 2.436 | 143 kiểm thử |
 | `ha_tang/` | 12 | 564 | Tệp compose, Dockerfile, XML của Hadoop |
 | `airflow/` | 6 | 451 | Các DAG |
 | `producer/` | 2 | 241 | Phát lại vào Kafka và người dùng ảo |

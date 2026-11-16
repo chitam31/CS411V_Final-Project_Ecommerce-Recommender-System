@@ -156,7 +156,7 @@ const S = [
     chi: "Hai con số, rồi vòng khép kín trên hình f08." },
   { id: "operations", tieu: "Lessons from a shared, constrained cluster", nguoi: T, giay: 50,
     loi: ["A large part of the work was operations: we logged thirty-three issues and wrote a hundred and nine automated tests. Four examples. A path-MTU black hole on the home network silently dropped large packets, so SSH hung. Cancelling a Spark application did not stop its client-mode driver, and the zombie collided with the new stream on the checkpoint. Our nightly deployment gate could never open, because the nightly grid did not contain the served hyper-parameters. And small files and small memory forced one file per date and careful scheduling."],
-    y: ["**33 lỗi** đã ghi nhận và sửa, **141 kiểm thử** tự động.", "MTU: gói lớn bị rơi → jump host, MTU ZeroTier 1.280.", "Driver “ma” tranh checkpoint → dừng = hủy app + giết driver.", "Cổng triển khai không bao giờ mở → luôn thử lại cấu hình đang phục vụ; tệp nhỏ, RAM nhỏ → 1 tệp/ngày, pool 1 chỗ ban đêm."],
+    y: ["**33 lỗi** đã ghi nhận và sửa, **143 kiểm thử** tự động.", "MTU: gói lớn bị rơi → jump host, MTU ZeroTier 1.280.", "Driver “ma” tranh checkpoint → dừng = hủy app + giết driver.", "Cổng triển khai không bao giờ mở → luôn thử lại cấu hình đang phục vụ; tệp nhỏ, RAM nhỏ → 1 tệp/ngày, pool 1 chỗ ban đêm."],
     chi: "Bốn thẻ, mỗi thẻ một câu." },
   { id: "results", tieu: "All eight criteria demonstrated", nguoi: T, giay: 45,
     loi: ["To close the loop on the list from the beginning, here are the eight criteria with their evidence: 27 tuning combinations; plus 1,237 and plus 43 percent over the baselines; cold start shown live; trending in 51 seconds; 10.3 seconds to bronze; an A/B p-value of 0.015; a reproduction deviation of zero; and files read cut from 67 to about one. All eight were demonstrated on the cluster with the real data. The only threshold not met in production, catalogue coverage, is analysed as the specification requires; the deployed re-ranking almost doubles it, and an offline mix with co-occurrence candidates passes it."],
@@ -280,7 +280,7 @@ ND.push(bang(["Slide", "Thời lượng mới", "Cách rút"], [
   ["18 – Z-ORDER", "30 giây (từ 45)", "Chỉ nói 67 → 1,07 tệp và 8,4 lần."],
   ["20 – v2", "40 giây (từ 50)", "Bỏ câu “small next to re-ranking”."],
   ["21 – Vòng khép kín", "40 giây (từ 50)", "Bỏ câu về luồng chết rồi chạy lại."],
-  ["22 – Vận hành", "20 giây (từ 50)", "Chỉ nói 33 lỗi, 141 kiểm thử và một ví dụ (cổng triển khai)."],
+  ["22 – Vận hành", "20 giây (từ 50)", "Chỉ nói 33 lỗi, 143 kiểm thử và một ví dụ (cổng triển khai)."],
   ["23 – Kết quả", "25 giây (từ 45)", "Không đọc từng dòng; nói “all eight met, coverage analysed”."],
   ["24 – Hạn chế", "25 giây (từ 35)", "Nói 3 hạn chế đầu và 1 hướng phát triển."],
 ], [18, 22, 60]));

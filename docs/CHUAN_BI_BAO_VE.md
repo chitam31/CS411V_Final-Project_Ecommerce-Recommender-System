@@ -397,7 +397,7 @@ Ghi chú:
 | Vòng khép kín | Kafka → bronze 10,3 giây; bấm → bảng thịnh hành 51 giây |
 | Mô hình v2 | NDCG 0,0680 → 0,0694 (+2,1 %); coverage 3,44 → 3,72 %; 4.346 → 4.699 item; tự triển khai ngày 11/11 |
 | Cụm | 6 máy lab, mỗi máy 7 GB RAM; 5 worker, 34 lõi, 13 GB executor; HDFS sao chép 2 |
-| Kỹ thuật | 33 lỗi đã ghi và sửa, 141 kiểm thử, khoảng 13.500 dòng mã, báo cáo chính 17 trang thân bài (bản đầy đủ 113 trang) |
+| Kỹ thuật | 33 lỗi đã ghi và sửa, 143 kiểm thử, khoảng 13.500 dòng mã, báo cáo chính 17 trang thân bài (bản đầy đủ 113 trang) |
 
 ---
 

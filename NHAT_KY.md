@@ -188,6 +188,7 @@ Việc nhóm cần chạy trên cụm: `chuyen_lakehouse.sh --chay` từ laptop,
 - Gốc dữ liệu đã ở `/lakehouse/bd03_khuyen_nghi` (chuyển từ tối 15/11). `kiem_tra_lakehouse.py` đạt: bronze 8.198.159 dòng đọc được qua `_spark_metadata` mới, silver 2.882.484, mọi bảng gold có phiên bản. Luồng và DAG 2–4 bật lại 06:08.
 - `thu_bang_chung.sh` 06:09–06:51, kết quả ở `docs/bang_chung/cum/`. Riêng bước dựng `_quarantine` (142 ngày, 8,2 triệu dòng bronze) mất 28 phút.
 - Đọc bằng chứng thấy sự cố 32, 33 (mục 4); đã sửa ở commit `bababb2`.
+- Đo lại sau khi sửa (build lại web, `toi_uu_delta.py --chi-bang gold.goi_y_nguoi_dung`: 1 tệp → 36 tệp): 220/220 yêu cầu thành công, 99,1 % dưới 3 s, p95 457 ms, gợi ý người dùng chưa đệm 0,4–0,6 s (`docs/bang_chung/cum/07b_do_tre_web_sau_sua.md`). Hai yêu cầu còn trên 3 s là lần đầu sau khi web khởi động, nên web thêm làm nóng bộ đệm trong lifespan (`KhoDelta.lam_nong`, tắt bằng `WEB_LAM_NONG=0`) và bộ đệm 10 phút cho ba bảng chỉ đổi mỗi đêm; chưa đo lại trên cụm.
 - Hai quan sát khác: DAG giám sát báo động giả khi bộ phát tắt (không có cửa sổ thịnh hành mới; luồng không bị gián đoạn). DAG 1 có một lượt `running` treo từ trưa 15/11, cần đánh dấu thất bại trước khi bật lại DAG 1.
 
 ## 4. Lỗi tìm thấy khi phát triển và cách sửa

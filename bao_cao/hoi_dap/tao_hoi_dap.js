@@ -79,7 +79,7 @@ ND.push(bang(["Hạng mục", "Số liệu"], [
   ["Nguồn ứng viên", "Offline 11/11: 7 ô ALS + 3 ô đồng xuất hiện → coverage 6,47 % → **14,5 %** (ngưỡng 10 %), NDCG@10 0,0865 → 0,0892 (kỳ kiểm tra 0,0742 → 0,0764); chưa triển khai"],
   ["Kỳ validation", "Chọn trên 19/8–2/9, báo cáo trên 3–18/9: chọn đúng rank 50, reg 1,0, alpha 40 và β = 1,0; kỳ kiểm tra: ALS 0,0579 (+1.086 % / +40 %), xếp lại 0,0742 (+80 % so với danh mục); lạc quan 0,0002"],
   ["Mô hình v2", "Đã triển khai 11/11 (als_v2_r20261110T230924, alpha 40): NDCG@10 0,0680 → 0,0694 (+2,1 %), coverage 3,44 % → 3,72 %, 4.346 → 4.699 item; ở alpha 10: +2,3 %"],
-  ["Cụm", "6 máy lab, mỗi máy 12 lõi, 7 GB RAM; 5 worker: 34 lõi, 13 GB executor; HDFS sao chép 2; 33 lỗi đã sửa, 141 kiểm thử"],
+  ["Cụm", "6 máy lab, mỗi máy 12 lõi, 7 GB RAM; 5 worker: 34 lõi, 13 GB executor; HDFS sao chép 2; 33 lỗi đã sửa, 143 kiểm thử"],
 ], [24, 76]));
 
 ND.push(muc("2. Tổng quan và kiến trúc"));

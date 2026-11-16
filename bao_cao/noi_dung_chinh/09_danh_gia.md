@@ -23,16 +23,12 @@ Table: Tình trạng các tiêu chí (đặc tả 3.11 và đề cương A.6) {#
 - **Độ phủ chưa đạt 10 % khi phục vụ.** Đạt 14,5 % chỉ ở thử nghiệm offline có thêm ô đồng xuất hiện.
 - **A/B dựa trên lưu lượng mô phỏng.** Kết luận chỉ đúng trong giả định của mô hình nhấp.
 - **Giá và số sao là đại lượng thay thế.** Thuộc tính 790 đã ẩn danh; số sao tính từ tỷ lệ mua trên xem.
-- **Máy master là điểm yếu.** Master chỉ có 7,4 GB RAM và giữ driver của mọi job. Cụm phụ thuộc mạng Wi-Fi của phòng lab, nhiều lúc ZeroTier phải đi đường chuyển tiếp.
+- **Máy master là điểm yếu.** Master chỉ có 7,4 GB RAM mà giữ driver của mọi job; mạng ZeroTier qua Wi-Fi phòng lab nhiều lúc phải đi đường chuyển tiếp.
 - **Kiểm thử web dùng kho dữ liệu giả.** Hai lỗi chỉ lộ ra khi đo trên cụm (@sec:web). Đã sửa, nhưng lớp truy cập Delta của web vẫn chưa có kiểm thử tự động trên Spark kèm Delta.
 - **Báo động giả khi không có lưu lượng.** Bộ phát tắt thì DAG giám sát không thấy cửa sổ thịnh hành mới, nên ghi cảnh báo và gọi khởi động lại luồng; luồng đang chạy được giữ nguyên.
 - **Bảng novelty nằm trên driver.** Bảng được broadcast, và sẽ không đủ chỗ khi số sản phẩm tăng 100 lần.
 
 ## Hướng phát triển
 
-- Chạy driver ở cluster mode (YARN hoặc Kubernetes), tách khỏi máy master.
-- Thay bảng novelty bằng broadcast join DataFrame.
-- Đưa bảng gợi ý ra kho key–value cho web.
-- Thử BPR, item-kNN, MinHash/LSH cho sản phẩm đuôi dài, và đưa nguồn ứng viên đồng xuất hiện vào phục vụ.
-- Thêm phân vùng Kafka.
-- Chạy A/B với lưu lượng thật.
+- **Hạ tầng.** Chạy driver ở cluster mode (YARN hoặc Kubernetes) để tách khỏi máy master; thay bảng novelty bằng broadcast join DataFrame; đưa bảng gợi ý ra kho key–value cho web; thêm phân vùng Kafka.
+- **Mô hình.** Thử BPR, item-kNN, MinHash/LSH cho sản phẩm đuôi dài, đưa nguồn ứng viên đồng xuất hiện vào phục vụ, rồi chạy A/B với lưu lượng thật.

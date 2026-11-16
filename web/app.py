@@ -24,8 +24,10 @@ Biến môi trường:
 import hashlib
 import logging
 import os
+import threading
 import time
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -72,7 +74,16 @@ def create_app(kho=None, gui=None, phien=None):
         gui = GuiKafka() if bat_kafka else GuiBoNho()
     phien = phien or BoNhoPhien()
 
-    app = FastAPI(title="bd03 - Hệ khuyến nghị sản phẩm TMĐT")
+    @asynccontextmanager
+    async def vong_doi(_app):
+        """Làm nóng bộ đệm trong luồng nền khi máy chủ khởi động (chỉ với kho Delta thật; tắt bằng
+        WEB_LAM_NONG=0). Đặt trong lifespan chứ không chạy ngay trong create_app: module này tạo
+        `app` lúc import, và import (vd. khi pytest thu thập kiểm thử) không được mở phiên Spark."""
+        if hasattr(kho, "lam_nong") and os.environ.get("WEB_LAM_NONG", "1") != "0":
+            threading.Thread(target=kho.lam_nong, name="lam-nong", daemon=True).start()
+        yield
+
+    app = FastAPI(title="bd03 - Hệ khuyến nghị sản phẩm TMĐT", lifespan=vong_doi)
     app.mount("/static", StaticFiles(directory=str(THU_MUC / "static")), name="static")
     mau = Jinja2Templates(directory=str(THU_MUC / "templates"))
     mau.env.globals["gia_lap"] = bool(getattr(kho, "la_gia_lap", False))
