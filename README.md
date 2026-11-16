@@ -249,4 +249,4 @@ Bảng đối chiếu đầy đủ từng yêu cầu: [docs/DOI_CHIEU_YEU_CAU.md
 
 ## 7. Nhóm thực hiện
 
-Sinh viên Lê Chí Tâm và Lê Nguyễn Quốc Anh. Repo cũ của nhóm (`spark-cluster`, `hadoop-cluster`, `kafka-docker`) vẫn tương thích: giữ nguyên tên container, tên volume và cổng, sửa các lỗi cấu hình ghi ở NHAT_KY.md.
+Sinh viên Lê Chí Tâm và Lê Nguyễn Quốc Anh. Repo cũ của nhóm (`spark-cluster`, `hadoop-cluster`, `kafka-docker`) vẫn tương thích với repo mới: giữ nguyên tên container, tên volume và cổng, sửa các lỗi cấu hình ghi ở NHAT_KY.md.
