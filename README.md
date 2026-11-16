@@ -226,7 +226,7 @@ Bảng đối chiếu đầy đủ từng yêu cầu: [docs/DOI_CHIEU_YEU_CAU.md
 | Hạng mục | Trạng thái |
 |---|---|
 | Logic job (làm sạch, quarantine, trọng số, suy giảm, chia train/test, ALS, metric, trộn, cold start, A/B) | Kiểm thử tự động trên Spark local thật (`pytest`) |
-| 5 DAG Airflow: nạp, tuần tự hóa, Deadline Alert, tham số backfill | Kiểm thử bằng Airflow 3.3.1 thật (`tests/test_airflow_dags.py`); Deadline Alert và `airflow backfill create` chạy thử trên Airflow thật: docs/bang_chung/kiem_chung_airflow_cuc_bo.md |
+| 5 DAG Airflow: nạp, tuần tự hóa, Deadline Alert, tham số backfill | Kiểm thử bằng Airflow 3.3.1 thật (`tests/test_airflow_dags.py`); Deadline Alert và `airflow backfill create` chạy thử trên Airflow thật: docs/bang_chung/kiem_chung_airflow_cuc_bo.md; backfill DAG 3 trên cụm: docs/bang_chung/cum/10_backfill_dag3.txt |
 | Chuyển gốc `/lake` → `/lakehouse/bd03_khuyen_nghi` | Thử với Spark thật trên đĩa cục bộ: dời bảng, viết lại `_spark_metadata`, luồng chạy tiếp không xử lý lại, hoàn tác (`tests/test_chuyen_lakehouse.py`) |
 | Web: 5 màn hình, API, ghi ngược, đo độ trễ | TestClient ở chế độ giả lập; số đo thật trong docs/bang_chung/cum/ |
 | Pipeline đầy đủ với dữ liệu thật RetailRocket | Đã chạy trên cụm 10–11/11/2026: 8 bước, 3 luồng, 5 DAG, 2 lần tái lập trùng khớp. Số liệu ở NHAT_KY.md và báo cáo |

@@ -432,7 +432,7 @@ Table: Trộn ứng viên đồng xuất hiện và ứng viên theo danh mục 
 Hai tính năng được thêm sau khi đối chiếu với đề cương: `sla` thay bằng Deadline Alert, và backfill. Cả hai được chạy thử trên chính Airflow 3.3.1, với đúng mô-đun `bd03_chung.py` của dự án, trước khi đưa lên cụm (`docs/bang_chung/kiem_chung_airflow_cuc_bo.md`).
 
 - **Deadline Alert.** Một DAG thử đặt hạn 1 phút, còn task của nó ngủ 150 giây. Lượt chạy vào hàng đợi lúc 10:09:28, hạn chót là 10:10:28, và scheduler gọi `canh_bao_tre_han` lúc 10:10:29, khi task vẫn đang chạy. Dòng cảnh báo được ghi vào `logs/canh_bao.log`. SLA cũ của Airflow 2 chỉ được kiểm tra khi lượt chạy kết thúc, tức sau 150 giây.
-- **Backfill DAG 3.** `airflow backfill create` cho năm giờ tạo năm lượt `backfill__`. Chỉ lượt 00:00 UTC truyền `--tu-ngay 2026-11-12` cho job, bốn lượt còn lại bị `cong_backfill` bỏ qua; lượt theo lịch vẫn chạy tăng dần, không tham số.
+- **Backfill DAG 3.** `airflow backfill create` cho năm giờ tạo năm lượt `backfill__`. Chỉ lượt 00:00 UTC truyền `--tu-ngay 2026-11-12` cho job, bốn lượt còn lại bị `cong_backfill` bỏ qua; lượt theo lịch vẫn chạy tăng dần, không tham số. Trên cụm (16/11), backfill 06:00–08:00 ngày 15/11 chạy lại ba lượt đã có theo lịch (`--reprocess-behavior completed`): lượt 00:00 UTC chạy job với `--tu-ngay 2026-11-15` trong 33 giây, hai lượt còn lại bị bỏ qua (`docs/bang_chung/cum/10_backfill_dag3.txt`).
 
 Bảy kiểm thử trong `tests/test_airflow_dags.py` nạp năm DAG thật bằng DagBag và kiểm tra:
 

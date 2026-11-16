@@ -3,6 +3,7 @@
 | Tệp | Nội dung | Mục đề cương |
 |---|---|---|
 | `kiem_chung_airflow_cuc_bo.md` | Deadline Alert và `airflow backfill create` chạy trên Airflow 3.3.1 thật (máy cục bộ) | A.6.5, A.8 |
+| `cum/10_backfill_dag3.txt` | `airflow backfill create` cho DAG 3 trên cụm (16/11): 3 lượt, đúng lượt 00:00 UTC tính lại ngày 15/11 | A.8 |
 | `cum/01_hdfs_du_h.txt` | `hdfs dfs -du -h /lakehouse/bd03_khuyen_nghi` | A.6.3 (bắt buộc nộp) |
 | `cum/02_hdfs_cay.txt` | du, count, cây thư mục (`hdfs dfs -ls -R` đã lọc) | A.4 |
 | `cum/03_quarantine.json` | Dựng `_quarantine.tuong_tac` từ bronze (nếu chưa có) | A.4 |

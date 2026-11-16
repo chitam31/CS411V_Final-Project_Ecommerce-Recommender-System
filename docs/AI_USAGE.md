@@ -82,7 +82,7 @@ Những phần thành viên tự làm hoặc tự sửa trực tiếp:
 - 143 kiểm thử pytest chạy trên Spark local thật và Airflow 3.3.1 thật: `pytest` (Spark, web) và `tests/test_airflow_dags.py` (cần `requirements-airflow.txt`).
 - Pipeline chạy thật trên cụm, kết quả ghi ở NHAT_KY.md và các tệp trong `docs/bang_chung/`.
 - Tái lập bằng time travel: DAG `kn_tai_lap` cho metric trùng khớp với lịch sử ở hai phiên bản đặc trưng (độ lệch 0).
-- Deadline Alert và backfill được thử trên Airflow 3.3.1 thật trước khi đưa lên cụm: `docs/bang_chung/kiem_chung_airflow_cuc_bo.md`.
+- Deadline Alert và backfill được thử trên Airflow 3.3.1 thật trước khi đưa lên cụm: `docs/bang_chung/kiem_chung_airflow_cuc_bo.md`; backfill DAG 3 chạy lại trên cụm ngày 16/11: `docs/bang_chung/cum/10_backfill_dag3.txt`.
 
 ## 7. Giải thích mã khi bảo vệ
 

@@ -22,7 +22,7 @@ chiếu đặc tả riêng của đề tài 3.
 | A.8 Delta | MERGE, time travel, schema evolution, OPTIMIZE đo lường | MO_HINH §11–12, `do_hieu_nang_zorder` | Báo cáo chương 6 |
 | A.8 HDFS | Phân vùng hợp lý, small files, benchmark | `silver` theo ngày (140 tệp sau sửa lỗi tệp nhỏ), Z-ORDER 200 → 67 → 1,07 tệp đọc | Báo cáo chương 6 |
 | A.8 Web | Đủ màn hình, ghi ngược, phản hồi < 3 s | Middleware đo thời gian, `/api/hieu-nang`, `scripts/do_do_tre_web.py` | `docs/bang_chung/cum/07_do_tre_web.md` |
-| A.8 Airflow | DAG rõ ràng, xử lý lỗi, backfill | retries + callback + nhánh giữ mô hình cũ + tự khởi động lại luồng; backfill DAG 1 (`tu_ngay`/`den_ngay`) và DAG 3 (`airflow backfill create`) | KIEN_TRUC.md §8 |
+| A.8 Airflow | DAG rõ ràng, xử lý lỗi, backfill | retries + callback + nhánh giữ mô hình cũ + tự khởi động lại luồng; backfill DAG 1 (`tu_ngay`/`den_ngay`) và DAG 3 (`airflow backfill create`) | KIEN_TRUC.md §8; `docs/bang_chung/cum/10_backfill_dag3.txt` (backfill DAG 3 trên cụm) |
 | A.9 | `docs/AI_USAGE.md` | Khai báo prompt, phần AI sinh, phần nhóm làm | `docs/AI_USAGE.md` |
 
 ## Phần C — Báo cáo, demo, câu hỏi phản biện
