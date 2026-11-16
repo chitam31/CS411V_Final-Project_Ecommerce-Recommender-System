@@ -54,4 +54,4 @@ Table: Thời gian phản hồi trước và sau khi sửa, 20 yêu cầu mỗi 
 | `/api/mo-hinh/chi-so`, `/tai-lap` | 20/20 lỗi 500 | trung vị 22–29 ms, **20/20** |
 | **Toàn bộ 220 yêu cầu** | 161 thành công | **220 thành công, 99,1 % dưới 3 s, p95 457 ms** |
 
-Hai yêu cầu còn trên 3 giây đều là lần đầu sau khi web khởi động: `/mo-hinh` 8,5 giây, một trang sản phẩm 3,4 giây. Sau lần đo này, web chạy trước các truy vấn chậm đó trong một luồng nền lúc khởi động, và giữ ba bảng báo cáo (chỉ đổi mỗi đêm) trong bộ đệm 10 phút. Hai thay đổi này chưa được đo lại trên cụm.
+Hai yêu cầu còn trên 3 giây đều là lần đầu sau khi web khởi động: `/mo-hinh` 8,5 giây, một trang sản phẩm 3,4 giây. Sau lần đo này, web chạy trước các truy vấn chậm đó trong một luồng nền lúc khởi động, và giữ ba bảng báo cáo (chỉ đổi mỗi đêm) trong bộ đệm 10 phút. Kiểm tra trên cụm sau khi build lại: luồng nền xong 9 truy vấn trong khoảng 43 giây kể từ khi web khởi động, và lần mở `/mo-hinh` đầu tiên còn 24 ms (trước 8,5 giây).

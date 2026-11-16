@@ -455,7 +455,7 @@ Table: Năm DAG trên cụm: lịch, hạn chót, thử lại và các lượt c
 Hai quan sát vận hành từ cùng tệp:
 
 - **Báo động khi không có lưu lượng.** Sáng 16/11, bộ phát dữ liệu tắt. Task `kiem_tra_du_lieu_15_phut` của DAG giám sát không thấy cửa sổ thịnh hành nào trong 15 phút gần nhất, nên ghi cảnh báo và gọi khởi động lại luồng ba lần liên tiếp (`logs/canh_bao.log`). Lệnh khởi động bỏ qua luồng đang chạy, nên luồng không bị gián đoạn: ứng dụng vẫn giữ nguyên mã sau 31,5 phút (`06_streaming.txt`). Cảnh báo đúng theo thiết kế nhưng là báo động giả khi không có sự kiện, ghi ở @sec:limits.
-- **Lượt chạy treo của DAG 1.** Lượt `scheduled__2026-11-14T19:00` ở trạng thái `running` từ trưa 15/11, vì DAG đã được tạm dừng trong lúc lượt này đang chờ. Scheduler không lập lịch task cho DAG đang tạm dừng, nên lượt này đứng yên mà không chạy job nào. Lượt này phải được đánh dấu thất bại trước khi bật lại DAG 1 (`docs/TRIEN_KHAI_CUM.md`), để nó không chạy tiếp với dữ liệu cũ.
+- **Lượt chạy treo của DAG 1.** Lượt `scheduled__2026-11-14T19:00` ở trạng thái `running` từ trưa 15/11, vì DAG đã được tạm dừng trong lúc lượt này đang chờ. Scheduler không lập lịch task cho DAG đang tạm dừng, nên lượt này đứng yên mà không chạy job nào. Ngày 16/11, sensor của lượt này được đánh dấu thất bại và các task còn lại chuyển sang bỏ qua, nên khi bật lại DAG 1 sau khi nộp bài, lượt này không chạy tiếp với dữ liệu cũ.
 
 ## Hiệu năng ứng dụng web {#sec:res-web}
 
@@ -520,10 +520,12 @@ Kết quả sau khi sửa:
 - **Gợi ý người dùng quen.** Lần đầu với mỗi người dùng (không trúng bộ đệm) còn khoảng 0,4–0,6 giây, so với 8,9–10,4 giây trước đó, tức nhanh khoảng 17 lần. Trung vị còn 28 ms vì các lần sau trúng bộ đệm. Đây là tác dụng Z-ORDER của @tab:zorder, nay có thật trên bảng phục vụ.
 - **Hai yêu cầu còn trên 3 giây.** Cả hai đều là lần đầu sau khi web khởi động: `/mo-hinh` 8,5 giây (nạp nhật ký Delta của ba bảng) và một trang sản phẩm 3,4 giây. Phía máy chủ còn ghi `/api/nguoi-dung-mau` 19,4 giây, cũng ở lần đầu.
 
-Vì vậy, sau lần đo này, web được bổ sung hai thay đổi. Hai thay đổi này chưa được đo lại trên cụm.
+Vì vậy, sau lần đo này, web được bổ sung hai thay đổi.
 
 - **Làm nóng bộ đệm.** Ngay khi khởi động, một luồng nền chạy trước các truy vấn chậm đó.
 - **Bộ đệm dài hơn.** Ba bảng chỉ đổi khi DAG hằng đêm chạy được giữ trong bộ đệm 10 phút thay cho 60 giây.
+
+Kiểm tra trên cụm sau khi build lại web (`07b_do_tre_web_sau_sua.md`, mục cuối): luồng làm nóng xong 9 truy vấn trong khoảng 43 giây kể từ khi web khởi động. Lâu nhất là danh sách người dùng mẫu (20,3 giây) và danh mục sản phẩm (4,7 giây). Sau đó lần mở `/mo-hinh` đầu tiên chỉ còn 24 ms, so với 8,5 giây khi chưa làm nóng. Vì vậy, sau mỗi lần khởi động lại web, chỉ cần chờ khoảng một phút trước khi mở trang.
 
 ## Xử lý luồng và vận hành {#sec:res-streaming}
 

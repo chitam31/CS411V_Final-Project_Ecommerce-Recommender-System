@@ -41,3 +41,24 @@ Tổng cộng 220 yêu cầu: p95 = 457 ms, lớn nhất = 8529 ms, 99.1% dướ
 Ghi chú: các giá trị lớn nhất phía máy chủ (`/api/nguoi-dung-mau` 19,4 s, `/api/goi-y` 10,8 s, `/mo-hinh` 8,5 s)
 là yêu cầu đầu tiên sau khi web khởi động (nạp nhật ký Delta, quét bảng gợi ý lấy người dùng mẫu). Sau lần đo
 này web được thêm bước làm nóng bộ đệm trong luồng nền khi khởi động (`KhoDelta.lam_nong`).
+
+## Kiểm tra làm nóng bộ đệm (bản `3eee18b`, build lại web 09:31 giờ Việt Nam)
+
+`docker exec bd03-web grep -c lam_nong ...` = 2 (`app.py`) và 1 (`kho_du_lieu.py`): image chạy đúng bản mới.
+`docker logs bd03-web 2>&1 | grep "Làm nóng"` (giờ UTC trong container):
+
+```
+2026-11-16 02:31:31,334 INFO web: Làm nóng nguoi_dung_mau: 20.3 s
+2026-11-16 02:31:35,794 INFO web: Làm nóng lich_su_mo_hinh: 4.5 s
+2026-11-16 02:31:39,421 INFO web: Làm nóng tuning: 3.6 s
+2026-11-16 02:31:41,982 INFO web: Làm nóng do_zorder: 2.6 s
+2026-11-16 02:31:44,279 INFO web: Làm nóng ket_qua_ab: 2.3 s
+2026-11-16 02:31:46,624 INFO web: Làm nóng ket_qua_tai_lap: 2.3 s
+2026-11-16 02:31:48,717 INFO web: Làm nóng thinh_hanh: 2.1 s
+2026-11-16 02:31:53,443 INFO web: Làm nóng danh_muc_san_pham: 4.7 s
+2026-11-16 02:31:53,975 INFO web: Làm nóng cay_danh_muc: 0.5 s
+```
+
+Chín bước, khoảng 43 giây sau khi container khởi động. Sau đó lần mở `/mo-hinh` đầu tiên
+(`curl -s -o /dev/null -w "%{time_total}" http://localhost:8000/mo-hinh`) mất 0,024 giây, so với 8,5 giây
+ở lần đo trên (chưa làm nóng).
