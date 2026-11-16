@@ -60,21 +60,24 @@ Các hội thoại đầy đủ được lưu trong dự án Claude "Big Data_Re
 
 ## 5. Phần nhóm thực hiện và chỉnh sửa
 
-Những việc dưới đây do nhóm làm. Phần lớn không nằm trong commit vì đó là vận hành trên các máy lab.
+Những việc dưới đây do nhóm làm. Phần lớn không nằm trong commit vì đó là vận hành trên các máy lab. Vai trò theo mục A.2: Lê Chí Tâm là ML Engineer và DevOps/Orchestration; Lê Nguyễn Quốc Anh là Web Developer và Data Engineer (bảng phân công ở mục 10 báo cáo chính).
 
-- Hạ tầng gốc trước khi dùng AI: repo cụm `spark-cluster`, `hadoop-cluster`, `hadoop-custom`, `kafka-docker` và job bronze ban đầu. AI rà soát và sửa trên nền này.
-- Mạng ZeroTier cho 6 máy lab và máy cá nhân; xin và phối hợp với phòng lab để dùng máy, chặn card Docker trong ZeroTier, xử lý máy ngủ.
-- Tải dữ liệu RetailRocket bằng khóa Kaggle trên laptop (khóa không để trên máy lab dùng chung) và chép sang cụm.
-- Chạy toàn bộ pipeline, 3 luồng streaming, Airflow, web, bộ phát Kafka trên cụm thật; chụp màn hình, gửi log lỗi; kiểm tra web và DAG tái lập.
-- Quyết định triển khai: chuyển web khỏi máy Ctam sang labsoe-18, tạm dừng Cassandra ngoài dự án trên master để đủ RAM, chọn máy chạy từng vai trò.
-- Commit của nhóm trong repo: đưa dự án lên thư mục gốc và cố định LF (10/11), mẫu bìa báo cáo TTU (11/11), sửa tên thành viên và tiêu đề README (11/11).
-- Duyệt và yêu cầu sửa các bản nháp tài liệu, kịch bản demo và thuyết trình.
+- Hạ tầng gốc trước khi dùng AI: repo cụm `spark-cluster`, `hadoop-cluster`, `hadoop-custom`, `kafka-docker` và job bronze ban đầu. AI rà soát và sửa trên nền này (Lê Nguyễn Quốc Anh).
+- Mạng ZeroTier cho 6 máy lab và máy cá nhân; xin và phối hợp với phòng lab để dùng máy, chặn card Docker trong ZeroTier, xử lý máy ngủ (Lê Nguyễn Quốc Anh).
+- Tải dữ liệu RetailRocket bằng khóa Kaggle trên laptop (khóa không để trên máy lab dùng chung) và chép sang cụm (Lê Nguyễn Quốc Anh).
+- Chạy toàn bộ pipeline, 3 luồng streaming, Airflow, web, bộ phát Kafka trên cụm thật; chụp màn hình, gửi log lỗi; kiểm tra web và DAG tái lập (Lê Chí Tâm).
+- Quyết định triển khai: chuyển web khỏi máy Ctam sang labsoe-18, tạm dừng Cassandra ngoài dự án trên master để đủ RAM, chọn máy chạy từng vai trò (cả nhóm).
+- Commit của nhóm trong repo: đưa dự án lên thư mục gốc và cố định LF (10/11), mẫu bìa báo cáo TTU (11/11), sửa tên thành viên và tiêu đề README (11/11) (Lê Chí Tâm).
+- Duyệt và yêu cầu sửa các bản nháp tài liệu, kịch bản demo và thuyết trình (Lê Chí Tâm).
 
-Nhóm bổ sung bên dưới những chỉnh sửa khác mà mình đã tự làm trên mã hoặc tài liệu, nếu có.
+Những phần thành viên tự sửa trực tiếp trên mã hoặc tài liệu (đối chiếu được trong lịch sử Git):
 
 | Thành viên | Tệp / phần đã tự sửa | Nội dung chỉnh sửa |
 |---|---|---|
-| | | |
+| Lê Chí Tâm | Cả repo, `.gitattributes` (`221db2d`, 10/11) | Đưa dự án lên thư mục gốc, cố định LF cho tệp văn bản |
+| Lê Chí Tâm | Báo cáo tiếng Anh, `bao_cao/hinh/` (`c850448`, 11/11) | Mẫu bìa báo cáo TTU |
+| Lê Chí Tâm | `README.md` (`3f37e24`, `1a2b245` ngày 11/11; `38fc8db` ngày 15/11) | Sửa tên thành viên, tiêu đề; bỏ ghi chú về dữ liệu thí nghiệm |
+| Lê Chí Tâm | Kết quả thí nghiệm, nay ở `docs/ket_qua_cum/` (`0bfc438`, 13/11) | Thêm kết quả thí nghiệm bổ sung chạy trên cụm (tuning, bootstrap A/B, chẩn đoán) |
 
 ## 6. Kiểm chứng phần do AI sinh
 

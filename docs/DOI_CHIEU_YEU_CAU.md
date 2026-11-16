@@ -8,7 +8,7 @@ chiếu đặc tả riêng của đề tài 3.
 
 | Mục | Yêu cầu | Hiện thực | Bằng chứng |
 |---|---|---|---|
-| A.2 | Nhóm 3–4 sinh viên, bảng phân công 4 vai trò, mỗi thành viên có commit ở ≥ 2 vai trò | Nhóm tự hoàn thiện (ngoài phạm vi đợt sửa ngày 15/11) | — |
+| A.2 | Nhóm 3–4 sinh viên, bảng phân công 4 vai trò, mỗi thành viên có commit ở ≥ 2 vai trò | Đủ 4 vai trò: Lê Chí Tâm (ML Engineer, DevOps/Orchestration), Lê Nguyễn Quốc Anh (Web Developer, Data Engineer). Chưa đạt hai ý: nhóm có 2 người; phần lớn mã do AI sinh (A.9) nên commit của thành viên ít (Tâm 6, Quốc Anh 0) | Báo cáo chính mục 10, báo cáo đầy đủ phụ lục F, `docs/AI_USAGE.md` mục 5, `git log` |
 | A.3 | Hadoop ≥ 3.3, Spark 3.5, Delta ≥ 3.1, Airflow ≥ 2.9, Kafka ≥ 3.6, FastAPI/Flask, Jinja2 + Chart.js, Git | Hadoop 3.5.0, Spark 3.5.3 Standalone, Delta 3.2.0, Airflow 3.3.1 (BashOperator), Kafka 3.7.2 KRaft, FastAPI + Jinja2 + Chart.js 4.6.1, Git; docker-compose cho mọi thành phần | `ha_tang/*`, `web/static/vendor/` |
 | A.4 | `hdfs:///lakehouse/<ma_de_tai>/` với bronze, silver, gold, features, models, checkpoints, `_quarantine` | `LAKE_DUONG_DAN=/lakehouse/bd03_khuyen_nghi` (`jobs/common/cau_hinh.py`); `_quarantine.tuong_tac` ghi mọi dòng bị loại khỏi silver kèm `ly_do`; chuyển từ `/lake` bằng `scripts/cum/chuyen_lakehouse.sh` | `docs/bang_chung/cum/02_hdfs_cay.txt`, `tests/test_chuyen_lakehouse.py` |
 | A.5 | Cấu trúc repo chuẩn | Bảng ánh xạ ở README mục 2.1; thêm `conf/`, `notebooks/eda_retailrocket.ipynb` | README |
