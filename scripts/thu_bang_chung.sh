@@ -35,19 +35,21 @@ buoc() { echo "[$(date +%H:%M:%S)] $*"; }
 
 { echo "# Thu lúc $(date '+%Y-%m-%d %H:%M:%S %Z') trên $(hostname), mã: $(git log -1 --format='%h %s' 2> /dev/null)"; } > "$RA/00_thong_tin.txt"
 
-buoc "1/9 hdfs dfs -du -h $GOC"
-{ echo ">> hdfs dfs -du -h $GOC"; $HD -du -h "$GOC"; echo; echo ">> hdfs dfs -du -s -h $GOC"; $HD -du -s -h "$GOC"; } \
-  > "$RA/01_hdfs_du_h.txt" 2>&1
-
-buoc "2/9 cây thư mục HDFS"
-bash scripts/demo/cay_hdfs.sh --tep > "$RA/02_hdfs_cay.txt" 2>&1
-
-buoc "3/9 _quarantine"
+# _quarantine dựng trước, rồi mới chụp du -h và cây thư mục: lần thu 16/11 chụp du trước nên _quarantine = 0
+# trong 01/02 dù bảng đã có ngay sau đó (NHAT_KY, 16/11).
+buoc "1/9 _quarantine"
 if $HD -test -e "$GOC/_quarantine/tuong_tac/_delta_log"; then
   echo '{"ghi_chu": "_quarantine.tuong_tac đã có, không dựng lại"}' > "$RA/03_quarantine.json"
 else
   bash ha_tang/spark/submit.sh lo transform/bronze_to_silver.py --toan-bo --chi-cach-ly > "$RA/03_quarantine.json" 2>&1
 fi
+
+buoc "2/9 hdfs dfs -du -h $GOC"
+{ echo ">> hdfs dfs -du -h $GOC"; $HD -du -h "$GOC"; echo; echo ">> hdfs dfs -du -s -h $GOC"; $HD -du -s -h "$GOC"; } \
+  > "$RA/01_hdfs_du_h.txt" 2>&1
+
+buoc "3/9 cây thư mục HDFS"
+bash scripts/demo/cay_hdfs.sh --tep > "$RA/02_hdfs_cay.txt" 2>&1
 
 buoc "4/9 Delta: HISTORY, VERSION AS OF, MERGE, OPTIMIZE, làm sạch (vài phút)"
 "${SQL[@]}" \

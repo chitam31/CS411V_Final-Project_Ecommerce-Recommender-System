@@ -190,6 +190,7 @@ Việc nhóm cần chạy trên cụm: `chuyen_lakehouse.sh --chay` từ laptop,
 - Đọc bằng chứng thấy sự cố 32, 33 (mục 4); đã sửa ở commit `bababb2`.
 - Đo lại sau khi sửa (build lại web, `toi_uu_delta.py --chi-bang gold.goi_y_nguoi_dung`: 1 tệp → 36 tệp): 220/220 yêu cầu thành công, 99,1 % dưới 3 s, p95 457 ms, gợi ý người dùng chưa đệm 0,4–0,6 s (`docs/bang_chung/cum/07b_do_tre_web_sau_sua.md`). Hai yêu cầu còn trên 3 s là lần đầu sau khi web khởi động, nên web thêm làm nóng bộ đệm trong lifespan (`KhoDelta.lam_nong`, tắt bằng `WEB_LAM_NONG=0`) và bộ đệm 10 phút cho ba bảng chỉ đổi mỗi đêm. Kiểm tra trên cụm (build lại 09:31): làm nóng xong 9 truy vấn trong khoảng 43 s, lần mở `/mo-hinh` đầu tiên còn 24 ms (trước 8,5 s).
 - Lượt `scheduled__2026-11-14T19:00` của DAG 1 đã kết thúc: sensor `cho_du_lieu_ngay_moi` đánh dấu Failed, các task còn lại Skipped (09:28–09:32). DAG 1 vẫn tạm dừng.
+- 10:27 chụp lại `hdfs dfs -du -h` (`01_hdfs_du_h.txt`): `_quarantine` 434,3 MB, cả hồ dữ liệu 4,9 GB (9,8 GB trên đĩa với hệ số sao chép 2). Lần chụp 06:09 có `_quarantine` = 0 vì `thu_bang_chung.sh` chụp `du` trước bước dựng `_quarantine`; đã đổi thứ tự trong script.
 - Hai quan sát khác: DAG giám sát báo động giả khi bộ phát tắt (không có cửa sổ thịnh hành mới; luồng không bị gián đoạn). DAG 1 có một lượt `running` treo từ trưa 15/11, cần đánh dấu thất bại trước khi bật lại DAG 1.
 
 ## 4. Lỗi tìm thấy khi phát triển và cách sửa
