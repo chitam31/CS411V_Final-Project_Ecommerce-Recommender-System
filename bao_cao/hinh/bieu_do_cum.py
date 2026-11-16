@@ -96,3 +96,27 @@ fig.savefig("c09_phan_tich_loi.png")
 fig.savefig("c09_phan_tich_loi.svg")
 plt.close(fig)
 print("ok: c08_eda, c09_phan_tich_loi")
+
+# ---------------------------------------------------------------- C9 bản tiếng Anh cho slide bảo vệ
+TEN_EN = {"duoi dai (0% SP test pho bien)": "Long tail\n(0 % popular)", "tron": "Mixed",
+          "dau (>=50% SP test pho bien)": "Head\n(≥ 50 % popular)"}
+KHUNG_EN = [("theo_so_tuong_tac", "nhom_tuong_tac", "(a) By training interactions", lambda x: x),
+            ("theo_pho_bien_test", "nhom_pho_bien_test", "(b) By popularity of test items", TEN_EN.get),
+            ("theo_so_danh_muc", "nhom_danh_muc", "(c) By categories viewed", lambda x: x)]
+fig, axs = plt.subplots(1, 3, figsize=(7.2, 2.6), sharey=True)
+for ax, (khoa, cot, tieu_de, nhan) in zip(axs, KHUNG_EN):
+    nhom = pt[khoa]
+    x = np.arange(len(nhom))
+    w = 0.27
+    for i, (k, ten, mau) in enumerate((("ndcg_b1", "Global best-sellers", XAM), ("ndcg_b2", "Category best-sellers", CAM),
+                                       ("ndcg_als", "ALS", XANH))):
+        ax.bar(x + (i - 1) * w, [d[k] for d in nhom], width=w, color=mau, label=ten, **VIEN)
+    ax.set_xticks(x, ["{}\nn = {:,}".format(nhan(d[cot]), d["so_nguoi"]) for d in nhom], fontsize=6.5)
+    ax.set_title(tieu_de, loc="left")
+axs[0].set_ylabel("NDCG@10")
+axs[0].legend(loc="upper right")
+fig.tight_layout()
+fig.savefig("c09_phan_tich_loi_en.png")
+fig.savefig("c09_phan_tich_loi_en.svg")
+plt.close(fig)
+print("ok: c09_phan_tich_loi_en")

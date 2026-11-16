@@ -100,7 +100,7 @@ ND.push(giua("Bản ngày 15/11/2026 · buổi 19/11/2026 tại phòng lab · th
 
 ND.push(muc("Cách dùng tài liệu"));
 ND.push(y("Thứ tự buổi 19/11: **demo** theo `KICH_BAN_DEMO_19_11.md` → **thuyết trình** theo tài liệu này → **hỏi đáp**. Thầy Dũng không giới hạn thời gian, yêu cầu là **làm rõ toàn bộ đồ án**. **Tâm trình bày toàn bộ** phần thuyết trình."));
-ND.push(y("Ngoài 25 slide có **6 phần bổ sung** (khung “Bổ sung 1–6”): không có slide riêng, nói ngay sau slide ghi trong đề mục và để nguyên slide đó trên màn hình."));
+ND.push(y("Ngoài 26 slide có **6 phần bổ sung** (khung “Bổ sung 1–6”): không có slide riêng, nói ngay sau slide ghi trong đề mục và để nguyên slide đó trên màn hình."));
 ND.push(y("Slide bằng tiếng Anh, **nói bằng tiếng Việt**; thuật ngữ (MERGE, watermark, NDCG, độ phủ/coverage…) giữ nguyên tiếng Anh khi cần."));
 ND.push(y("Mỗi slide gồm: thời lượng ước tính; **lời nói** chi tiết (khung xanh); **ý chính và số cần nhớ** (dàn ý khi quên lời); **chỉ vào** đâu trên slide; **Thầy có thể hỏi** (câu hỏi đào sâu kèm ý trả lời)."));
 ND.push(y(`Thời lượng ước tính theo tốc độ nói khoảng ${TOC_DO} âm tiết/phút; cả bài **${phut(moc)}**, chưa tính hỏi đáp.`));
@@ -120,7 +120,7 @@ batDauSo();
 
 // ---- 2. bố cục
 ND.push(muc("2. Bố cục"));
-ND.push(doan(`**Tâm trình bày toàn bộ**: 25 slide và 6 phần bổ sung, cả bài **${phut(moc)}** (trong đó phần bổ sung ${phut(tongBS)}). Ba phần: nền tảng (slide 1–9), mô hình và đánh giá (slide 10–20), vận hành và kết luận (slide 21–25).`));
+ND.push(doan(`**Tâm trình bày toàn bộ**: 26 slide và 6 phần bổ sung, cả bài **${phut(moc)}** (trong đó phần bổ sung ${phut(tongBS)}). Ba phần: nền tảng (slide 1–9), mô hình và đánh giá (slide 10–20), vận hành và kết luận (slide 21–25).`));
 ND.push(bang(["#", "Nội dung", "Ước tính", "Mốc"],
   S.map((s) => [s.bs ? `**B${s.bs}**` : String(s.so), s.bs ? `**Bổ sung ${s.bs} · ${s.tieu}** (sau slide ${s.sau}, không có slide riêng)` : s.tieu, mmss(s.giay), mmss(s.moc)]),
   [8, 64, 14, 14], (d) => (String(d[0]).startsWith("**B") ? "FFF4E5" : null)));

@@ -20,6 +20,7 @@
     "als",
     "tuning",
     "baselines",
+    "errors",
     "bias",
     "rerank",
     "coldstart",
@@ -45,7 +46,7 @@
       "start": "dataset"
     },
     "s3": {
-      "description": "ALS, tuning, baselines, popularity bias, re-ranking and cold start",
+      "description": "ALS, tuning, baselines, error analysis, popularity bias, re-ranking and cold start",
       "start": "als"
     },
     "s4": {

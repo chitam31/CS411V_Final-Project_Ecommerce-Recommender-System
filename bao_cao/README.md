@@ -7,6 +7,7 @@ Ba bản, cùng một bộ sinh `tao_bao_cao.js`:
 | **Báo cáo chính** (tiếng Việt, theo cấu trúc C.3 của đề cương, thân bài 17 trang) | `BD03_Bao_cao_chinh.docx` / `.pdf` | **Bản nộp** |
 | Báo cáo đầy đủ (tiếng Việt, 113 trang) | `BD03_Bao_cao_He_thong_goi_y.docx` / `.pdf` | Tài liệu tham khảo chi tiết đi kèm: mọi thí nghiệm, sự cố, phụ lục |
 | Báo cáo tiếng Anh | `BD03_Recommender_System_Report.docx` / `.pdf` | Bản cũ (trước 15/11), chưa có các bổ sung sau kiểm tra theo đề cương |
+| Slide bảo vệ (PDF, 27 trang) | `BD03_Slide_bao_ve.pdf` | Xuất từ `slide/project` (bản trình chiếu chính là deck Slides trên claude.ai) |
 
 Các ô vàng "To be completed" trong hai bản tiếng Việt chờ số liệu từ `scripts/thu_bang_chung.sh` trên cụm.
 
@@ -20,7 +21,7 @@ Các ô vàng "To be completed" trong hai bản tiếng Việt chờ số liệu
 | `hinh/cong_thuc.py` | Công thức dưới dạng ảnh (matplotlib mathtext) |
 | `tao_bao_cao.js` | Dựng `.docx` bằng docx-js: đánh số chương/hình/bảng/công thức, tham chiếu chéo `@fig:` `@tab:` `@eq:` `@sec:` |
 | `cap_nhat_muc_luc.py` | Mở `.docx` bằng LibreOffice, cập nhật mục lục, danh mục hình/bảng và xuất PDF |
-| `slide/` | Mã dựng 25 slide thuyết trình (tiếng Anh, có lời ghi chú cho người nói) |
+| `slide/` | Mã dựng 27 slide bảo vệ (26 slide + 1 dự phòng, tiếng Anh, có lời ghi chú cho người nói): `python3 gen.py`; bản PDF: `BD03_Slide_bao_ve.pdf` |
 | `hoi_dap/` | Bộ 49 câu hỏi – đáp dự kiến (tiếng Việt): `node tao_hoi_dap.js` |
 | `kich_ban/` | Buổi 19/11 (demo trước, thuyết trình sau, không giới hạn thời gian): `KICH_BAN_DEMO_19_11.md` (bản thực hiện) và `node tao_kich_ban_demo_19_11.js` (bản docx); kịch bản thuyết trình chi tiết `node tao_noi_dung_thuyet_trinh.js`. `tao_kich_ban.js`, `tao_kich_ban_demo.js` là bản cũ (20 phút, 12/11) |
 

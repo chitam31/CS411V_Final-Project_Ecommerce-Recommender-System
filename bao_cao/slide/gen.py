@@ -33,6 +33,7 @@ IMG = {
     "c04": ("/_blob/88e24660e94d702e65d25d205dd48bef", 1155, 587, "c04_xep_lai.svg"),
     "c05": ("/_blob/2d91d56be0f4fc937d653e12756904aa", 1172, 509, "c05_zorder.svg"),
     "c06": ("/_blob/dcdd8358392a4e72022732ccf3a68035", 1925, 722, "c06_ab.svg"),
+    "c09": ("/_blob/b42da5d24d6af6998f1233472d502a76", 1544, 526, "c09_phan_tich_loi_en.svg"),
     "s01": ("/_blob/d74fa9afdacef1c40c17f19df041f67c", 1350, 1034, "s01_cold_start_web.png"),
     "s03": ("/_blob/47ac9f5a98784585209076b04e959092", 1350, 870, "s03_ab_web.png"),
     "eq_als": ("/_blob/4576264a7d76e2eb4a8cf05a603503e4", 975, 113, "eq_als.png"),
@@ -40,7 +41,7 @@ IMG = {
 }
 
 THU_TU = []
-TONG = 26
+TONG = 27
 
 
 SO_HINH = [0]
@@ -197,7 +198,7 @@ slide("dataset", tieu_de("Data and architecture", "RetailRocket clickstream") +
       so_lon("2.89 M", "events over 139 days: views, add-to-cart, purchases") +
       so_lon("417,053", "items in the catalogue (126,230 seen in training)") +
       so_lon("179,999", "training users with at least 3 interactions") +
-      so_lon("1.8×10<sup style=\"font-size:0.6em;vertical-align:0.75em;line-height:0\">−5</sup>", "density of the user–item matrix") +
+      so_lon("3.3×10<sup style=\"font-size:0.6em;vertical-align:0.75em;line-height:0\">−5</sup>", "density of the training matrix (179,999 × 126,230)") +
       "</div>" +
       '<div style="display:flex;flex-direction:column;gap:12px">' +
       dong("Replay", "A Kafka producer replays the log, compressing one day into 30 seconds; 4.8 % of users are synthetic newcomers for cold start", 28, 260) +
@@ -326,6 +327,20 @@ slide("baselines", tieu_de("Model and evaluation", "ALS beats both baselines") +
       "Against the two mandatory baselines ALS wins by a wide margin: thirteen times the global best-seller list, and 43 percent "
       "over best-sellers of the user’s category, which is a much stronger baseline because RetailRocket visitors stay within a "
       "category. ALS also wins on precision, recall and MAP. The served configuration, with novelty re-ranking, is better again.")
+
+# ------------------------------------------------------------------ 12b. Error analysis
+slide("errors", tieu_de("Model and evaluation", "Where ALS fails: error analysis") +
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:48px">' +
+      so_lon("Every group", "ALS beats category best-sellers in all 12 user groups, by 29–54 %") +
+      so_lon("41 %", "of test users only touch long-tail items; their NDCG@10 is 1/9 of the rest", ORANGE) +
+      so_lon("84.8 %", "of test users get NDCG@10 = 0 from both ALS and the category baseline") +
+      "</div>" +
+      '<div style="display:flex;justify-content:center">' + hinh("c09", "NDCG@10 per user group for ALS and both baselines (9,467 test users, cluster run 16 Nov)", rong=1100) + "</div>",
+      "We expected ALS to lose to the category baseline for users with few interactions and for users who stay in one category. "
+      "Both hypotheses were wrong: ALS wins in every group, including the three-to-four-interaction users who are two thirds of the "
+      "test set, and single-category users are the easiest case for both methods. The real failure is the long tail: when the items "
+      "a user touches next month are all unpopular, both methods almost always score zero. That is the same popularity bias as on "
+      "the next slide, and it points to long-tail candidate sources rather than more ALS tuning.")
 
 # ------------------------------------------------------------------ 13. Popularity bias
 slide("bias", tieu_de("Model and evaluation", "Coverage is limited by popularity bias") +
@@ -526,18 +541,19 @@ slide("limits", tieu_de("Conclusion", "Limitations and future work") +
       "more candidate sources before re-ranking, a proper validation protocol, and a sensitivity analysis of the A/B simulation.")
 
 # ------------------------------------------------------------------ 25. Cảm ơn
-demo = ["Model quality", "Cold start", "Closed loop ≤ 90 s", "A/B dashboard", "Reproduction"]
+demo = ["8 criteria shown live", "Airflow DAG run", "HDFS + Delta SQL", "Web write-back → Delta", "Streams ≥ 30 min"]
 slide("thanks", (
     '<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:{la}">Thank you</p>'
-    '<h1 style="font-family:{h};font-size:96px;font-weight:700;line-height:1.08;color:{bg}">Questions — then a live demo</h1>'
+    '<h1 style="font-family:{h};font-size:96px;font-weight:700;line-height:1.08;color:{bg}">Thank you — questions welcome</h1>'
     '<div style="display:flex;gap:20px;flex-wrap:wrap">{d}</div>'
     '<div style="flex:1"></div>'
     '<p style="font-family:{mo};font-size:26px;color:#C9D4E5">github.com/chitam31/CS411V_Final-Project_Ecommerce-Recommender-System</p>'
 ).format(la=LIGHT_ACC, h=H, bg=BG, mo=M, d="".join(
     '<p style="font-size:28px;font-weight:600;color:{n};background:{la};padding:12px 24px;border-radius:12px">{i}. {t}</p>'.format(
         n=NAVY, la=LIGHT_ACC, i=i + 1, t=t) for i, t in enumerate(demo))),
-    "Thank you for your attention. We are happy to take questions, and then we will run the live demonstration in this order: "
-    "model quality, cold start with a new user, the closed loop with its latency, the A/B dashboard and the reproduction screen.",
+    "Thank you for your attention. You have already seen the system live at the start: the eight criteria on the cluster, a DAG "
+    "run, the HDFS tree and Delta SQL, a write-back from the web confirmed in Delta, and streams that have run for hours. We are "
+    "happy to take your questions.",
     nen=NAVY)
 p = os.path.join(SL, "thanks.html")
 s = open(p, encoding="utf-8").read().replace("color:{}\">BD03".format(MUTED), "color:#9FB0C8\">BD03").replace(

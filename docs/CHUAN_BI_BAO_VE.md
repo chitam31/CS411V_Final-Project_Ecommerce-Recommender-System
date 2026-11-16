@@ -21,8 +21,8 @@ Quy ước trong tài liệu này:
 | Mục | Giá trị |
 |---|---|
 | Ngày bảo vệ | 19/11/2026 tại phòng lab: demo trước, thuyết trình sau (không giới hạn thời gian thuyết trình). Nộp báo cáo và sản phẩm sau 19/11, trước 22/11/2026 |
-| Thời lượng | 20 phút trình bày (25 slide, thêm slide 26 dự phòng cho hỏi – đáp), sau đó hỏi – đáp, rồi demo khoảng 5 phút. Hội đồng có thể muốn xem demo trước |
-| Thành viên | Lê Chí Tâm (2302220) nói slide 1–9 và 21–25, đồng thời bấm máy khi demo. Lê Nguyễn Quốc Anh (2302283) nói slide 10–20 và nói lời dẫn khi demo |
+| Thời lượng | Buổi 19/11: demo trước (khoảng 14 phút, `bao_cao/kich_ban/KICH_BAN_DEMO_19_11.md`), rồi thuyết trình không giới hạn thời gian (26 slide, thêm slide 27 dự phòng cho hỏi – đáp) |
+| Thành viên | Lê Chí Tâm (2302220) trình bày toàn bộ phần slide và bấm máy khi demo. Lê Nguyễn Quốc Anh (2302283) nói lời dẫn khi demo |
 | Giảng viên hướng dẫn | TS. Cao Tiến Dũng |
 | Web | `http://10.68.71.149:8000`. Từ ngoài mạng lab: đường hầm SSH (mục 3.3), rồi mở `http://localhost:8001` |
 | Airflow | `http://10.68.71.113:8088`, tài khoản `admin`, mật khẩu đã đổi ngày 11/11. Không ghi mật khẩu ra giấy hay lên màn hình |
@@ -266,7 +266,7 @@ Chỉ làm khi hội đồng hỏi “hệ thống có chạy phân tán thật 
   - Lịch sử mô hình: dòng triển khai `als_v2_…`.
   - Mục OPTIMIZE / ZORDER ở cuối trang.
 - **Câu chốt:** “Every number on the slides comes from these gold tables.”
-- **Nếu trang chậm** (web đang đọc Delta lần đầu): nói tiếp lời dẫn, chờ tối đa 20 giây. Vẫn không tải được thì chuyển sang slide 11–14.
+- **Nếu trang chậm** (web đang đọc Delta lần đầu): nói tiếp lời dẫn, chờ tối đa 20 giây. Vẫn không tải được thì chuyển sang slide 11–15.
 
 ### Bước 2 (1 phút): Cold start với người dùng mới (tiêu chí 3)
 
@@ -294,7 +294,7 @@ Chỉ làm khi hội đồng hỏi “hệ thống có chạy phân tán thật 
 - **Nếu quá 90 giây chưa cập nhật:**
   1. Nói: “The stream may be in a micro-batch; let me check it.”
   2. Chạy ở `[labsoe-11]`: `bash scripts/luong.sh trang_thai`. Thiếu luồng thịnh hành thì `bash scripts/luong.sh khoi_dong thinh_hanh`. Checkpoint giữ offset, nên click vừa bấm vẫn được tính, đúng như sự cố ngày 11/11.
-  3. Nếu không kịp: chỉ slide 21 (51 giây đo ngày 11/11) và đi tiếp.
+  3. Nếu không kịp: chỉ slide 22 (51 giây đo ngày 11/11) và đi tiếp.
 - **Chứng minh sự kiện đã vào bronze** (khi hội đồng hỏi):
   ```bash
   # [labsoe-11]
@@ -352,10 +352,10 @@ Ghi chú:
 
 | Dấu hiệu | Nguyên nhân thường gặp | Xử lý trong 1 phút | Nếu vẫn không được |
 |---|---|---|---|
-| Web không phản hồi | Container web treo | `[labsoe-18] docker restart bd03-web`, chờ khoảng 30 giây để web tạo phiên Spark | Dùng ảnh chụp (slide 15–16, `bao_cao/hinh/s0*.png`), nói rõ là ảnh chụp ngày 11/11 |
+| Web không phản hồi | Container web treo | `[labsoe-18] docker restart bd03-web`, chờ khoảng 30 giây để web tạo phiên Spark | Dùng ảnh chụp (slide 16–17, `bao_cao/hinh/s0*.png`), nói rõ là ảnh chụp ngày 11/11 |
 | Trang treo, tải được một nửa | Lỗi MTU trên đường ZeroTier | Chuyển sang đường hầm (mục 3.3) | Phát Wi-Fi từ điện thoại rồi dùng đường hầm |
 | Khối thịnh hành đứng yên hoặc chỉ 1–2 món | Bộ phát đã dừng, hoặc luồng thịnh hành chết | `tmux attach -t phat` trên labsit; `bash scripts/luong.sh trang_thai` | `bash scripts/luong.sh khoi_dong thinh_hanh` |
-| Bảng thịnh hành không cập nhật sau 90 giây | Luồng đang chạy micro-batch dài, hoặc đã chết | Như dòng trên | Chỉ slide 21 (51 giây đã đo) |
+| Bảng thịnh hành không cập nhật sau 90 giây | Luồng đang chạy micro-batch dài, hoặc đã chết | Như dòng trên | Chỉ slide 22 (51 giây đã đo) |
 | Một Spark worker hoặc DataNode chết | Wi-Fi chập chờn | Không cần làm gì: Spark chạy lại task, HDFS còn bản sao thứ hai. Có thể dùng làm ví dụ chịu lỗi | Nói tiếp, xử lý sau buổi bảo vệ |
 | Airflow có ô đỏ | Triggerer (cố ý tắt), hoặc lần chạy cũ bị lỗi (lỗi 24) | Giải thích: triggerer không cần vì không có deferrable operator; lần chạy lỗi đã có trong nhật ký lỗi | — |
 | p trên bảng A/B khác 0,0135 | Có thêm impression thật từ các buổi tập | Nói đúng số đang hiện; phân tích chính là p = 0,015 | — |
@@ -420,13 +420,13 @@ Trả lời ngắn, rồi quay lại demo. Câu dài hơn xem bộ hỏi – đ�
   - Khi Kafka sống lại, luồng đọc tiếp từ offset trong checkpoint, không mất và không trùng sự kiện.
 - **Vì sao DAG 1 đang tạm dừng?** Xem câu trả lời ở mục 2.5.
 - **Chọn siêu tham số trên tháng test có gian lận không?** / **Impression không độc lập thì p còn đúng không?**
-  - Mở slide 26 (dự phòng): chọn trên kỳ validation ra đúng cấu hình đang phục vụ; theo user p = 0,029–0,037.
+  - Mở slide 27 (dự phòng): chọn trên kỳ validation ra đúng cấu hình đang phục vụ; theo user p = 0,029–0,037.
 - **Coverage dưới 10 % có phải không đạt tiêu chí?**
   - Hệ thống đang chạy 6,47 % (đã phân tích theo yêu cầu đề); thí nghiệm offline với 3 ô đồng xuất hiện đạt 14,5 % và NDCG còn tăng; chưa triển khai để giữ hệ thống ổn định trước buổi bảo vệ.
 - **Danh sách cá nhân có đổi ngay sau click không?**
   - Phần ALS đổi mỗi đêm (DAG 1).
   - Phần thịnh hành đổi trong khoảng 1 phút. User mới đổi chiến lược ngay trong phiên.
-  - Cập nhật trực tuyến là hướng phát triển (slide 24).
+  - Cập nhật trực tuyến là hướng phát triển (slide 25).
 
 ---
 
