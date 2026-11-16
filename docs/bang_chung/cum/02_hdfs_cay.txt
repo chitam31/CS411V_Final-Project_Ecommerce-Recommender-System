@@ -1,28 +1,34 @@
+# Chụp lại 16/11/2026 khoảng 10:42 (giờ Việt Nam), chạy từ laptop qua ZeroTier:
+#   ssh labsoe-11 "cd ~/bd03_khuyen_nghi && bash scripts/demo/cay_hdfs.sh --tep"
+# Lần chụp 06:09 cùng ngày có _quarantine rỗng (xem ghi chú ở 01_hdfs_du_h.txt).
+# Giờ trong cột thời gian của HDFS là UTC: 2026-11-15 23:34 UTC = 06:34 ngày 16/11 giờ Việt Nam.
+
 >> hdfs dfs -du -h /lakehouse/bd03_khuyen_nghi
-0        0        /lakehouse/bd03_khuyen_nghi/_quarantine
+434.3 M  868.5 M  /lakehouse/bd03_khuyen_nghi/_quarantine
 943.1 M  1.8 G    /lakehouse/bd03_khuyen_nghi/bronze
 1.0 G    2.0 G    /lakehouse/bd03_khuyen_nghi/checkpoints
 39.8 M   79.6 M   /lakehouse/bd03_khuyen_nghi/features
-821.6 M  1.6 G    /lakehouse/bd03_khuyen_nghi/gold
+853.7 M  1.7 G    /lakehouse/bd03_khuyen_nghi/gold
 941.8 M  1.8 G    /lakehouse/bd03_khuyen_nghi/landing
 541.9 M  1.1 G    /lakehouse/bd03_khuyen_nghi/models
 247.0 M  494.0 M  /lakehouse/bd03_khuyen_nghi/silver
 
 >> hdfs dfs -du -s -h /lakehouse/bd03_khuyen_nghi
-4.5 G  8.9 G  /lakehouse/bd03_khuyen_nghi
+4.9 G  9.8 G  /lakehouse/bd03_khuyen_nghi
 
 >> hdfs dfs -count /lakehouse/bd03_khuyen_nghi/*   (số thư mục, số tệp, số byte, đường dẫn)
-           1            0                  0 /lakehouse/bd03_khuyen_nghi/_quarantine
+         146          143          455367590 /lakehouse/bd03_khuyen_nghi/_quarantine
          145         2967          988907492 /lakehouse/bd03_khuyen_nghi/bronze
           35         2330         1082453000 /lakehouse/bd03_khuyen_nghi/checkpoints
            4          645           41730046 /lakehouse/bd03_khuyen_nghi/features
-          38         1909          861529772 /lakehouse/bd03_khuyen_nghi/gold
+          38         1946          895151711 /lakehouse/bd03_khuyen_nghi/gold
            2            4          987498023 /lakehouse/bd03_khuyen_nghi/landing
           44          224          568248610 /lakehouse/bd03_khuyen_nghi/models
          148         6753          258984610 /lakehouse/bd03_khuyen_nghi/silver
 
 >> hdfs dfs -ls -R /lakehouse/bd03_khuyen_nghi   (chỉ thư mục, tối đa 3 cấp dưới gốc; bỏ ngay=..., _delta_log, nội dung checkpoint)
-drwxr-xr-x  2026-11-15 22:58  /lakehouse/bd03_khuyen_nghi/_quarantine
+drwxr-xr-x  2026-11-15 23:34  /lakehouse/bd03_khuyen_nghi/_quarantine
+drwxr-xr-x  2026-11-15 23:37  /lakehouse/bd03_khuyen_nghi/_quarantine/tuong_tac
 drwxr-xr-x  2026-11-15 22:48  /lakehouse/bd03_khuyen_nghi/bronze
 drwxr-xr-x  2026-11-12 03:11  /lakehouse/bd03_khuyen_nghi/bronze/su_kien
 drwxr-xr-x  2026-11-15 22:49  /lakehouse/bd03_khuyen_nghi/checkpoints
@@ -34,7 +40,7 @@ drwxr-xr-x  2026-11-11 19:10  /lakehouse/bd03_khuyen_nghi/features/ma_tran_tuong
 drwxr-xr-x  2026-11-15 22:49  /lakehouse/bd03_khuyen_nghi/gold
 drwxr-xr-x  2026-11-10 10:00  /lakehouse/bd03_khuyen_nghi/gold/do_hieu_nang_zorder
 drwxr-xr-x  2026-11-11 19:49  /lakehouse/bd03_khuyen_nghi/gold/goi_y_als_tam
-drwxr-xr-x  2026-11-15 21:01  /lakehouse/bd03_khuyen_nghi/gold/goi_y_nguoi_dung
+drwxr-xr-x  2026-11-16 01:12  /lakehouse/bd03_khuyen_nghi/gold/goi_y_nguoi_dung
 drwxr-xr-x  2026-11-11 19:53  /lakehouse/bd03_khuyen_nghi/gold/goi_y_tam
 drwxr-xr-x  2026-11-15 05:00  /lakehouse/bd03_khuyen_nghi/gold/ket_qua_ab
 drwxr-xr-x  2026-11-12 03:34  /lakehouse/bd03_khuyen_nghi/gold/ket_qua_tai_lap
