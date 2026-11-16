@@ -142,8 +142,8 @@ slide("cover", (
     '</div>'
     '<p style="font-size:24px;color:#C9D4E5">Trường Đại học Tân Tạo · Bảo vệ ngày 19/11/2026 · GVHD: TS. Cao Tiến Dũng</p>'
 ).format(la=LIGHT_ACC, h=H, bg=BG),
-    "Kính chào thầy cô. Chúng em là Lê Chí Tâm và Lê Nguyễn Quốc Anh. Đề tài của nhóm là Đề tài 3 của học phần CS411V: hệ thống "
-    "gợi ý sản phẩm cho một sàn thương mại điện tử mô phỏng. Hội đồng vừa xem hệ thống chạy trực tiếp trên cụm sáu máy phòng lab; "
+    "Kính chào Thầy. Chúng em là Lê Chí Tâm và Lê Nguyễn Quốc Anh. Đề tài của nhóm là Đề tài 3 của học phần CS411V: hệ thống "
+    "gợi ý sản phẩm cho một sàn thương mại điện tử mô phỏng. Thầy vừa xem hệ thống chạy trực tiếp trên cụm sáu máy phòng lab; "
     "các slide này trình bày cách hệ thống được xây dựng, mô hình đạt được gì trên dữ liệu thật, và từng tiêu chí trong tám tiêu "
     "chí nghiệm thu được chứng minh ra sao.", nen=NAVY)
 # chân trang trên nền tối: sửa màu trong tệp bìa
@@ -519,14 +519,14 @@ slide("limits", tieu_de("Kết luận", "Hạn chế và hướng phát triển"
 demo = ["8 tiêu chí minh họa trực tiếp", "Lượt chạy DAG Airflow", "HDFS + Delta SQL", "Web ghi ngược → Delta", "Luồng chạy ≥ 30 phút"]
 slide("thanks", (
     '<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:{la}">Cảm ơn</p>'
-    '<h1 style="font-family:{h};font-size:96px;font-weight:700;line-height:1.08;color:{bg}">Cảm ơn thầy cô — xin mời đặt câu hỏi</h1>'
+    '<h1 style="font-family:{h};font-size:96px;font-weight:700;line-height:1.08;color:{bg}">Cảm ơn Thầy — xin mời đặt câu hỏi</h1>'
     '<div style="display:flex;gap:20px;flex-wrap:wrap">{d}</div>'
     '<div style="flex:1"></div>'
     '<p style="font-family:{mo};font-size:26px;color:#C9D4E5">github.com/chitam31/CS411V_Final-Project_Ecommerce-Recommender-System</p>'
 ).format(la=LIGHT_ACC, h=H, bg=BG, mo=M, d="".join(
     '<p style="font-size:28px;font-weight:600;color:{n};background:{la};padding:12px 24px;border-radius:12px">{i}. {t}</p>'.format(
         n=NAVY, la=LIGHT_ACC, i=i + 1, t=t) for i, t in enumerate(demo))),
-    "Cảm ơn thầy cô đã lắng nghe. Hội đồng đã xem hệ thống chạy trực tiếp ở phần đầu: tám tiêu chí trên cụm, một lượt chạy DAG, cây "
+    "Cảm ơn Thầy đã lắng nghe. Thầy đã xem hệ thống chạy trực tiếp ở phần đầu: tám tiêu chí trên cụm, một lượt chạy DAG, cây "
     "HDFS và Delta SQL, một lần ghi ngược từ web được xác nhận trong Delta, và các luồng đã chạy nhiều giờ. Chúng em xin sẵn sàng trả "
     "lời câu hỏi.",
     nen=NAVY)
