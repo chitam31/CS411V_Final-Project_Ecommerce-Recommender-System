@@ -70,14 +70,12 @@ Những việc dưới đây do nhóm làm. Phần lớn không nằm trong comm
 - Commit của nhóm trong repo: đưa dự án lên thư mục gốc và cố định LF (10/11), mẫu bìa báo cáo TTU (11/11), sửa tên thành viên và tiêu đề README (11/11) (Lê Chí Tâm).
 - Duyệt và yêu cầu sửa các bản nháp tài liệu, kịch bản demo và thuyết trình (Lê Chí Tâm).
 
-Những phần thành viên tự sửa trực tiếp trên mã hoặc tài liệu (đối chiếu được trong lịch sử Git):
+Những phần thành viên tự làm hoặc tự sửa trực tiếp:
 
-| Thành viên | Tệp / phần đã tự sửa | Nội dung chỉnh sửa |
+| Thành viên | Phần đã tự làm / tự sửa | Nội dung |
 |---|---|---|
-| Lê Chí Tâm | Cả repo, `.gitattributes` (`221db2d`, 10/11) | Đưa dự án lên thư mục gốc, cố định LF cho tệp văn bản |
-| Lê Chí Tâm | Báo cáo tiếng Anh, `bao_cao/hinh/` (`c850448`, 11/11) | Mẫu bìa báo cáo TTU |
-| Lê Chí Tâm | `README.md` (`3f37e24`, `1a2b245` ngày 11/11; `38fc8db` ngày 15/11) | Sửa tên thành viên, tiêu đề; bỏ ghi chú về dữ liệu thí nghiệm |
-| Lê Chí Tâm | Kết quả thí nghiệm, nay ở `docs/ket_qua_cum/` (`0bfc438`, 13/11) | Thêm kết quả thí nghiệm bổ sung chạy trên cụm (tuning, bootstrap A/B, chẩn đoán) |
+| Lê Chí Tâm | Cấu trúc repo, `README.md`, mẫu bìa báo cáo, kết quả thí nghiệm (`docs/ket_qua_cum/`) | Đưa dự án lên thư mục gốc và cố định LF, sửa thông tin nhóm, mẫu bìa TTU, đưa kết quả thí nghiệm chạy trên cụm vào repo (6 commit) |
+| Lê Nguyễn Quốc Anh | Hạ tầng cụm gốc và dữ liệu | Dựng và chỉnh cấu hình cụm Spark, Hadoop, Kafka ban đầu; tải và chuẩn bị dữ liệu RetailRocket |
 
 ## 6. Kiểm chứng phần do AI sinh
 
