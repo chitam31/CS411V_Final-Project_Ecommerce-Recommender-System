@@ -585,7 +585,7 @@ ND.push(ghi("Mỗi khung là một lệnh; thay `moi_xxxxxxxx` bằng mã user t
 // ================================================================== PHỤ LỤC B
 ND.push(muc("Phụ lục B. Số liệu cần thuộc"));
 ND.push(bang(["Hạng mục", "Số liệu"], [
-  ["Dữ liệu", "2,89 triệu sự kiện, 139 ngày, 417.053 sản phẩm; mật độ 1,8·10⁻⁵"],
+  ["Dữ liệu", "2,89 triệu sự kiện, 139 ngày, 417.053 sản phẩm; mật độ 3,3·10⁻⁵"],
   ["Train / test", "179.999 user train (≥ 3 tương tác), 126.230 item; 9.467 user test; tháng test 19/8–18/9/2015"],
   ["Trọng số", "Xem 1, thêm giỏ 3, mua 5; suy giảm λ = 0,01/ngày"],
   ["Tuning", "Lưới 27 tổ hợp; tốt nhất rank 50, regParam 1,0, alpha 40, NDCG@10 = 0,0680"],

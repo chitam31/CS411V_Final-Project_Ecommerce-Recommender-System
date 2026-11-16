@@ -2,7 +2,7 @@
 
 ## Tổng kết kết quả
 
-Đồ án đã hoàn thành một hệ thống gợi ý trọn vẹn cho một sàn thương mại điện tử mô phỏng trên cụm sáu máy phòng thí nghiệm, bao phủ mọi thành phần của đặc tả: một Kafka producer phát lại sự kiện RetailRocket kèm người dùng mới tổng hợp; ba job Structured Streaming có checkpoint trên HDFS; một lakehouse Delta Lake gồm các lớp bronze, silver, features và gold, dùng MERGE, time travel, tiến hóa lược đồ, Change Data Feed, OPTIMIZE/Z-ORDER và phân vùng; một pipeline theo lô hằng đêm từ làm sạch đến công bố danh sách gợi ý; ALS cho phản hồi ngầm với lưới 27 tổ hợp, hai baseline, ba chiến lược khởi đầu lạnh và phiên bản 2 có lọc giá; một pipeline A/B gồm ghi lượt hiển thị, lưu lượng mô phỏng và kiểm định hai tỉ lệ; năm DAG Airflow; và một ứng dụng web có đủ năm màn hình theo yêu cầu. Hệ thống chạy trong các container Docker được cấu hình từ một tệp danh bạ cụm duy nhất và được bao phủ bởi 139 kiểm thử tự động.
+Đồ án đã hoàn thành một hệ thống gợi ý trọn vẹn cho một sàn thương mại điện tử mô phỏng trên cụm sáu máy phòng thí nghiệm, bao phủ mọi thành phần của đặc tả: một Kafka producer phát lại sự kiện RetailRocket kèm người dùng mới tổng hợp; ba job Structured Streaming có checkpoint trên HDFS; một lakehouse Delta Lake gồm các lớp bronze, silver, features và gold, dùng MERGE, time travel, tiến hóa lược đồ, Change Data Feed, OPTIMIZE/Z-ORDER và phân vùng; một pipeline theo lô hằng đêm từ làm sạch đến công bố danh sách gợi ý; ALS cho phản hồi ngầm với lưới 27 tổ hợp, hai baseline, ba chiến lược khởi đầu lạnh và phiên bản 2 có lọc giá; một pipeline A/B gồm ghi lượt hiển thị, lưu lượng mô phỏng và kiểm định hai tỉ lệ; năm DAG Airflow; và một ứng dụng web có đủ năm màn hình theo yêu cầu. Hệ thống chạy trong các container Docker được cấu hình từ một tệp danh bạ cụm duy nhất và được bao phủ bởi 141 kiểm thử tự động.
 
 Đối chiếu với các tiêu chí nghiệm thu, kết quả trên dữ liệu thật như sau:
 
@@ -26,13 +26,15 @@ Ngày 15 tháng 11, sau khi đối chiếu toàn bộ với đề cương đồ 
 - notebook EDA (A.5);
 - khai báo sử dụng AI (A.9).
 
-## Hạn chế
+## Hạn chế {#sec:limits}
 
 - **Độ phủ trong vận hành chưa đạt mục tiêu.** Không cấu hình ALS nào đạt độ phủ 10 %, vì phần lớn sản phẩm huấn luyện chỉ có một hai tương tác và vector ẩn yếu; danh sách đang phục vụ đạt 6,47 %. Tổ hợp đồng xuất hiện đạt 14,5 % mới chỉ được đánh giá ở chế độ offline.
 - **Giao thức đánh giá.** Kết quả chính chọn siêu tham số, β và tập ứng viên trên tháng kiểm tra. Một kiểm tra trên kỳ validation riêng đã chọn cùng cấu hình với mức lạc quan không đáng kể, nhưng chỉ bao phủ 17 trong 27 tổ hợp, một phép chia duy nhất và chưa xét kích thước tập ứng viên.
 - **Lưu lượng mô phỏng.** Kết luận A/B chỉ đúng trong các giả định của mô hình nhấp phụ thuộc vị trí, trong đó sản phẩm thịnh hành không được ưu đãi; nó không nói gì về người mua thật. Các lượt hiển thị của cùng một người dùng tương quan với nhau (hệ số thiết kế 1,36); các kiểm định theo người dùng vẫn giữ kết luận, với p-value khoảng 0,03 thay vì 0,015.
 - **Thuộc tính thay thế.** Giá là giá trị tương đối đã ẩn danh và số sao là đại lượng thay thế suy từ tỉ lệ mua trên xem.
 - **Điểm hỏng đơn lẻ.** NameNode, Spark Master, Kafka (một broker) và mọi driver chạy trên các máy đơn lẻ, và mọi driver dùng chung 7,4 GB của máy master.
+- **Kiểm thử web dùng kho dữ liệu giả.** Hai lỗi chỉ lộ ra khi đo trên cụm ngày 16/11 (@sec:res-web): lỗi 500 do sửa dữ liệu trong bộ đệm, và Z-ORDER mất tác dụng vì OPTIMIZE hằng đêm gộp bảng gợi ý thành một tệp. Cả hai đã được sửa và có kiểm thử hồi quy, nhưng lớp truy cập Delta thật của web vẫn chưa có kiểm thử tự động trên Spark kèm Delta.
+- **DAG giám sát báo động giả khi không có lưu lượng.** Không có sự kiện mới trong 15 phút thì phép kiểm tra cửa sổ thịnh hành coi là sự cố và gọi khởi động lại luồng (vô hại vì luồng đang chạy được giữ nguyên). Cần phân biệt "luồng chết" với "không có dữ liệu", ví dụ bằng offset mới nhất của topic.
 - **Cá nhân hóa chỉ theo lô.** Danh sách cá nhân hóa thay đổi mỗi đêm một lần; chỉ khối thịnh hành và danh sách khởi đầu lạnh trong phiên phản ứng trong vài giây.
 
 ## Hướng phát triển

@@ -44,7 +44,7 @@ Table: Tra cứu gợi ý của một người dùng trước và sau tối ưu 
 | Chỉ OPTIMIZE (gộp tệp) | 67 | 67 | 8.280 | 9.524 |
 | OPTIMIZE ZORDER BY (ma_nguoi_dung) | 55 | 1,07 | 980 | 1.387 |
 
-Chỉ gộp tệp gần như không giúp, vì mỗi tệp vẫn chứa người dùng thuộc toàn dải mã nên min/max của mọi tệp phủ trọn miền giá trị. Z-ORDER xếp các dòng cùng người dùng cạnh nhau, khoảng min/max của mỗi tệp hẹp lại, và data skipping chỉ còn mở khoảng 1 tệp: **nhanh hơn 8,4 lần** so với chỉ gộp tệp.
+Chỉ gộp tệp gần như không giúp, vì mỗi tệp vẫn chứa người dùng thuộc toàn dải mã nên min/max của mọi tệp phủ trọn miền giá trị. Z-ORDER xếp các dòng cùng người dùng cạnh nhau, khoảng min/max của mỗi tệp hẹp lại, và data skipping chỉ còn mở khoảng 1 tệp: **nhanh hơn 8,4 lần** so với chỉ gộp tệp. Điều kiện là tệp phải đủ nhỏ: thí nghiệm giới hạn 1 MB mỗi tệp. Ngày 16/11, nhóm phát hiện OPTIMIZE hằng đêm của DAG 4 dùng mặc định 1 GB nên gộp bảng thành một tệp và làm mất tác dụng này; nhóm đã sửa bằng cách đặt cùng giới hạn 1 MB (@sec:web).
 
 **Độ trễ luồng.** Đo trên cụm ngày 11/11 (@tab:dotre).
 

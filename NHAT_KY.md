@@ -183,6 +183,13 @@ Những gì **giữ lại** từ mã cũ: phiên bản phần mềm, tên contai
 
 Việc nhóm cần chạy trên cụm: `chuyen_lakehouse.sh --chay` từ laptop, rồi `thu_bang_chung.sh` trên master (TRIEN_KHAI_CUM mục 8b, 8c).
 
+### 16/11/2026: chuyển gốc và thu bằng chứng trên cụm
+
+- Gốc dữ liệu đã ở `/lakehouse/bd03_khuyen_nghi` (chuyển từ tối 15/11). `kiem_tra_lakehouse.py` đạt: bronze 8.198.159 dòng đọc được qua `_spark_metadata` mới, silver 2.882.484, mọi bảng gold có phiên bản. Luồng và DAG 2–4 bật lại 06:08.
+- `thu_bang_chung.sh` 06:09–06:51, kết quả ở `docs/bang_chung/cum/`. Riêng bước dựng `_quarantine` (142 ngày, 8,2 triệu dòng bronze) mất 28 phút.
+- Đọc bằng chứng thấy sự cố 32, 33 (mục 4); đã sửa ở commit `bababb2`.
+- Hai quan sát khác: DAG giám sát báo động giả khi bộ phát tắt (không có cửa sổ thịnh hành mới; luồng không bị gián đoạn). DAG 1 có một lượt `running` treo từ trưa 15/11, cần đánh dấu thất bại trước khi bật lại DAG 1.
+
 ## 4. Lỗi tìm thấy khi phát triển và cách sửa
 
 | # | Lỗi | Phát hiện nhờ | Sửa |
@@ -218,6 +225,8 @@ Việc nhóm cần chạy trên cụm: `chuyen_lakehouse.sh --chay` từ laptop,
 | 29 | Hai lần triển khai sáng 11/11 trộn danh sách khi producer đang dừng: cửa sổ thịnh hành mới nhất chỉ có sản phẩm click thử, nên cả 265.043 danh sách lưu đúng 1 món thịnh hành, các ô còn lại lấp bằng bán chạy danh mục (số sản phẩm của bảng phục vụ bị thổi lên 22.011) | `xuat_ket_qua` sau triển khai v2, 11/11 | Cửa sổ dưới 30 món thì bù bằng top xem 24 giờ (`bo_sung_thinh_hanh`), job ghi rõ nguồn đã dùng; chạy lại `tron_goi_y` + `ghi_gold` |
 | 30 | Sau khi làm lại giao diện, trình duyệt giữ CSS cũ và ảnh minh họa vẽ theo cách gán ngành hàng cũ: thẻ "Tạ tay" hiện quyển sách | Chụp màn hình trên cụm, 11/11 | Địa chỉ tệp tĩnh có mã băm nội dung; địa chỉ ảnh mang khóa ngành hàng nên chữ và ảnh không thể lệch; kiểm thử so khớp ảnh với tên ngành trên mọi thẻ |
 | 31 | Ba job thí nghiệm bổ sung chạy tay, ngoài pool của Airflow. Do dán cả khối lệnh, job nguồn ứng viên chạy cùng lúc với job validation; sau đó lượt `kn_tinh_ab` 16:00 không xin được executor (job validation giữ 12,5/13 GB) nên đứng WAITING, driver của nó chiếm thêm RAM master đang dùng swap, SSH vào master báo `timed out during banner exchange`. Riêng job validation còn chậm 5–6 lần vì ground truth dựng từ silver bị đẩy khỏi cache và tính lại từ HDFS ở mỗi lần đo | Thí nghiệm bổ sung, 11/11 15:40–16:15 | Dừng job thừa (pkill driver + tmux), tạm dừng `kn_tinh_ab` trong lúc chạy thí nghiệm rồi bật lại; mỗi lúc chỉ một job tay; ground truth gom về driver thành bảng không còn lineage (`gop_nhan_tren_driver`), đo mọi kỳ trong một lượt |
+| 32 | `lich_su_mo_hinh` (`kho_du_lieu.py`) `pop("chi_tiet_json")` thẳng trên danh sách trong bộ đệm 60 giây: gọi lại `/mo-hinh`, `/api/mo-hinh/chi-so`, `/tai-lap` trong 60 giây đều 500 | `do_do_tre_web.py` trên cụm 16/11 (19/20 và 20/20 lỗi) | Chép dòng trước khi sửa; `test_lich_su_mo_hinh_khong_sua_bo_dem` |
+| 33 | DAG 4 `OPTIMIZE ... ZORDER BY` với `maxFileSize` mặc định 1 GB gộp `gold.goi_y_nguoi_dung` (38 MB) thành 1 tệp: Z-ORDER vô tác dụng, `/api/goi-y/{user}` trung vị 8,9 s | `do_do_tre_web.py` + `DESCRIBE HISTORY` (OPTIMIZE `numRemovedFiles` = 1) trên cụm 16/11 | `TEP_TOI_DA_MB` 1 MB cho bảng gợi ý, `--chi-bang`; người dùng mẫu vào bộ đệm 1 giờ; `test_bao_tri_gioi_han_co_tep_bang_goi_y` |
 
 ---
 

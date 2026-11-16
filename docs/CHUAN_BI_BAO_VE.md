@@ -382,7 +382,7 @@ Ghi chú:
 
 | Hạng mục | Số liệu |
 |---|---|
-| Dữ liệu | 2,89 triệu sự kiện, 139 ngày, 417.053 sản phẩm; mật độ ma trận 1,8·10⁻⁵ |
+| Dữ liệu | 2,89 triệu sự kiện, 139 ngày, 417.053 sản phẩm; mật độ ma trận huấn luyện 3,3·10⁻⁵ |
 | Train / test | 179.999 user train (≥ 3 tương tác), 126.230 item; 9.467 user test; tháng test 19/8–18/9/2015 |
 | Trọng số | Xem 1, thêm giỏ 3, mua 5; suy giảm λ = 0,01/ngày |
 | Tuning | 27 tổ hợp; tốt nhất rank 50, regParam 1,0, alpha 40, NDCG@10 = 0,0680 |
@@ -397,7 +397,7 @@ Ghi chú:
 | Vòng khép kín | Kafka → bronze 10,3 giây; bấm → bảng thịnh hành 51 giây |
 | Mô hình v2 | NDCG 0,0680 → 0,0694 (+2,1 %); coverage 3,44 → 3,72 %; 4.346 → 4.699 item; tự triển khai ngày 11/11 |
 | Cụm | 6 máy lab, mỗi máy 7 GB RAM; 5 worker, 34 lõi, 13 GB executor; HDFS sao chép 2 |
-| Kỹ thuật | 31 lỗi đã ghi và sửa, 139 kiểm thử, khoảng 13.500 dòng mã, báo cáo chính 17 trang thân bài (bản đầy đủ 113 trang) |
+| Kỹ thuật | 33 lỗi đã ghi và sửa, 141 kiểm thử, khoảng 13.500 dòng mã, báo cáo chính 17 trang thân bài (bản đầy đủ 113 trang) |
 
 ---
 

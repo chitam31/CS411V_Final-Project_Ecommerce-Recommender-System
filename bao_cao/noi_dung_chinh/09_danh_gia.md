@@ -24,6 +24,8 @@ Table: Tình trạng các tiêu chí (đặc tả 3.11 và đề cương A.6) {#
 - **A/B dựa trên lưu lượng mô phỏng.** Kết luận chỉ đúng trong giả định của mô hình nhấp.
 - **Giá và số sao là đại lượng thay thế.** Thuộc tính 790 đã ẩn danh; số sao tính từ tỷ lệ mua trên xem.
 - **Máy master là điểm yếu.** Master chỉ có 7,4 GB RAM và giữ driver của mọi job. Cụm phụ thuộc mạng Wi-Fi của phòng lab, nhiều lúc ZeroTier phải đi đường chuyển tiếp.
+- **Kiểm thử web dùng kho dữ liệu giả.** Hai lỗi chỉ lộ ra khi đo trên cụm (@sec:web). Đã sửa, nhưng lớp truy cập Delta của web vẫn chưa có kiểm thử tự động trên Spark kèm Delta.
+- **Báo động giả khi không có lưu lượng.** Bộ phát tắt thì DAG giám sát không thấy cửa sổ thịnh hành mới, nên ghi cảnh báo và gọi khởi động lại luồng; luồng đang chạy được giữ nguyên.
 - **Bảng novelty nằm trên driver.** Bảng được broadcast, và sẽ không đủ chỗ khi số sản phẩm tăng 100 lần.
 
 ## Hướng phát triển

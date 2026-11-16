@@ -151,7 +151,7 @@ S.forEach((s) => {
 ND.push(muc("4. Số liệu cần thuộc", true));
 ND.push(bang(["Hạng mục", "Số liệu"], [
   ["Dữ liệu", "2,76 triệu sự kiện gốc (2,89 triệu vào bronze, gồm 4,8 % người dùng mới tổng hợp), 139 ngày, 417.053 sản phẩm"],
-  ["Ma trận", "179.999 user train (≥ 3 tương tác), 746.350 cặp, mật độ ~1,8·10⁻⁵; 126.230 sản phẩm train; 9.467 user test"],
+  ["Ma trận", "179.999 user train (≥ 3 tương tác), 746.350 cặp, mật độ ~3,3·10⁻⁵; 126.230 sản phẩm train; 9.467 user test"],
   ["Chia thời gian", "Ngày cắt 19/8/2015, ngày cuối 18/9/2015; trọng số 1–3–5; suy giảm λ = 0,01/ngày"],
   ["Cụm", "6 máy lab 12 lõi / 7 GB RAM; 5 worker, 34 lõi, 13 GB executor; HDFS 5 DataNode, nhân bản 2; Kafka 2 topic × 3 phân vùng"],
   ["Luồng", "Trigger 15 / 20 / 30 giây; cửa sổ 15 phút trượt 1 phút; watermark 2 phút; RocksDB"],
@@ -164,8 +164,8 @@ ND.push(bang(["Hạng mục", "Số liệu"], [
   ["Z-ORDER", "Bảng 5,3 triệu dòng; tệp đọc 200 → 67 → 1,07; trung vị 10,8 s → 8,3 s → 0,98 s; nhanh 8,4 lần so với chỉ nén"],
   ["Vòng khép kín", "Kafka → bronze 10,3–10,7 giây; bấm → bảng thịnh hành 51 giây (ngưỡng 90)"],
   ["Tái lập", "Lệch 0,000000 (dung sai 10⁻⁶); không làm tròn ~10⁻¹⁵; phiên bản features 0, 3, 4"],
-  ["Vận hành", "31 sự cố; 139 kiểm thử; ~13.500 dòng mã; 5 DAG; 12 bảng gold"],
-  ["Bổ sung 15/11", "Gốc /lakehouse/bd03_khuyen_nghi; _quarantine 11.759 dòng (0,41 %); Deadline Alerts thay sla; backfill DAG 1 + DAG 3; web đo thời gian xử lý, ghi ngược gold.ket_qua_tai_lap"],
+  ["Vận hành", "33 sự cố; 141 kiểm thử; ~13.500 dòng mã; 5 DAG; 12 bảng gold"],
+  ["Bổ sung 15/11", "Gốc /lakehouse/bd03_khuyen_nghi; _quarantine 5.315.672 dòng (5.304.360 trùng nội dung do phát lại + 11.312 nhấp lặp 5 giây); Deadline Alerts thay sla; backfill DAG 1 + DAG 3; web đo thời gian xử lý, ghi ngược gold.ket_qua_tai_lap"],
 ], [22, 78]));
 
 // ---- 5. tập và hỏi đáp

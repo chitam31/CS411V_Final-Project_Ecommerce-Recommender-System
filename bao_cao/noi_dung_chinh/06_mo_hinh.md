@@ -50,10 +50,26 @@ Không cấu hình nào đạt 10 %, vì phần lớn sản phẩm chỉ có m�
 ## Phân tích lỗi
 
 - **Độ phủ và độ mới lạ.** ALS thuần kém baseline 2: 3,44 % so với 5,28 %, và 10,86 so với 11,88. Lý do là thiên lệch nêu trên. Bản phục vụ có xếp lại đã vượt baseline 2 ở độ phủ.
-- **Theo nhóm người dùng.** `jobs/kiem_tra/phan_tich_loi.py` tính NDCG@10 từng người cho ALS và hai baseline, gom theo ba trục: số tương tác train, độ phổ biến của sản phẩm test, số danh mục đã xem. Giả thuyết: ALS thua baseline 2 ở người dùng ít tương tác và ở người dùng chỉ xem một danh mục.
-- **Người dùng mới, sản phẩm mới.** ALS không chấm điểm được. Hệ thống dùng ba chiến lược khởi đầu lạnh (@tab:cs).
+- **Theo nhóm người dùng.** `jobs/kiem_tra/phan_tich_loi.py` tính NDCG@10 từng người trong 9.467 người dùng cho ALS và hai baseline, rồi gom theo ba trục: số tương tác train, độ phổ biến của sản phẩm kiểm tra, số danh mục đã xem (@tab:loi; bảng đầy đủ và biểu đồ ở báo cáo đầy đủ, mục 6.6). Kết quả chạy trên cụm ngày 16/11. Giả thuyết ban đầu là ALS thua baseline 2 ở người dùng ít tương tác và ở người dùng chỉ xem một danh mục.
 
-> [!TODO] Chèn bảng và biểu đồ phân tích lỗi theo nhóm từ `docs/bang_chung/cum/phan_tich_loi.json` và kết luận.
+Table: Phân tích lỗi rút gọn; "ALS thua" là tỷ lệ người dùng có NDCG của ALS thấp hơn baseline 2 {#tab:loi w=34,13,13,13,13,14}
+| Nhóm | Người dùng | ALS | Baseline 2 | ALS thua | Cả hai = 0 |
+|---|---|---|---|---|---|
+| Tất cả | 9.467 | 0,0680 | 0,0475 | 3,9 % | 84,8 % |
+| 3–4 tương tác train | 6.401 | 0,0727 | 0,0504 | 3,4 % | 85,7 % |
+| ≥ 50 tương tác train | 126 | 0,0644 | 0,0499 | 13,5 % | 57,9 % |
+| SP kiểm tra toàn đuôi dài | 3.865 | 0,0123 | 0,0080 | 1,3 % | 96,6 % |
+| SP kiểm tra ≥ 50 % phổ biến | 5.061 | 0,1139 | 0,0802 | 5,6 % | 76,4 % |
+| Xem 1 danh mục | 2.823 | 0,1228 | 0,0882 | 5,2 % | 76,7 % |
+| Xem 4–7 danh mục | 1.743 | 0,0368 | 0,0252 | 2,8 % | 90,1 % |
+
+Kết luận:
+
+- **Hai giả thuyết ban đầu đều sai.** ALS hơn baseline 2 ở **mọi** nhóm, khoảng 30–45 % ở mọi mức số tương tác. Ở nhóm 3–4 tương tác (68 % người dùng), ALS hơn 44 %. Người chỉ xem một danh mục lại là trường hợp dễ nhất cho cả hai phương pháp; khó nhất là người trải trên 2–7 danh mục.
+- **Nguồn lỗi chính là đuôi dài.** 41 % người dùng chỉ tương tác với sản phẩm đuôi dài trong tháng kiểm tra. Ở nhóm này NDCG của ALS chỉ bằng 1/9 nhóm "đầu", và 96,6 % người nhận 0 từ cả hai phương pháp. Điều này khớp với việc ALS dồn 99,2 % số ô vào 10 % sản phẩm phổ biến nhất.
+- **Hướng cải thiện.** Cần nguồn ứng viên cho đuôi dài (đồng xuất hiện, nội dung), không phải tinh chỉnh thêm ALS.
+
+- **Người dùng mới, sản phẩm mới.** ALS không chấm điểm được. Hệ thống dùng ba chiến lược khởi đầu lạnh (@tab:cs).
 
 Table: Ba chiến lược khởi đầu lạnh {#tab:cs w=26,74}
 | Trường hợp | Chiến lược |

@@ -22,7 +22,7 @@ Table: Các lỗi cấu hình tìm thấy trong cụm kế thừa {#tab:ra-soat 
 
 ## Các sự cố gặp trong phát triển và vận hành
 
-@tab:loi liệt kê các sự cố gặp phải trong quá trình phát triển và vận hành đồ án, theo thứ tự xuất hiện. Sự cố 1–12 được phát hiện qua kiểm thử hoặc rà soát mã trước khi triển khai; sự cố 13–31 xuất hiện trên cụm.
+@tab:loi liệt kê các sự cố gặp phải trong quá trình phát triển và vận hành đồ án, theo thứ tự xuất hiện. Sự cố 1–12 được phát hiện qua kiểm thử hoặc rà soát mã trước khi triển khai; sự cố 13–33 xuất hiện trên cụm.
 
 Table: Các sự cố gặp trong phát triển và vận hành {#tab:loi w=4,46,50}
 | # | Sự cố | Cách khắc phục |
@@ -58,6 +58,8 @@ Table: Các sự cố gặp trong phát triển và vận hành {#tab:loi w=4,46
 | 29 | Cả hai lần triển khai ngày 11 tháng 11 đều trộn danh sách khi producer đang dừng: cửa sổ thịnh hành mới nhất chỉ chứa một sản phẩm thử nghiệm, nên cả 265.043 danh sách lưu đều mang một sản phẩm thịnh hành duy nhất và các ô thịnh hành khác quay về sản phẩm bán chạy theo danh mục, đồng thời thổi phồng độ phủ đo được của bảng phục vụ | Khi cửa sổ mới nhất có ít hơn 30 sản phẩm, danh sách thịnh hành được bù bằng các sản phẩm xem nhiều nhất trong 24 giờ cuối, và job báo nguồn đã dùng; chạy lại trộn và công bố cho cùng mô hình |
 | 30 | Sau khi thiết kế lại giao diện web, trình duyệt giữ bảng định kiểu cũ và các hình sản phẩm vẽ theo cách ánh xạ ngành hàng cũ, nên một số thẻ hiện hình quyển sách dưới tên "Tạ tay" | Tệp tĩnh được gọi kèm mã băm nội dung, và địa chỉ của mỗi hình chứa ngành hàng của nó, nên thẻ và hình không thể lệch nhau |
 | 31 | Các thí nghiệm bổ sung ngày 11 tháng 11 chạy ngoài pool của Airflow. Hai thí nghiệm chồng lên nhau, rồi job A/B hằng giờ phải chờ executor đang bị lượt chạy validation giữ trong khi driver của nó chiếm bộ nhớ trên một máy master vốn đã phải dùng swap; SSH vào master hết thời gian chờ. Lượt chạy validation còn chậm hơn lần tinh chỉnh gốc năm đến sáu lần vì các bảng đáp án nhỏ dựng từ silver bị đẩy khỏi bộ nhớ đệm và bị tính lại từ HDFS ở mỗi phép đo | Dừng driver thừa và tạm dừng DAG A/B hằng giờ khi chạy thí nghiệm thủ công; mỗi lúc một job thủ công; gom tập đáp án về driver thành một bảng không mang lineage và chấm điểm mọi kỳ trong một lượt |
+| 32 | Lần đo web trên cụm ngày 16 tháng 11: tải lại `/mo-hinh`, gọi `/api/mo-hinh/chi-so` hay mở `/tai-lap` trong 60 giây sau lần gọi đầu đều trả HTTP 500. `lich_su_mo_hinh` bỏ cột JSON thô ngay trên danh sách nằm trong bộ đệm, nên lần sau gặp `KeyError`. Kiểm thử chỉ dùng kho dữ liệu giả, không có bộ đệm này | Chép từng dòng trước khi biến đổi; kiểm thử hồi quy gọi hàm ba lần liên tiếp trên cùng bộ đệm |
+| 33 | Cũng lần đo đó: lấy gợi ý của một người dùng quen mất trung vị 8,9 giây. OPTIMIZE ZORDER hằng đêm dùng cỡ tệp tối đa mặc định 1 GB, gộp bảng gợi ý 38 MB thành một tệp, nên data skipping không loại được tệp nào. Thí nghiệm Z-ORDER đặt 1 MB nên không thấy | `toi_uu_delta.py` đặt giới hạn 1 MB cho riêng bảng gợi ý, chạy lại một lần với `--chi-bang`; danh sách người dùng mẫu giữ trong bộ đệm 1 giờ; kiểm thử hồi quy |
 
 ## Các sự cố tiêu biểu
 

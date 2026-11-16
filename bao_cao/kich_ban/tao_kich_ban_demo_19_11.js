@@ -640,7 +640,7 @@ buoc({
   noi: ["Finally, the general items of the project outline. We trigger the hourly A/B DAG by hand; each DAG carries a deadline alert, which replaces the SLA feature that Airflow 3 removed. While it runs: the lakehouse on HDFS, under slash lakehouse slash bd03, with bronze, silver, gold, models, checkpoints and a quarantine table that keeps every rejected row with its reason. The Spark UI shows our three streams have been running for hours. Now SQL on the terminal: the history of the impression log, written by the stream every thirty seconds; time travel to version one; the row the web just wrote when we pressed “Re-run”; and our new user’s impressions and click, which went from the browser through Kafka into Delta. And the DAG we triggered has finished, green."],
   yc: [
     "Gốc đúng A.4: `hdfs:///lakehouse/bd03_khuyen_nghi`, dời từ `/lake` ngày 15/11 bằng `hdfs dfs -mv` (giữ nguyên lịch sử Delta).",
-    "`_quarantine.tuong_tac`: dòng bị loại kèm `ly_do` (6 lý do), 11.759 dòng = 0,41 %.",
+    "`_quarantine.tuong_tac`: dòng bị loại kèm `ly_do` (6 lý do): 5.315.672 dòng, gồm 5.304.360 trùng nội dung (bản phát lại) và 11.312 nhấp lặp 5 giây.",
     "Hai đường ghi ngược Delta từ web (A.6.4): qua Kafka → MERGE vào `gold.nhat_ky_hien_thi`; trực tiếp → `gold.ket_qua_tai_lap`.",
     "`delta_sql.sh` chạy Spark `local[2]` trong container `spark-master`: không lấy lõi của cụm.",
   ],
@@ -787,7 +787,7 @@ ND.push(muc2("Cửa sổ 2 · labsit"));
 // ================================================================== PHỤ LỤC B
 ND.push(muc("Phụ lục B. Số liệu cần thuộc"));
 ND.push(bang(["Hạng mục", "Số liệu"], [
-  ["Dữ liệu", "2,89 triệu sự kiện, 139 ngày, 417.053 sản phẩm; mật độ 1,8·10⁻⁵"],
+  ["Dữ liệu", "2,89 triệu sự kiện, 139 ngày, 417.053 sản phẩm; mật độ 3,3·10⁻⁵"],
   ["Train / test", "179.999 user train (≥ 3 tương tác), 126.230 item; 9.467 user test; tháng test 19/8–18/9/2015"],
   ["Trọng số", "Xem 1, thêm giỏ 3, mua 5; suy giảm λ = 0,01/ngày"],
   ["Tuning", "Lưới 27 tổ hợp; tốt nhất rank 50, regParam 1,0, alpha 40, NDCG@10 = 0,0680"],

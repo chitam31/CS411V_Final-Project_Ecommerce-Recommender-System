@@ -1,6 +1,6 @@
 # Hiện thực hệ thống {#sec:impl}
 
-Mã nguồn gồm khoảng 13.500 dòng: 42 tệp job và thư viện PySpark (5.540 dòng), 5 DAG Airflow cùng một mô-đun dùng chung, một ứng dụng web 19 tệp, các Kafka producer, 25 script vận hành, 12 tệp cấu hình Docker và Hadoop, và 16 tệp kiểm thử với 139 kiểm thử (Phụ lục A). Chương này đi theo trình tự của pipeline: hạ tầng, các job Spark, điều phối, ứng dụng web, pipeline A/B, khả năng tái lập và kiểm thử.
+Mã nguồn gồm khoảng 13.500 dòng: 42 tệp job và thư viện PySpark (5.540 dòng), 5 DAG Airflow cùng một mô-đun dùng chung, một ứng dụng web 19 tệp, các Kafka producer, 25 script vận hành, 12 tệp cấu hình Docker và Hadoop, và 16 tệp kiểm thử với 141 kiểm thử (Phụ lục A). Chương này đi theo trình tự của pipeline: hạ tầng, các job Spark, điều phối, ứng dụng web, pipeline A/B, khả năng tái lập và kiểm thử.
 
 ## Dựng hạ tầng (Docker) {#sec:impl-infra}
 
@@ -255,7 +255,7 @@ Tái lập một thí nghiệm cần cùng dữ liệu, cùng mã nguồn và c�
 
 ## Kiểm thử và bảo đảm chất lượng {#sec:impl-test}
 
-Kho mã chứa 139 kiểm thử tự động (8 kiểm thử về DAG cần cài Airflow 3.3.1 theo `requirements-airflow.txt`, một kiểm thử cần SciPy; thiếu thư viện thì được bỏ qua). Chúng chạy bằng `pytest` trên một phiên Spark cục bộ thật, nên kiểm tra đúng mã DataFrame chạy trên cụm (@tab:tests). Các script hạ tầng được kiểm thử bằng cách đặt các lệnh giả `ssh`, `docker`, `curl`, `getent` hoặc `ping` lên đầu `PATH` rồi kiểm tra script làm gì với chúng.
+Kho mã chứa 141 kiểm thử tự động (8 kiểm thử về DAG cần cài Airflow 3.3.1 theo `requirements-airflow.txt`, một kiểm thử cần SciPy; thiếu thư viện thì được bỏ qua). Chúng chạy bằng `pytest` trên một phiên Spark cục bộ thật, nên kiểm tra đúng mã DataFrame chạy trên cụm (@tab:tests). Các script hạ tầng được kiểm thử bằng cách đặt các lệnh giả `ssh`, `docker`, `curl`, `getent` hoặc `ping` lên đầu `PATH` rồi kiểm tra script làm gì với chúng.
 
 Table: Kiểm thử tự động theo lĩnh vực {#tab:tests w=27,8,65}
 | Tệp kiểm thử | Số KT | Nội dung kiểm tra |

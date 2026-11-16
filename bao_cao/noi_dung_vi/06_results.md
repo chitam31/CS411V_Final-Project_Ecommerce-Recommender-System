@@ -13,7 +13,7 @@ Table: Khối lượng dữ liệu ở từng giai đoạn của pipeline {#tab:
 | Số dòng trong `silver.tuong_tac` sau làm sạch | 2.882.479 trên 139 ngày |
 | Ngày cắt / ngày kết thúc của tháng kiểm tra | 2015-08-19 / 2015-09-18 (30 ngày) |
 | Người dùng giữ lại trong ma trận (≥ 3 tương tác huấn luyện) | 179.999 |
-| Số cặp người dùng – sản phẩm huấn luyện / mật độ | 746.350 / khoảng 1,8 × 10^{−5} |
+| Số cặp người dùng – sản phẩm huấn luyện / mật độ | 746.350 / khoảng 3,3 × 10^{−5} (trên 179.999 × 126.230) |
 | Số cặp kiểm tra / số người dùng được đánh giá | 32.804 / 9.467 |
 | Sản phẩm trong tập huấn luyện (mẫu số của độ phủ) / sản phẩm trong danh mục | 126.230 / 417.053 |
 | Số tệp của `silver.tuong_tac` sau khi sửa lỗi tệp nhỏ | 140 (mỗi ngày một tệp) |
@@ -32,13 +32,56 @@ Ma trận cực kỳ thưa, và chỉ 9.467 trong 179.999 người dùng huấn 
 
 `notebooks/eda_retailrocket.ipynb` vẽ các bảng đó và tự rút ra hệ quả cho thiết kế từ chính số liệu: chọn ALS phản hồi ngầm, lọc ≥ 3 tương tác, cần khởi đầu lạnh, đo độ phủ và độ mới lạ, lọc bot, phân vùng theo ngày.
 
-> [!TODO] Chèn bảng tổng quan EDA từ `docs/bang_chung/cum/eda.json` (số sự kiện, người dùng, sản phẩm, mật độ, tỷ lệ người dùng chỉ có 1 sự kiện, phần sự kiện của 1 % sản phẩm phổ biến nhất, số bot) sau khi chạy `scripts/thu_bang_chung.sh`.
+Job chạy trên cụm ngày 16 tháng 11 (`docs/bang_chung/cum/eda.json`). @tab:eda tóm tắt kết quả, @fig:eda vẽ ba phân bố chính; biểu đồ là sản phẩm của `bao_cao/hinh/bieu_do_cum.py`, đọc thẳng tệp JSON đó.
 
-**Thống kê làm sạch.** Bronze có 2.894.238 sự kiện: 2.756.101 sự kiện gốc và 138.137 sự kiện của người dùng mới tổng hợp. Silver giữ 2.882.479 dòng, tức **11.759 dòng (0,41 %) bị loại**.
+Table: Khảo sát `events.csv`, thuộc tính và cây danh mục (tính trên cụm, 16/11/2026) {#tab:eda w=58,42}
+| Chỉ số | Giá trị |
+|---|---|
+| Sự kiện / người dùng / sản phẩm / giao dịch | 2.756.101 / 1.407.580 / 235.061 / 17.672 |
+| Khoảng thời gian | 3/5 – 18/9/2015 (139 ngày); trung bình 19.828 sự kiện và 162 lượt mua mỗi ngày |
+| Xem / thêm giỏ / mua | 2.664.312 (96,7 %) / 69.332 (2,5 %) / 22.457 (0,8 %) |
+| Phễu người dùng: xem → thêm giỏ → mua | 1.404.179 → 37.722 (2,7 %) → 11.719 (0,83 %); 31 % người thêm giỏ đã mua |
+| Mật độ ma trận người dùng × sản phẩm | 6,5 × 10^{−6} (2.145.179 cặp khác nhau) |
+| Người dùng chỉ có 1 sự kiện / dưới 3 / từ 3 sự kiện | 1.001.560 (71,2 %) / 1.207.552 (85,8 %) / 200.028 (14,2 %) |
+| Sự kiện mỗi người dùng: trung vị / p90 / p99 / lớn nhất | 1 / 3 / 13 / 7.757 |
+| Sự kiện mỗi sản phẩm: trung vị / p90 / p99 / lớn nhất | 3 / 25 / 136 / 3.412 |
+| Phần sự kiện của 1 % / 10 % sản phẩm phổ biến nhất | 22,9 % / 64,0 % |
+| Giờ cao điểm / thấp điểm (UTC) | 20 giờ: 187.919 sự kiện / 10 giờ: 16.408 sự kiện (gấp 11,5 lần) |
+| Ngày đông nhất / vắng nhất trong tuần | thứ Ba: 447.077 / thứ Bảy: 305.215 |
+| Dòng trùng hoàn toàn / nhấp lặp trong 5 giây | 460 / 11.759 |
+| Bot (một giờ > 500 sự kiện) | 0 người dùng; nhiều nhất 242 sự kiện trong một giờ |
+| Mua thiếu mã giao dịch / không mua mà có mã / thiếu trường | 0 / 0 / 0 |
+| Thuộc tính sản phẩm | 20.275.902 dòng, 417.053 sản phẩm, 1.104 thuộc tính; mọi sản phẩm có danh mục và thuộc tính 790; 49.815 sản phẩm có sự kiện nhưng không có thuộc tính |
+| Cây danh mục | 1.669 danh mục, 25 gốc |
 
-Từ ngày 15 tháng 11, mỗi dòng bị loại nằm trong `_quarantine.tuong_tac` kèm lý do, theo đúng thứ tự các bước của @tab:lam-sach. Vì vậy tổng số dòng trong silver và trong quarantine bằng đúng số dòng bronze.
+![Khảo sát `events.csv`: (a) sự kiện theo ngày, (b) theo giờ UTC, (c) phân bố số sự kiện của mỗi người dùng (trục log)](hinh/c08_eda.png){#fig:eda w=16}
 
-> [!TODO] Chèn bảng số dòng bị loại theo `ly_do` (thieu_truong, trung_ma_su_kien, trung_noi_dung, bot, nhap_lap_5_giay, loai_su_kien_khong_dung) từ mục F của `docs/bang_chung/cum/04_delta.txt`.
+Số liệu xác nhận các giả định thiết kế:
+
+- **Phản hồi ngầm, cực thưa.** 96,7 % là lượt xem và mật độ 6,5 × 10^{−6}, nên chọn ALS phản hồi ngầm.
+- **Lọc ≥ 3 tương tác bỏ đi phần lớn khách.** Lọc này loại 85,8 % người dùng, nên cần chiến lược khởi đầu lạnh cho phần còn lại.
+- **Đuôi dài rõ.** 10 % sản phẩm nhận 64 % sự kiện, nên phải đo độ phủ và độ mới lạ.
+- **Không có bot theo ngưỡng 500 sự kiện/giờ.** Người hoạt động mạnh nhất chỉ có 242 sự kiện trong một giờ. Bước lọc bot vẫn giữ làm hàng rào cho lưu lượng mô phỏng và lưu lượng web, nhưng không loại dòng nào của dữ liệu thật.
+- **Biên độ ngày đêm khoảng 11 lần.** Producer giữ đúng thứ tự thời gian, nên luồng thịnh hành gặp đúng các đợt tăng giảm này.
+
+**Thống kê làm sạch.** Ở lượt phát lại đầu tiên (10/11), bronze có 2.894.238 sự kiện: 2.756.101 sự kiện gốc và 138.137 sự kiện của người dùng mới tổng hợp. Silver giữ 2.882.479 dòng, tức 11.759 dòng (0,41 %) bị loại.
+
+Từ ngày 15 tháng 11, mỗi dòng bị loại nằm trong `_quarantine.tuong_tac` kèm lý do, theo đúng thứ tự các bước của @tab:lam-sach. Ngày 16/11, job được chạy lại toàn bộ với `--toan-bo --chi-cach-ly` để dựng bảng này cho dữ liệu đã có (@tab:loai). Job xử lý 142 ngày và mất 28 phút trong khi ba luồng vẫn chạy.
+
+Table: Số dòng bị loại theo lý do (16/11/2026, `docs/bang_chung/cum/03_quarantine.json` và mục F của `04_delta.txt`) {#tab:loai w=34,20,46}
+| Nơi / `ly_do` | Số dòng | Ghi chú |
+|---|---|---|
+| `bronze.su_kien` | 8.198.159 | Mọi sự kiện đã nạp, gồm các lần phát lại |
+| `thieu_truong` | 0 | |
+| `trung_ma_su_kien` | 0 | Kafka và file sink không giao lại lô nào |
+| `trung_noi_dung` | 5.304.360 | Các bản phát lại (mỗi lần có offset mới nên mã mới) và 460 dòng trùng có sẵn trong CSV; 475.531 người dùng |
+| `bot` | 0 | Đúng như khảo sát |
+| `nhap_lap_5_giay` | 11.312 | 0,39 % số dòng còn lại sau khi bỏ trùng; 7.901 người dùng |
+| `loai_su_kien_khong_dung` | 0 | |
+| `_quarantine.tuong_tac` (tổng) | 5.315.672 | 142 tệp, mỗi ngày một tệp |
+| `silver.tuong_tac` | 2.882.484 | Xem 2.779.729, thêm giỏ 77.561, mua 25.194 |
+
+Silver cộng quarantine bằng bronze, trừ 3 sự kiện đến sau lần làm sạch gần nhất (DAG 1 đang tạm dừng). Bronze tăng từ 2,89 lên 8,20 triệu dòng sau các lần phát lại khi chạy thử và tập demo, còn silver gần như không đổi: 2.882.479 dòng ở phiên bản 0, 2.882.484 dòng ở phiên bản hiện tại (mục C của `04_delta.txt`). Đây là kiểm chứng ở quy mô thật cho quyết định bỏ trùng theo nội dung trước khi lọc bot. Nếu thứ tự ngược lại, mỗi người dùng trong dữ liệu phát lại ba lần sẽ có số sự kiện mỗi giờ gấp ba, và người hoạt động mạnh (242 sự kiện/giờ) sẽ bị coi là bot.
 
 ## Tinh chỉnh siêu tham số {#sec:res-tuning}
 
@@ -165,7 +208,34 @@ Mỗi nhóm ghi tỷ lệ người dùng mà ALS thua baseline 2. Giả thuyết
 - ALS yếu ở người dùng chỉ xem một danh mục, nơi baseline 2 vốn đã gần đúng.
 - Khi sản phẩm cần đoán nằm ở đuôi dài, cả ba phương pháp đều gần 0.
 
-> [!TODO] Chèn bảng và biểu đồ phân tích lỗi từ `docs/bang_chung/cum/phan_tich_loi.json` (NDCG@10 trung bình của ALS, baseline 1, baseline 2 và tỷ lệ ALS thua baseline 2 theo từng nhóm), rồi kết luận giả thuyết nào đúng.
+Job chạy trên cụm ngày 16/11 cho mô hình `r20261111T190002` trên `features.ma_tran_tuong_tac` phiên bản 4 (`docs/bang_chung/cum/phan_tich_loi.json`). Kết quả ở @tab:phan-tich-loi và @fig:phan-tich-loi. "Phổ biến" nghĩa là thuộc 10 % sản phẩm có nhiều người tương tác nhất trong train.
+
+Table: NDCG@10 theo nhóm người dùng; "thua" và "thắng" là tỷ lệ người dùng có NDCG của ALS thấp hơn hoặc cao hơn baseline 2 {#tab:phan-tich-loi w=24,10,11,11,11,11,11,11}
+| Nhóm | Người dùng | ALS | Baseline 1 | Baseline 2 | ALS thua | ALS thắng | Cả hai = 0 |
+|---|---|---|---|---|---|---|---|
+| **Tất cả** | 9.467 | 0,0680 | 0,0051 | 0,0475 | 3,9 % | 9,0 % | 84,8 % |
+| *Số tương tác train:* 3–4 | 6.401 | 0,0727 | 0,0043 | 0,0504 | 3,4 % | 8,5 % | 85,7 % |
+| 5–9 | 1.945 | 0,0538 | 0,0040 | 0,0373 | 3,8 % | 7,7 % | 86,5 % |
+| 10–19 | 680 | 0,0718 | 0,0093 | 0,0537 | 6,5 % | 12,9 % | 78,1 % |
+| 20–49 | 315 | 0,0542 | 0,0049 | 0,0382 | 7,0 % | 11,4 % | 80,6 % |
+| ≥ 50 | 126 | 0,0644 | 0,0389 | 0,0499 | 13,5 % | 27,8 % | 57,9 % |
+| *SP kiểm tra:* đuôi dài (0 % phổ biến) | 3.865 | 0,0123 | 0,0000 | 0,0080 | 1,3 % | 1,9 % | 96,6 % |
+| trộn | 541 | 0,0369 | 0,0021 | 0,0241 | 7,0 % | 13,9 % | 78,7 % |
+| đầu (≥ 50 % phổ biến) | 5.061 | 0,1139 | 0,0093 | 0,0802 | 5,6 % | 13,9 % | 76,4 % |
+| *Danh mục đã xem:* 1 | 2.823 | 0,1228 | 0,0060 | 0,0882 | 5,2 % | 14,1 % | 76,7 % |
+| 2–3 | 4.287 | 0,0460 | 0,0038 | 0,0323 | 3,3 % | 6,2 % | 88,9 % |
+| 4–7 | 1.743 | 0,0368 | 0,0040 | 0,0252 | 2,8 % | 5,7 % | 90,1 % |
+| ≥ 8 | 492 | 0,0531 | 0,0160 | 0,0380 | 7,1 % | 15,0 % | 76,2 % |
+
+![NDCG@10 của ALS và hai baseline theo (a) số tương tác train, (b) độ phổ biến của sản phẩm kiểm tra, (c) số danh mục đã xem](hinh/c09_phan_tich_loi.png){#fig:phan-tich-loi w=16}
+
+Kết luận về ba giả thuyết:
+
+- **Giả thuyết 1 sai.** ALS không thua ở người dùng ít tương tác. Nhóm 3–4 tương tác chiếm 68 % người dùng kiểm tra, và ở đó ALS hơn baseline 2 tới 44 %. Ở mọi nhóm số tương tác, ALS đều hơn baseline 2 khoảng 30–45 %. Tỷ lệ "ALS thua" tăng theo số tương tác (3,4 % lên 13,5 %), nhưng tỷ lệ "ALS thắng" tăng nhanh hơn (8,5 % lên 27,8 %): người dùng nhiều tương tác chỉ đơn giản là ít bị cả hai cùng bằng 0.
+- **Giả thuyết 2 sai.** Người dùng chỉ xem một danh mục là trường hợp *dễ nhất* cho cả hai phương pháp: NDCG 0,1228 so với 0,0882, ALS hơn 39 %. Khó nhất là người dùng trải trên 2–7 danh mục: NDCG giảm còn 0,037–0,046 vì sở thích bị chia nhỏ.
+- **Giả thuyết 3 đúng, và là nguồn lỗi chính.** 3.865 người dùng (41 %) chỉ tương tác với sản phẩm đuôi dài trong tháng kiểm tra. Ở nhóm này NDCG của ALS chỉ bằng 1/9 nhóm "đầu", và 96,6 % người dùng nhận 0 từ cả hai phương pháp. Kết quả này khớp với thiên lệch độ phổ biến ở @sec:res-coverage, khi ALS dồn 99,2 % số ô vào 10 % sản phẩm phổ biến nhất.
+
+Tổng thể, ALS hơn baseline 2 ở **mọi** nhóm con, nên lợi thế của ALS không đến từ một nhóm đặc biệt. Giới hạn chính là độ thưa: 84,8 % người dùng kiểm tra nhận NDCG bằng 0 với cả hai phương pháp. Hướng cải thiện vì vậy là nguồn ứng viên cho đuôi dài (đồng xuất hiện, nội dung, @sec:res-coverage) chứ không phải tinh chỉnh thêm ALS.
 
 **Người dùng mới và sản phẩm mới.** ALS không chấm điểm được người dùng hay sản phẩm không có trong train. Đó là giới hạn cấu trúc của phân rã ma trận, và hệ thống xử lý bằng ba chiến lược khởi đầu lạnh (@tab:cold-start).
 
@@ -242,7 +312,7 @@ Table: Tra cứu theo người dùng trên gold.goi_y_nguoi_dung trước và sa
 
 ![Độ trễ và số tệp phải đọc cho mỗi lần tra cứu một người dùng ở ba pha](hinh/c05_zorder.png){#fig:zorder w=14}
 
-Chỉ nén tệp gần như không giúp gì: mỗi tệp đã nén vẫn chứa người dùng thuộc toàn bộ dải mã, nên thống kê min/max của mọi tệp phủ gần trọn miền giá trị và data skipping không loại được tệp nào. Z-ORDER đặt các dòng của cùng một người dùng cạnh nhau, thu hẹp khoảng min/max của mỗi tệp, và cho phép Delta bỏ qua tất cả trừ khoảng một tệp cho mỗi lần tra cứu. Độ trễ trung vị giảm từ 8.280 ms xuống 980 ms, **nhanh hơn 8,4 lần so với chỉ nén** và 11 lần so với bảng phân mảnh. Độ trễ tuyệt đối trên cụm thay đổi theo tải và theo Wi-Fi, nhưng số tệp phải đọc thì không, nên đó là con số đáng tin hơn.
+Chỉ nén tệp gần như không giúp gì: mỗi tệp đã nén vẫn chứa người dùng thuộc toàn bộ dải mã, nên thống kê min/max của mọi tệp phủ gần trọn miền giá trị và data skipping không loại được tệp nào. Z-ORDER đặt các dòng của cùng một người dùng cạnh nhau, thu hẹp khoảng min/max của mỗi tệp, và cho phép Delta bỏ qua tất cả trừ khoảng một tệp cho mỗi lần tra cứu. Độ trễ trung vị giảm từ 8.280 ms xuống 980 ms, **nhanh hơn 8,4 lần so với chỉ nén** và 11 lần so với bảng phân mảnh. Độ trễ tuyệt đối trên cụm thay đổi theo tải và theo Wi-Fi, nhưng số tệp phải đọc thì không, nên đó là con số đáng tin hơn. Kết quả này chỉ đúng khi tệp đủ nhỏ: thí nghiệm giới hạn 1 MB mỗi tệp, còn OPTIMIZE hằng đêm của DAG 4 ban đầu dùng mặc định 1 GB và gộp cả bảng thành một tệp, làm mất tác dụng của Z-ORDER. Lỗi này được phát hiện và sửa ngày 16/11 (@sec:res-web).
 
 ## Khả năng tái lập {#sec:res-repro}
 
@@ -371,7 +441,21 @@ Bảy kiểm thử trong `tests/test_airflow_dags.py` nạp năm DAG thật bằ
 - retries và callback lỗi đúng như thiết kế;
 - tham số backfill dựng đúng lệnh `spark-submit`.
 
-> [!TODO] Chèn danh sách 5 DAG kèm hạn Deadline Alert lấy trên cụm từ `docs/bang_chung/cum/05_airflow.txt`.
+Trên cụm, `airflow dags list-import-errors` không báo lỗi nào, và cả năm DAG đều nạp được Deadline Alert (@tab:dag-cum, `docs/bang_chung/cum/05_airflow.txt`, thu ngày 16/11).
+
+Table: Năm DAG trên cụm: lịch, hạn chót, thử lại và các lượt chạy gần nhất {#tab:dag-cum w=22,12,10,8,48}
+| DAG | Lịch | Hạn chót | Thử lại | Các lượt chạy gần nhất |
+|---|---|---|---|---|
+| `kn_pipeline_hang_ngay` | 02:00 | 420 phút | 1 | Tạm dừng có chủ đích tới khi nộp bài. Lượt 10/11 (thủ công) thành công trong 43 phút, lượt 11/11 thành công trong 58 phút và tự triển khai mô hình v2 |
+| `kn_giam_sat_streaming` | 15 phút | 10 phút | 0 | Các lượt thành công, mỗi lượt khoảng 30 giây |
+| `kn_tinh_ab` | mỗi giờ | 30 phút | 1 | 5/5 lượt gần nhất thành công, 17 giây – 6 phút |
+| `kn_bao_tri` | 04:00 | 90 phút | 1 | 5/5 đêm 11–15/11 thành công, 6–10 phút |
+| `kn_tai_lap` | thủ công | 180 phút | 0 | 3 lượt 10–12/11 thành công, 19 phút – 1 giờ 48 phút |
+
+Hai quan sát vận hành từ cùng tệp:
+
+- **Báo động khi không có lưu lượng.** Sáng 16/11, bộ phát dữ liệu tắt. Task `kiem_tra_du_lieu_15_phut` của DAG giám sát không thấy cửa sổ thịnh hành nào trong 15 phút gần nhất, nên ghi cảnh báo và gọi khởi động lại luồng ba lần liên tiếp (`logs/canh_bao.log`). Lệnh khởi động bỏ qua luồng đang chạy, nên luồng không bị gián đoạn: ứng dụng vẫn giữ nguyên mã sau 31,5 phút (`06_streaming.txt`). Cảnh báo đúng theo thiết kế nhưng là báo động giả khi không có sự kiện, ghi ở @sec:limits.
+- **Lượt chạy treo của DAG 1.** Lượt `scheduled__2026-11-14T19:00` ở trạng thái `running` từ trưa 15/11, vì DAG đã được tạm dừng trong lúc lượt này đang chờ. Scheduler không lập lịch task cho DAG đang tạm dừng, nên lượt này đứng yên mà không chạy job nào. Lượt này phải được đánh dấu thất bại trước khi bật lại DAG 1 (`docs/TRIEN_KHAI_CUM.md`), để nó không chạy tiếp với dữ liệu cũ.
 
 ## Hiệu năng ứng dụng web {#sec:res-web}
 
@@ -391,9 +475,28 @@ Table: Hạn sống bộ đệm của ứng dụng web {#tab:bo-dem w=60,40}
 | Sản phẩm liên quan | 600 giây |
 | Bảng lớn | 3.600 giây |
 
-Yêu cầu đầu tiên sau khi bộ đệm hết hạn mới phải chạy một truy vấn Spark cục bộ; truy vấn lấy gợi ý theo người dùng chính là truy vấn được đo Z-ORDER ở @tab:zorder (trung vị 0,98 giây sau Z-ORDER).
+Yêu cầu đầu tiên sau khi bộ đệm hết hạn mới phải chạy một truy vấn Spark cục bộ. Truy vấn lấy gợi ý theo người dùng chính là truy vấn được đo Z-ORDER ở @tab:zorder.
 
-> [!TODO] Chèn bảng thời gian phản hồi (lần đầu, trung vị, p95, lớn nhất, tỷ lệ dưới 3 giây theo nhóm yêu cầu) từ `docs/bang_chung/cum/07_do_tre_web.md`.
+**Lần đo đầu tiên (16/11, `docs/bang_chung/cum/07_do_tre_web.md`) phát hiện hai lỗi** mà kiểm thử cục bộ với kho dữ liệu giả không bắt được (@tab:web-truoc).
+
+Table: Thời gian phản hồi đo từ máy master, 20 yêu cầu mỗi nhóm, trước khi sửa (16/11/2026) {#tab:web-truoc w=36,11,11,11,11,20}
+| Nhóm yêu cầu | Lần đầu (ms) | Trung vị (ms) | p95 (ms) | Lớn nhất (ms) | Dưới 3 s |
+|---|---|---|---|---|---|
+| Trang chủ | 18 | 18 | 54 | 67 | 20/20 |
+| `GET /api/goi-y/{user_id}`, người dùng quen | 528 | **8.907** | 10.154 | 10.424 | **1/20** |
+| `GET /api/goi-y/{user_id}`, người dùng mới | 511 | 17 | 511 | 790 | 20/20 |
+| `GET /api/thinh-hanh` | 14 | 16 | 22 | 24 | 20/20 |
+| Trang sản phẩm | 3.847 | 409 | 3.847 | 3.886 | 18/20 |
+| `GET /api/thinh-hanh/{id}` (không qua bộ đệm) | 272 | 410 | 818 | 819 | 20/20 |
+| Bảng điều khiển A/B `/ab` | 2.669 | 21 | 34 | 2.669 | 20/20 |
+| `GET /api/ab/ket-qua` | 17 | 18 | 44 | 56 | 20/20 |
+| `/mo-hinh` | 8.698 | – | – | – | **1/20, 19 lỗi 500** |
+| `GET /api/mo-hinh/chi-so`, `/tai-lap` | – | – | – | – | **20/20 lỗi 500** |
+
+- **Lỗi 500 ở hai màn hình báo cáo.** `lich_su_mo_hinh` bỏ cột JSON thô ngay trên danh sách nằm trong bộ đệm 60 giây. Lần gọi đầu đúng, nhưng mọi lần gọi sau trong 60 giây gặp `KeyError`: tải lại `/mo-hinh`, gọi `/api/mo-hinh/chi-so` hay mở `/tai-lap` (dùng chung hàm này) đều lỗi. Trong kịch bản demo, `/tai-lap` được mở ngay sau `/mo-hinh`, nên chắc chắn đã gặp lỗi này. Sửa: chép từng dòng trước khi biến đổi; kiểm thử hồi quy gọi hàm ba lần liên tiếp trên cùng một bộ đệm.
+- **Z-ORDER mất tác dụng trên bảng thật.** `OPTIMIZE ... ZORDER BY` hằng đêm của DAG 4 dùng cỡ tệp tối đa mặc định của Delta là 1 GB. Bảng gợi ý chỉ khoảng 38 MB, nên bị gộp thành **một tệp**: data skipping không loại được tệp nào, và mỗi lần tra một người dùng lại đọc cả 5,3 triệu dòng (trung vị 8,9 giây). Thí nghiệm ở @tab:zorder đặt cỡ tệp 1 MB nên không gặp hiện tượng này. Sửa: `toi_uu_delta.py` giới hạn 1 MB riêng cho bảng gợi ý (khoảng 40 tệp), như thí nghiệm; danh sách người dùng mẫu (quét cả bảng) giữ trong bộ đệm 1 giờ thay cho 60 giây.
+
+> [!TODO] Chèn bảng đo lại sau khi sửa (`python3 scripts/do_do_tre_web.py` sau khi build lại web và chạy `toi_uu_delta.py --chi-bang gold.goi_y_nguoi_dung`).
 
 ## Xử lý luồng và vận hành {#sec:res-streaming}
 

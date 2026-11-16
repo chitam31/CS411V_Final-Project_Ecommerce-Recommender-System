@@ -22,7 +22,7 @@ Lúc demo, `scripts/demo/delta_sql.sh demo <người dùng>` truy vấn hai bả
 
 Middleware đo thời gian xử lý mọi yêu cầu theo mẫu route. Mỗi phản hồi có header `X-Thoi-Gian-Xu-Ly-Ms`, và `GET /api/hieu-nang` trả trung vị, p95, tỷ lệ dưới 3 giây.
 
-Bộ đệm có hạn sống (@tab:bo-dem) giữ phần lớn yêu cầu ở mức mili giây. Lần đầu sau khi bộ đệm hết hạn mới chạy truy vấn Spark cục bộ. Truy vấn gợi ý theo người dùng là truy vấn đã tối ưu bằng Z-ORDER (trung vị 0,98 giây, @tab:zorder).
+Bộ đệm có hạn sống (@tab:bo-dem) giữ phần lớn yêu cầu ở mức mili giây. Lần đầu sau khi bộ đệm hết hạn mới chạy truy vấn Spark cục bộ. Truy vấn gợi ý theo người dùng là truy vấn được đo Z-ORDER ở @tab:zorder.
 
 Table: Hạn sống bộ đệm của web {#tab:bo-dem w=60,40}
 | Dữ liệu | Hạn sống |
@@ -35,4 +35,11 @@ Table: Hạn sống bộ đệm của web {#tab:bo-dem w=60,40}
 
 `scripts/do_do_tre_web.py` đo từ máy khách 20 lần mỗi nhóm yêu cầu đọc; script không ghi lượt hiển thị để không làm bẩn số liệu A/B.
 
-> [!TODO] Chèn bảng thời gian phản hồi (lần đầu, trung vị, p95, lớn nhất, tỷ lệ dưới 3 s) từ `docs/bang_chung/cum/07_do_tre_web.md`.
+**Lần đo trên cụm ngày 16/11 phát hiện hai lỗi** mà kiểm thử với kho dữ liệu giả không bắt được (`docs/bang_chung/cum/07_do_tre_web.md`):
+
+- **Gợi ý cho người dùng quen chậm:** trung vị 8,9 giây, chỉ 1/20 yêu cầu dưới 3 giây. Nguyên nhân là OPTIMIZE ZORDER hằng đêm dùng cỡ tệp mặc định 1 GB, gộp bảng gợi ý (38 MB) thành một tệp; data skipping không loại được tệp nào, nên mỗi lần tra một người dùng phải đọc cả bảng. Thí nghiệm ở @tab:zorder đặt cỡ tệp 1 MB nên không gặp hiện tượng này. Sửa: DAG 4 giới hạn 1 MB cho riêng bảng này.
+- **`/mo-hinh`, `/api/mo-hinh/chi-so`, `/tai-lap` lỗi 500** nếu gọi lại trong 60 giây: một hàm bỏ cột ngay trên dữ liệu nằm trong bộ đệm. Sửa: chép trước khi biến đổi, kèm kiểm thử hồi quy.
+
+Các yêu cầu khác đạt mục tiêu ngay từ lần đo này: trang chủ, thịnh hành, gợi ý cho người dùng mới, `/api/ab/ket-qua` có trung vị 16–18 ms. Trang sản phẩm và `/ab` chỉ chậm ở lần đầu sau khi bộ đệm hết hạn (3,8 và 2,7 giây).
+
+> [!TODO] Chèn số đo lại sau khi sửa (`python3 scripts/do_do_tre_web.py`).

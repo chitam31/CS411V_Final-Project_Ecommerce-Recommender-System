@@ -19,7 +19,7 @@ Mục A.9 của đề cương cho phép dùng mã do AI sinh nếu ghi rõ ba đ
 
 1. Nhóm đưa vào dự án Claude: đề cương (`ĐỀ TÀI 3_BIG DATA.pdf`, đề cương chi tiết học phần, sau đó `de_cuong_do_an_big_data.pdf`), giáo trình các môn liên quan, hai tệp `spark-cluster.zip` và `hadoop-cluster.zip`, địa chỉ các repo cũ của nhóm (`spark-cluster`, `hadoop-cluster`, `hadoop-custom`, `kafka-docker`) và ảnh chụp ZeroTier Central.
 2. AI rà soát cấu hình cũ (NHAT_KY.md mục 2 liệt kê các lỗi tìm thấy), đề xuất kiến trúc, viết mã và tài liệu theo từng mục của đặc tả.
-3. Nhóm chạy trên cụm thật. Lỗi (log Spark, Airflow, HDFS, ảnh màn hình) được gửi lại; AI chẩn đoán và sửa. 31 lỗi đã gặp và cách sửa được ghi trong NHAT_KY.md và mục "Sự cố" của báo cáo.
+3. Nhóm chạy trên cụm thật. Lỗi (log Spark, Airflow, HDFS, ảnh màn hình) được gửi lại; AI chẩn đoán và sửa. 33 lỗi đã gặp và cách sửa được ghi trong NHAT_KY.md và mục "Sự cố" của báo cáo.
 4. Từ 10/11/2026 AI làm việc trực tiếp trong repo qua Claude Code: commit, push lên GitHub. Nhóm đồng bộ mã sang các máy lab bằng `scripts/cum/ssh_tat_ca.sh --dong-bo-ma` (trên máy lab dùng chung không lưu token GitHub).
 
 ## 3. Prompt đã dùng
@@ -78,7 +78,7 @@ Nhóm bổ sung bên dưới những chỉnh sửa khác mà mình đã tự là
 
 ## 6. Kiểm chứng phần do AI sinh
 
-- 139 kiểm thử pytest chạy trên Spark local thật và Airflow 3.3.1 thật: `pytest` (Spark, web) và `tests/test_airflow_dags.py` (cần `requirements-airflow.txt`).
+- 141 kiểm thử pytest chạy trên Spark local thật và Airflow 3.3.1 thật: `pytest` (Spark, web) và `tests/test_airflow_dags.py` (cần `requirements-airflow.txt`).
 - Pipeline chạy thật trên cụm, kết quả ghi ở NHAT_KY.md và các tệp trong `docs/bang_chung/`.
 - Tái lập bằng time travel: DAG `kn_tai_lap` cho metric trùng khớp với lịch sử ở hai phiên bản đặc trưng (độ lệch 0).
 - Deadline Alert và backfill được thử trên Airflow 3.3.1 thật trước khi đưa lên cụm: `docs/bang_chung/kiem_chung_airflow_cuc_bo.md`.
