@@ -21,7 +21,7 @@ M = TNR
 # (chữ đã đổi thành đường cong) nên chiếu lên màn hình lớn hay phóng to PDF vẫn nét; ảnh chụp màn hình giữ PNG.
 IMG = {
     "f01b": ("/_blob/3a772df7155058c87d6e7644cea45af0", 2220, 972, "f01b_kien_truc_ngang.svg"),
-    "f02": ("/_blob/66302d81121681065323d50f3b37dc50", 2220, 966, "f02_cum.svg"),
+    "f02": ("/_blob/d898dd0406c5091507c12cc8375e0804", 2220, 966, "f02_cum.svg"),
     "f05b": ("/_blob/b9e878745e8b27b49925a59e9a8ef739", 2220, 798, "f05b_dag1_ngang.svg"),
     "f07": ("/_blob/0a39b751c8359353a6959ec9ec922238", 2220, 1026, "f07_luong.svg"),
     "f08": ("/_blob/d29bb1fa153ddc586d7834b395f1a889", 2220, 1050, "f08_vong_khep_kin.svg"),
@@ -206,7 +206,7 @@ slide("dataset", tieu_de("Data and architecture", "RetailRocket clickstream") +
       dong("Weights", "View 1, add-to-cart 3, purchase 5, decayed with age (λ = 0.01 per day)", 28, 260) +
       "</div>",
       "We use the RetailRocket dataset: almost 2.9 million events over 139 days. The matrix is extremely sparse, "
-      "1.8 times ten to the minus five, and most visitors appear only once, which shapes every result later. A producer "
+      "3.3 times ten to the minus five, and most visitors appear only once, which shapes every result later. A producer "
       "replays the log through Kafka, one day in thirty seconds, and adds about five percent synthetic new users so that "
       "cold start can be exercised. Evaluation uses a temporal split: the last month is the test set.")
 
@@ -242,7 +242,7 @@ slide("cluster", tieu_de("Data and architecture", "Deployed on six laboratory ma
 
 # ------------------------------------------------------------------ 7. Lakehouse
 tang = [
-    ("Bronze", "#8C5A2B", "su_kien_v2", "Raw events from Kafka, Parquet, append-only, by date"),
+    ("Bronze", "#8C5A2B", "su_kien", "Raw events from Kafka, Parquet, append-only, by date"),
     ("Silver", "#5F6B7A", "tuong_tac", "Deduplicated by id and content, bot filter, weights; one file per date"),
     ("Features", BLUE, "ma_tran_tuong_tac", "Decayed scores, temporal split, append-only indexers"),
     ("Gold", ORANGE, "goi_y_nguoi_dung", "Served lists, trending windows, impression log, A/B and model history"),

@@ -1,6 +1,6 @@
 # Quản lý cấu hình {#sec:config}
 
-Một cụm tám máy, năm loại dịch vụ và tám hồ sơ Spark có rất nhiều thiết lập phải khớp với nhau: địa chỉ IP mà DataNode quảng bá phải là địa chỉ client dùng, bộ nhớ một worker cung cấp phải lớn hơn bộ nhớ executor yêu cầu, và hệ số nhân bản của HDFS phải trùng với hệ số các job Spark dùng khi ghi. Những thiết lập được chép tay sẽ dần lệch nhau. Vì vậy đồ án suy mọi thiết lập từ một số ít nguồn, sinh tự động phần còn lại và giữ bí mật ngoài hệ thống quản lý phiên bản. @fig:config trình bày tổng quan.
+Một cụm sáu máy, năm loại dịch vụ và tám hồ sơ Spark có rất nhiều thiết lập phải khớp với nhau: địa chỉ IP mà DataNode quảng bá phải là địa chỉ client dùng, bộ nhớ một worker cung cấp phải lớn hơn bộ nhớ executor yêu cầu, và hệ số nhân bản của HDFS phải trùng với hệ số các job Spark dùng khi ghi. Những thiết lập được chép tay sẽ dần lệch nhau. Vì vậy đồ án suy mọi thiết lập từ một số ít nguồn, sinh tự động phần còn lại và giữ bí mật ngoài hệ thống quản lý phiên bản. @fig:config trình bày tổng quan.
 
 ![Phân phối mã và sinh cấu hình từ một tệp danh bạ cụm duy nhất](hinh/f10_cau_hinh.png){#fig:config w=15.8}
 
@@ -15,7 +15,6 @@ MAY_3="labsit|10.68.71.204|datanode,spark-worker,kafka|6|2g"
 MAY_4="labsit-may25|10.68.71.42|datanode,spark-worker|4|2g"
 MAY_5="labsit-may26|10.68.71.90|datanode,spark-worker|8|3g"
 MAY_6="labsoe-18|10.68.71.149|datanode,spark-worker,web|8|3g"
-MAY_7="ctam|10.68.71.205|du-phong|0|0"            # dự phòng
 TAI_KHOAN_SSH="labsoe-11=hduser labsit12=labsit12 labsit=labsit ..."   # tài khoản SSH theo máy
 SPARK_MASTER_IP=10.68.71.113
 HDFS_GOC=hdfs://10.68.71.113:8020

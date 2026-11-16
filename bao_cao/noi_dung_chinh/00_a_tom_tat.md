@@ -37,6 +37,6 @@ Hệ thống đáp ứng năm yêu cầu bắt buộc của đề cương:
 - Airflow có retries, Deadline Alerts thay `sla`, nhánh rẽ và sensor;
 - backfill.
 
-Bản đầy đủ (113 trang, `BD03_Bao_cao_He_thong_goi_y.pdf`) là phụ lục kỹ thuật của bản chính này.
+Bản đầy đủ (120 trang, `BD03_Bao_cao_He_thong_goi_y.pdf`) là phụ lục kỹ thuật của bản chính này.
 
 **Từ khóa:** hệ thống gợi ý, ALS phản hồi ngầm, Spark, Structured Streaming, Kafka, Delta Lake, lakehouse, Airflow, A/B, tái lập.

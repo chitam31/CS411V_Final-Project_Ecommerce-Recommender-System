@@ -1,7 +1,7 @@
 """Biểu đồ từ bằng chứng thu trên cụm ngày 16/11/2026 (scripts/thu_bang_chung.sh).
 
 Đọc thẳng docs/bang_chung/cum/eda.json và phan_tich_loi.json, không chép tay số liệu:
-  c08_eda.png            sự kiện theo ngày, theo giờ UTC, phân bố số sự kiện mỗi người dùng
+  c08_eda.png            sự kiện theo ngày, theo giờ UTC, phân bố số sự kiện mỗi người dùng (c08_eda_en: tiếng Anh)
   c09_phan_tich_loi.png  NDCG@10 của ALS và hai baseline theo ba cách chia nhóm người dùng
 
 Chạy trong bao_cao/hinh:  python3 bieu_do_cum.py
@@ -42,34 +42,41 @@ def so_vn(x, _=None):
     return "{:,.0f}".format(x).replace(",", ".")
 
 
-# ---------------------------------------------------------------- C8 EDA
+# ---------------------------------------------------------------- C8 EDA (bản tiếng Việt và tiếng Anh)
 eda = doc("eda.json")
-fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(7.2, 2.4), gridspec_kw={"width_ratios": [1.5, 1, 1]})
-ngay = [date.fromisoformat(d["ngay"]) for d in eda["theo_ngay"]]
-a1.plot(ngay, [d["so_su_kien"] / 1000 for d in eda["theo_ngay"]], color=XANH)
-a1.set_ylabel("Nghìn sự kiện / ngày")
-a1.set_xlim(ngay[0], ngay[-1])
-a1.set_ylim(bottom=0)
-a1.xaxis.set_major_locator(mdates.MonthLocator())
-a1.xaxis.set_major_formatter(mdates.DateFormatter("%m/%Y"))
-a1.set_title("(a) Sự kiện theo ngày", loc="left")
-gio = eda["theo_gio_utc"]
-a2.bar([d["gio"] for d in gio], [d["count"] / 1000 for d in gio], width=0.8, color=XANH, **VIEN)
-a2.set_xticks([0, 6, 12, 18, 23])
-a2.set_xlabel("Giờ (UTC)")
-a2.set_ylabel("Nghìn sự kiện")
-a2.set_title("(b) Theo giờ trong ngày", loc="left")
-pb = eda["phan_bo_nguoi_dung"]
-a3.bar(range(len(pb)), [d["so_luong"] for d in pb], color=XANH, **VIEN)
-a3.set_yscale("log")
-a3.set_xticks(range(len(pb)), [d["nhom"] for d in pb], rotation=45, ha="right")
-a3.set_xlabel("Số sự kiện của một người dùng")
-a3.set_ylabel("Số người dùng (log)")
-a3.set_title("(c) Phân bố người dùng", loc="left")
-fig.tight_layout()
-fig.savefig("c08_eda.png")
-fig.savefig("c08_eda.svg")
-plt.close(fig)
+NHAN_C8 = {
+    "vi": ("Nghìn sự kiện / ngày", "(a) Sự kiện theo ngày", "Giờ (UTC)", "Nghìn sự kiện", "(b) Theo giờ trong ngày",
+           "Số sự kiện của một người dùng", "Số người dùng (log)", "(c) Phân bố người dùng", "c08_eda"),
+    "en": ("Thousand events / day", "(a) Events per day", "Hour (UTC)", "Thousand events", "(b) By hour of day",
+           "Events per user", "Users (log)", "(c) Distribution of users", "c08_eda_en"),
+}
+for nn, (y1, t1, x2, y2, t2, x3, y3, t3, ten_tep) in NHAN_C8.items():
+    fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(7.2, 2.4), gridspec_kw={"width_ratios": [1.5, 1, 1]})
+    ngay = [date.fromisoformat(d["ngay"]) for d in eda["theo_ngay"]]
+    a1.plot(ngay, [d["so_su_kien"] / 1000 for d in eda["theo_ngay"]], color=XANH)
+    a1.set_ylabel(y1)
+    a1.set_xlim(ngay[0], ngay[-1])
+    a1.set_ylim(bottom=0)
+    a1.xaxis.set_major_locator(mdates.MonthLocator())
+    a1.xaxis.set_major_formatter(mdates.DateFormatter("%m/%Y"))
+    a1.set_title(t1, loc="left")
+    gio = eda["theo_gio_utc"]
+    a2.bar([d["gio"] for d in gio], [d["count"] / 1000 for d in gio], width=0.8, color=XANH, **VIEN)
+    a2.set_xticks([0, 6, 12, 18, 23])
+    a2.set_xlabel(x2)
+    a2.set_ylabel(y2)
+    a2.set_title(t2, loc="left")
+    pb = eda["phan_bo_nguoi_dung"]
+    a3.bar(range(len(pb)), [d["so_luong"] for d in pb], color=XANH, **VIEN)
+    a3.set_yscale("log")
+    a3.set_xticks(range(len(pb)), [d["nhom"] for d in pb], rotation=45, ha="right")
+    a3.set_xlabel(x3)
+    a3.set_ylabel(y3)
+    a3.set_title(t3, loc="left")
+    fig.tight_layout()
+    fig.savefig(ten_tep + ".png")
+    fig.savefig(ten_tep + ".svg")
+    plt.close(fig)
 
 # ---------------------------------------------------------------- C9 phân tích lỗi
 pt = doc("phan_tich_loi.json")

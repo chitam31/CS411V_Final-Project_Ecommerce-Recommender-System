@@ -37,7 +37,7 @@ Table: Các thành phần của hệ thống {#tab:thanh-phan w=19,24,57}
 
 ### Máy và vai trò
 
-Cụm gồm sáu máy phòng thí nghiệm, một trong số đó còn chạy ứng dụng web, tất cả là thành viên của mạng ZeroTier `ttunet`, cộng với laptop điều khiển dùng để vận hành chúng (@fig:cluster). Mỗi máy phòng thí nghiệm có 12 lõi logic và 7 GB RAM, khiến bộ nhớ chứ không phải CPU là ràng buộc then chốt. Vai trò được gán trong một tệp danh bạ duy nhất, `cau_hinh/cum.env` (@sec:config), tóm tắt ở @tab:may.
+Cụm gồm sáu máy phòng thí nghiệm, một trong số đó còn chạy ứng dụng web, tất cả là thành viên của mạng ZeroTier `ttunet` (@fig:cluster). Mỗi máy phòng thí nghiệm có 12 lõi logic và 7 GB RAM, khiến bộ nhớ chứ không phải CPU là ràng buộc then chốt. Vai trò được gán trong một tệp danh bạ duy nhất, `cau_hinh/cum.env` (@sec:config), tóm tắt ở @tab:may.
 
 ![Triển khai vật lý: máy, container, cổng và tài nguyên](hinh/f02_cum.png){#fig:cluster w=15.8}
 
@@ -50,8 +50,6 @@ Table: Các máy của cụm và vai trò {#tab:may w=17,15,40,14,14}
 | labsit-may25 | 10.68.71.42 | DataNode, Spark Worker (dùng chung với dịch vụ của nhóm khác) | 4 | 2 GB |
 | labsit-may26 | 10.68.71.90 | DataNode, Spark Worker (dùng chung với Airflow worker của nhóm khác) | 8 | 3 GB |
 | labsoe-18 | 10.68.71.149 | DataNode, Spark Worker, ứng dụng web (FastAPI với Spark cục bộ), máy trung gian SSH | 8 | 3 GB |
-| ctam | 10.68.71.205 | Dự phòng (Ubuntu trong WSL2 trên laptop; máy chủ web đầu tiên, xem @sec:issues) | – | – |
-| whitehathacker | 10.68.71.182 | Laptop điều khiển (Windows, Git Bash) | – | – |
 
 Bộ nhớ được định cỡ từ số đo lấy bằng `scripts/cum/khao_sat_may.sh` ngày 10 tháng 11 năm 2026 theo một quy tắc đơn giản: dành khoảng 2 GB cho Ubuntu và giao diện đồ họa, 1 GB cho DataNode và bộ nhớ của mọi dịch vụ khác trên máy, phần còn lại cho Spark worker. Executor của các job theo lô dùng 2 GB, nên một worker phải cung cấp ít nhất 2 GB, nếu không sẽ không bao giờ nhận được executor. Các máy dùng chung với nhóm khác được cấp ít hơn. Tổng các worker là **34 lõi và 13 GB bộ nhớ executor**.
 

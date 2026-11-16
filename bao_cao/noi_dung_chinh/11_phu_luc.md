@@ -2,7 +2,7 @@
 
 Nội dung đầy đủ ở `docs/AI_USAGE.md` (mục A.9 của đề cương).
 
-**Công cụ, thời gian, phạm vi.** Nhóm dùng Claude (Anthropic), qua claude.ai Projects và Claude Code, từ 9 đến 15/11/2026. AI sinh gần như toàn bộ:
+**Công cụ, thời gian, phạm vi.** Nhóm dùng Claude (Anthropic), qua claude.ai Projects và Claude Code, từ 9 đến 16/11/2026. AI sinh gần như toàn bộ:
 
 - mã nguồn, cấu hình, kiểm thử;
 - tài liệu, báo cáo, slide, kịch bản bảo vệ.

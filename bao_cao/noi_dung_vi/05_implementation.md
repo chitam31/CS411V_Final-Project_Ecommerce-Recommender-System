@@ -205,7 +205,7 @@ Hai hành vi của Airflow 3 đã được rút ra trên cụm. Một DAG bị t
 
 ## Ứng dụng web {#sec:impl-web}
 
-Ứng dụng web đóng vai sàn thương mại, đúng như mục 3.8 của đặc tả yêu cầu, để có thể sinh lượt hiển thị và cú nhấp thật. Đây là một ứng dụng FastAPI với template Jinja2 và một ít JavaScript, chạy trên labsoe-18 (máy chủ đầu tiên, Ctam, được giữ làm dự phòng, sự cố 26). Ứng dụng đọc bảng Delta trực tiếp từ HDFS bằng một phiên Spark cục bộ (`local[2]`) trong chính tiến trình, không lấy lõi của cụm (@tab:web). Ứng dụng ghi ngược vào Delta theo hai đường (mục A.6.4 của đề cương):
+Ứng dụng web đóng vai sàn thương mại, đúng như mục 3.8 của đặc tả yêu cầu, để có thể sinh lượt hiển thị và cú nhấp thật. Đây là một ứng dụng FastAPI với template Jinja2 và một ít JavaScript, chạy trên labsoe-18 (sự cố 26 ghi lại lần chuyển máy chủ web). Ứng dụng đọc bảng Delta trực tiếp từ HDFS bằng một phiên Spark cục bộ (`local[2]`) trong chính tiến trình, không lấy lõi của cụm (@tab:web). Ứng dụng ghi ngược vào Delta theo hai đường (mục A.6.4 của đề cương):
 
 - **Trực tiếp.** Nút "Chạy lại" ở màn hình Tái lập, sau khi trả kết quả cho trình duyệt, ghi nền một dòng `loai = 'ab_web'` vào `gold.ket_qua_tai_lap` bằng chính phiên Spark + Delta của ứng dụng. Phép ghi là append nên không xung đột với commit của DAG 5. Ứng dụng chỉ ghi khi bảng đã có ở gốc hồ dữ liệu hiện tại.
 - **Qua Kafka.** Mỗi lượt hiển thị, cú nhấp hay lượt mua đi vào topic `hien-thi`, rồi luồng `ghi_hien_thi` MERGE vào `gold.nhat_ky_hien_thi`.

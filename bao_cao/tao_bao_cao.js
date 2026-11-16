@@ -4,6 +4,7 @@
 //   node tao_bao_cao.js vi         -> BD03_Bao_cao_He_thong_goi_y.docx       (tiếng Việt, noi_dung_vi/)
 //   node tao_bao_cao.js chinh      -> BD03_Bao_cao_chinh.docx                (bản chính 15–20 trang theo mục C.3
 //                                                                            của đề cương, noi_dung_chinh/)
+//   node tao_bao_cao.js chinh en   -> BD03_Main_Report_EN.docx               (bản chính tiếng Anh, noi_dung_chinh_en/)
 //
 // Cú pháp hỗ trợ (đủ cho báo cáo, không phải Markdown đầy đủ):
 //   # Title {#sec:id}            chương (tự đánh số 1, 2, ...; "# !Title" không đánh số; "# @A Title" phụ lục A)
@@ -36,7 +37,8 @@ const PX_CM = 37.795;                // docx-js tính ảnh theo px ở 96 dpi
 
 // ------------------------------------------------------------------ ngôn ngữ
 const CHINH = process.argv.includes("chinh");
-const VI = CHINH || process.argv.includes("vi");
+const EN = process.argv.includes("en");          // node tao_bao_cao.js chinh en -> báo cáo chính tiếng Anh
+const VI = !EN && (CHINH || process.argv.includes("vi"));
 const L = VI ? {
   thuMuc: "noi_dung_vi", ra: "BD03_Bao_cao_He_thong_goi_y.docx",
   chuong: "Chương ", muc: "Mục ", hinh: "Hình ", bang: "Bảng ", ct: "Công thức ", phuLuc: "Phụ lục ",
@@ -60,10 +62,16 @@ const L = VI ? {
 };
 
 // ------------------------------------------------------------------ đọc nội dung
-if (CHINH) Object.assign(L, {
+if (CHINH && VI) Object.assign(L, {
   thuMuc: "noi_dung_chinh", ra: "BD03_Bao_cao_chinh.docx", loai: "BÁO CÁO ĐỒ ÁN CUỐI KỲ",
   dauTrang: "Hệ thống gợi ý sản phẩm thương mại điện tử – Báo cáo chính",
   tieuDeTep: "Hệ thống gợi ý sản phẩm thương mại điện tử – Báo cáo chính (CS411V Dữ liệu lớn)",
+});
+if (CHINH && EN) Object.assign(L, {
+  thuMuc: "noi_dung_chinh_en", ra: "BD03_Main_Report_EN.docx", loai: "FINAL PROJECT REPORT",
+  nhom: "GROUP MEMBERS", ma: "Student ID",
+  dauTrang: "E-commerce Product Recommender System – Main Report",
+  tieuDeTep: "E-commerce Product Recommender System – Main Report (CS411V Big Data)",
 });
 const tep = fs.readdirSync(path.join(GOC, L.thuMuc)).filter((t) => /^\d\d_.*\.md$/.test(t)).sort();
 const nguon = tep.map((t) => ({ ten: t, dong: fs.readFileSync(path.join(GOC, L.thuMuc, t), "utf8").split(/\r?\n/) }));

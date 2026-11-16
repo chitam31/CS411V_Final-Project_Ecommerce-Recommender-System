@@ -5,21 +5,18 @@ s = So(7.4, 3.22)
 s.hop("zt", 0.1, 0.1, 7.2, 0.27, "ZeroTier overlay network 'ttunet' · subnet 10.68.71.0/24 · carried over the LabSoe Wi-Fi",
       "kafka", co=7.0)
 
-# Máy master
-s.nhom(0.1, 0.5, 3.62, 0.98, "labsoe-11 · 10.68.71.113 · master (12 cores, 7.4 GB RAM)", "xam", co=7.2)
-s.hop("nn", 0.18, 0.76, 1.1, 0.62, "hadoop-master\nNameNode\n:8020 · UI :9870", "gold", co=6.6)
-s.hop("sm", 1.36, 0.76, 1.1, 0.62, "spark-master\nMaster :7077\ndrivers of all jobs", "lo", co=6.6)
-s.hop("af", 2.54, 0.76, 1.1, 0.62, "Airflow 3.3.1\nAPI :8088\nPostgreSQL 16", "af", co=6.6)
-
-s.nhom(3.84, 0.5, 1.68, 0.98, "whitehathacker · .182 · control", "xam", co=7.2)
-s.hop("lap", 3.92, 0.76, 1.52, 0.62, "Control laptop\nGit Bash · SSH tunnels\ncode sync: --dong-bo-ma", "trang", co=6.6)
-s.nhom(5.64, 0.5, 1.66, 0.98, "ctam · .205 · standby", "xam", co=7.2)
-s.hop("sb", 5.72, 0.76, 1.5, 0.62, "Ubuntu in WSL2\nfirst web host,\nkept as standby", "xam", co=6.6)
+# Máy master (chỉ vẽ 6 máy của cụm; laptop dùng để SSH không phải một phần của cụm)
+s.nhom(0.1, 0.5, 7.2, 0.98, "labsoe-11 · 10.68.71.113 · master (12 cores, 7.4 GB RAM)", "xam", co=7.2)
+for k, (ten, chu, mau) in enumerate([
+        ("nn", "hadoop-master\nNameNode\n:8020 · UI :9870", "gold"),
+        ("sm", "spark-master\nMaster :7077\ndrivers of all jobs", "lo"),
+        ("af", "Airflow 3.3.1\nAPI :8088 · scheduler\nLocalExecutor", "af"),
+        ("pg", "PostgreSQL 16\nAirflow metadata\ndatabase", "af")]):
+    s.hop(ten, 0.22 + k * 1.77, 0.76, 1.62, 0.62, chu, mau, co=6.6)
 
 # Đường trục mạng
 s.ax.plot([0.3, 7.1], [1.6, 1.6], color="#6C8EBF", lw=1.8, zorder=2)
-for x in (1.91, 4.68, 6.47):
-    s.ax.plot([x, x], [1.48, 1.6], color="#6C8EBF", lw=1.0, zorder=2)
+s.ax.plot([3.7, 3.7], [1.48, 1.6], color="#6C8EBF", lw=1.0, zorder=2)
 
 may = [
     ("labsit12 · .198", "Spark: 8 cores · 3 GB", None),
