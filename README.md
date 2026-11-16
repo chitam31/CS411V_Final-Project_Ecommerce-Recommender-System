@@ -127,7 +127,7 @@ Cần Python 3.10–3.11 và Java 17.
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-pytest                      # 61 test chạy trên Spark local; test DAG tự bỏ qua nếu thiếu Airflow
+pytest                      # 143 test chạy trên Spark local; test DAG tự bỏ qua nếu thiếu Airflow
 ```
 
 Test DAG Airflow (tùy chọn, nên dùng venv riêng vì Airflow kéo nhiều thư viện):
@@ -151,12 +151,12 @@ Chế độ `gia` chỉ để xem giao diện: mọi con số trên màn hình l
 ### 3.3. Chạy toàn bộ pipeline trên một máy với Delta thật
 
 ```bash
-bash scripts/kiem_tra_cuc_bo.sh
+bash scripts/kiem_tra_cuc_bo.sh            # máy ít RAM, ví dụ WSL2: BO_NHO=2g bash scripts/kiem_tra_cuc_bo.sh
 ```
 
-Script sinh một bộ dữ liệu nhỏ đúng định dạng RetailRocket ([scripts/tao_du_lieu_mau.py](scripts/tao_du_lieu_mau.py)), rồi chạy lần lượt mọi job với Spark local, Delta Lake thật và nguồn luồng đọc từ tệp thay cho Kafka. Script cần tải Delta qua `--packages` (Internet tới Maven Central), hoặc đặt sẵn `DELTA_JARS=/duong/delta-spark_2.12-3.2.0.jar,/duong/delta-storage-3.2.0.jar`.
+Trên Windows, chạy trong Ubuntu của WSL2 (PySpark ghi tệp cục bộ trên Windows thuần cần thêm winutils). Script sinh một bộ dữ liệu nhỏ đúng định dạng RetailRocket ([scripts/tao_du_lieu_mau.py](scripts/tao_du_lieu_mau.py)), rồi chạy lần lượt mọi job với Spark local, Delta Lake thật và nguồn luồng đọc từ tệp thay cho Kafka. Script cần tải Delta qua `--packages` (Internet tới Maven Central), hoặc đặt sẵn `DELTA_JARS=/duong/delta-spark_2.12-3.2.0.jar,/duong/delta-storage-3.2.0.jar`.
 
-### 3.4. Triển khai trên cụm 8 máy
+### 3.4. Triển khai trên cụm 6 máy lab
 
 Tóm tắt (chi tiết từng máy ở [docs/TRIEN_KHAI_CUM.md](docs/TRIEN_KHAI_CUM.md)):
 

@@ -7,6 +7,7 @@
 #   - DELTA_JARS=/duong/delta-spark_2.12-3.2.0.jar,/duong/delta-storage-3.2.0.jar
 #
 #   bash scripts/kiem_tra_cuc_bo.sh
+#   BO_NHO=2g bash scripts/kiem_tra_cuc_bo.sh     # máy ít RAM (WSL2): giảm bộ nhớ driver, mặc định 3g
 set -euo pipefail
 GOC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TAM="${TAM:-/tmp/bd03_cuc_bo}"
@@ -14,7 +15,7 @@ PY="${PY:-python3}"
 export LAKE_GOC="file://$TAM/lake"
 export PYTHONPATH="$GOC/jobs"
 if [ -n "${DELTA_JARS:-}" ]; then GOI="--jars $DELTA_JARS"; else GOI="--packages io.delta:delta-spark_2.12:3.2.0"; fi
-export PYSPARK_SUBMIT_ARGS="--master local[4] --driver-memory 3g $GOI --conf spark.sql.shuffle.partitions=8 --conf spark.ui.enabled=false pyspark-shell"
+export PYSPARK_SUBMIT_ARGS="--master local[4] --driver-memory ${BO_NHO:-3g} $GOI --conf spark.sql.shuffle.partitions=8 --conf spark.ui.enabled=false pyspark-shell"
 
 chay() { echo; echo ">>> $*"; "$PY" "$GOC/jobs/$1" "${@:2}" 2>&1 | grep -v -E "WARN|^\s*$" | tail -n 5; }
 
@@ -43,4 +44,5 @@ chay kiem_tra/tai_lap_huan_luyen.py --ma-chay rcucbo
 chay transform/tien_hoa_luoc_do.py
 chay bao_tri/do_zorder.py --phan-manh 50 --so-truy-van 10
 chay bao_tri/toi_uu_delta.py
-echo; echo "Xong. Dữ liệu ở $TAM/lake. Xem web với dữ liệu này: cd web && WEB_CHE_DO=delta WEB_KAFKA=tat LAKE_GOC=$LAKE_GOC uvicorn app:app"
+echo; echo "Xong. Dữ liệu ở $TAM/lake. Xem web với dữ liệu này (rồi mở http://localhost:8000):"
+echo "  cd \"$GOC/web\" && WEB_CHE_DO=delta WEB_KAFKA=tat LAKE_GOC=$LAKE_GOC PYTHONPATH=\"$GOC/jobs\" PYSPARK_SUBMIT_ARGS=\"$GOI pyspark-shell\" uvicorn app:app --port 8000"
