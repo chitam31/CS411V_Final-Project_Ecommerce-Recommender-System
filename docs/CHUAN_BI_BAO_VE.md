@@ -59,17 +59,16 @@ Quy ước trong tài liệu này:
 | Ngay sau đó | Chép kết quả về laptop, giải nén vào `docs/bang_chung/cum/`, commit + push | `[laptop] scp labsoe-11:~/bd03_bang_chung/<thời điểm>.tar.gz .` | ☐ |
 | 16–18/11 | Tập phần demo C.4: chạy DAG `kn_tinh_ab` trực tiếp, `cay_hdfs.sh`, `delta_sql.sh demo <user>`, ghi ngược rồi xác nhận | `docs/HUONG_DAN_DEMO.md` mục B' | ☐ |
 
-## 1. Lịch chuẩn bị từ 12/11 đến 19/11
+## 1. Lịch chuẩn bị đến 19/11
+
+Báo cáo, slide, bằng chứng và khai báo AI đã hoàn tất trong gói nộp bài ngày 16/11 (`BD03_khuyen_nghi_16_11.zip`). Còn lại là phần tập:
 
 | Ngày | Việc | Xong |
 |---|---|---|
-| 12–14/11 | Đọc lại toàn bộ báo cáo, sửa lỗi chính tả, kiểm tra số liệu khớp với slide. Nếu sửa mã hoặc báo cáo: commit, đẩy lên, gắn tag `v1.2` | ☐ |
-| 13/11 | Mỗi người đọc to phần mình 3 lần với đồng hồ, theo kịch bản | ☐ |
-| 14/11 | Tập chung trọn 20 phút và ghi âm. Kiểm tra các mốc 7:15, 16:30, 20:00 | ☐ |
-| 15/11 | **Nộp báo cáo** (Word và PDF). Tập 5 bước demo trên cụm thật | ☐ |
-| 16/11 | Hỏi – đáp thử theo bộ 52 câu, hai người đổi vai hỏi và trả lời | ☐ |
+| 16/11 | Hỏi – đáp thử theo `bao_cao/hoi_dap/BD03_Hoi_dap_bao_ve.docx`, hai người đổi vai hỏi và trả lời. Quốc Anh đọc phần mã mình giải thích (`producer/`, `jobs/streaming/`, `jobs/transform/`, `web/`) cùng `docs/KIEN_TRUC.md` | ☐ |
+| 17/11 | Tập trọn kịch bản demo trên cụm (`bao_cao/kich_ban/KICH_BAN_DEMO_19_11.md`), bấm giờ (khoảng 14 phút); ghi lại bước chậm hoặc lỗi. Tâm tập thuyết trình 26 slide theo kịch bản chi tiết | ☐ |
 | 18/11 sáng | Làm toàn bộ **mục 2** (kiểm tra cụm, chọn sản phẩm, quay video dự phòng) | ☐ |
-| 18/11 tối | Tập lần cuối. **Tạm dừng DAG `kn_pipeline_hang_ngay`** (mục 2.5). Sạc đầy pin laptop, chuẩn bị đồ ở mục 3 | ☐ |
+| 18/11 tối | Tập lần cuối. Kiểm tra DAG `kn_pipeline_hang_ngay` **vẫn tạm dừng** (mục 2.5). Sạc đầy pin laptop, chuẩn bị đồ ở mục 3 | ☐ |
 | 19/11 | Làm theo **mục 4** (T−60 đến T), demo theo **mục 5**, dọn dẹp theo **mục 11** | ☐ |
 
 ---
