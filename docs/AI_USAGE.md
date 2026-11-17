@@ -42,6 +42,8 @@ Các hội thoại đầy đủ được lưu trong dự án Claude "Big Data_Re
 | 14/11 | "còn nội dung nào thiếu chưa trình bày cho Thầy Dũng chưa ạ Thầy" | Nguyên văn | Các phần bổ sung 1–6 của kịch bản thuyết trình |
 | 15/11 | "Thầy hãy đọc thật kỹ xem toàn bộ đồ án hiện tại Thầy làm đã đáp ứng được file đề cương đồ án này chưa ạ Thầy, em cần check thật kỹ tất cả mọi thứ để đảm bảo đồ án đạt điểm cao nhất có thể ạ Thầy" | Nguyên văn | Bảng đối chiếu với đề cương (docs/DOI_CHIEU_YEU_CAU.md, Phần A và C) |
 | 15/11 | "Bây giờ Thầy hãy sửa toàn bộ đồ án để có thể đáp ứng tất cả yêu cầu hiện còn sai thiếu ạ (trừ phần A.2 Nhóm và vai trò ra). thầy phải sửa toàn bộ luôn nha Thầy" | Nguyên văn | Đợt sửa theo đề cương, xem mục 4 |
+| 17/11 | "em đâu có thấy số giây ở bước 4 hiện ra dòng “ĐÃ CẬP NHẬT sau N giây” đâu ạ" | Nguyên văn | Sửa cách đo độ trễ trên trang sản phẩm và `demo_vong_khep_kin.py` (cửa sổ của lần bấm), cập nhật kịch bản demo |
+| 17/11 | "Thầy viết lại file word (Vietnamese) thuyết trình demo từ Slide đã chốt thật chính xác, chi tiết đi ạ, phải giải thích rõ các behaviour từ các chart trong slide và web, nói tất cả các vấn đề cần trình bày cho Thầy Dũng và cả lớp nắm đồ án ạ Thầy" | Nguyên văn | `BD03_Kich_ban_thuyet_trinh_chi_tiet_19_11.docx` (viết lại: demo đọc màn hình + 27 slide) |
 
 ## 4. Phần do AI sinh
 

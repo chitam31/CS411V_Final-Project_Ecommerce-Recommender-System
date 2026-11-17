@@ -26,7 +26,7 @@ Hình và biểu đồ ghi nhãn tiếng Anh, dùng chung cho hai ngôn ngữ (c
 | `cap_nhat_muc_luc.py` | Mở `.docx` bằng LibreOffice, cập nhật mục lục, danh mục hình/bảng và xuất PDF |
 | `slide/` | Mã dựng 27 slide bảo vệ (26 slide + 1 dự phòng, có lời ghi chú cho người nói): `python3 gen.py` (tiếng Anh, `project/`), `python3 gen_vi.py` (tiếng Việt, `project_vi/`); PDF bằng `dung_thu_slide.py [--vi] --pdf` |
 | `hoi_dap/` | Bộ 49 câu hỏi – đáp dự kiến (tiếng Việt): `node tao_hoi_dap.js` |
-| `kich_ban/` | Buổi 19/11 (demo trước, thuyết trình sau, không giới hạn thời gian): `KICH_BAN_DEMO_19_11.md` (bản thực hiện) và `node tao_kich_ban_demo_19_11.js` (bản docx); kịch bản thuyết trình chi tiết `node tao_noi_dung_thuyet_trinh.js`. `tao_kich_ban.js`, `tao_kich_ban_demo.js` là bản cũ (20 phút, 12/11) |
+| `kich_ban/` | Buổi 19/11 (demo trước, thuyết trình sau, không giới hạn thời gian): `KICH_BAN_DEMO_19_11.md` (bản thực hiện) và `node tao_kich_ban_demo_19_11.js` (bản docx); kịch bản demo và thuyết trình chi tiết theo 27 slide, có giải thích từng biểu đồ trên slide và trên web: `node tao_noi_dung_thuyet_trinh.js` (nội dung ở `noi_dung_demo_chi_tiet.js`, `noi_dung_thuyet_trinh_chi_tiet.js`). `tao_kich_ban.js`, `tao_kich_ban_demo.js` là bản cũ (20 phút, 12/11) |
 
 ## Dựng lại
 
