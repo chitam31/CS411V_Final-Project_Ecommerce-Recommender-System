@@ -85,7 +85,7 @@ SSH treo khi đứng ngoài lab (`banner exchange`, `KEX`): Ctrl+C, chạy lại
 - Mô hình đang phục vụ `als_v2_r20261111T190002`: features v4, rank 50, regParam 1,0, alpha 40, NDCG@10 = 0,0680 (trùng số liệu với `als_v2_r20261110T230924` trong báo cáo).
 - Bảng tái lập đã có 6 dòng **CÓ**.
 - Hồ dữ liệu ở `hdfs:///lakehouse/bd03_khuyen_nghi` (dời từ `/lake` ngày 15/11).
-- Airflow hiện giờ Việt Nam; bảng Delta, cửa sổ thịnh hành, Spark UI từng ứng dụng ghi **UTC** (cộng 7 tiếng).
+- Airflow và ô thịnh hành của trang sản phẩm hiện giờ Việt Nam; bảng Delta, kết quả `curl`, Spark UI từng ứng dụng ghi **UTC** (cộng 7 tiếng).
 
 ---
 
@@ -199,7 +199,7 @@ Tab 4 Airflow <http://10.68.71.113:8088/dags>, công tắc phải đúng như sa
 | `kn_pipeline_hang_ngay` (DAG 1) | **Tạm dừng** | Giữ tới khi nộp bài xong |
 | `kn_giam_sat_streaming` | Tạm dừng | Có thể bật lúc bộ phát chạy ngày 19/11 |
 | `kn_tinh_ab` | Bật | Mỗi giờ |
-| `kn_bao_tri` | Bật | 04:00; xóa dòng thịnh hành cũ hơn 2 ngày → phải mồi sản phẩm |
+| `kn_bao_tri` | Bật | 04:00; xóa dòng thịnh hành cũ hơn 2 ngày |
 | `kn_tai_lap` (DAG 5) | Bật | Chỉ chạy khi kích hoạt tay |
 
 Ô **Triggerer** đỏ là cố ý (không có deferrable operator).
@@ -260,7 +260,7 @@ ssh -N -L 8001:localhost:8000 labsoe-18
 | ☐ | T−5 | ____ | Kiểm tra lần cuối | Cửa sổ 1, tab 6, tab 3 |
 | ☐ | T−2 | ____ | Chiếu slide 1 (tiêu đề); trình duyệt để sẵn ở tab 1; điện thoại im lặng | Máy chiếu |
 
-- Nhóm lên muộn hơn T vẫn ổn: bộ phát chạy ~4 giờ; sản phẩm đã mồi vẫn dùng được.
+- Nhóm lên muộn hơn T vẫn ổn: bộ phát chạy ~4 giờ; trang sản phẩm đo trên cửa sổ của chính lần bấm nên không phụ thuộc lúc mồi.
 - T vào sáng sớm: kích hoạt DAG 5 từ nhà bằng **cách B** bên dưới, hoặc tối 18/11 sau khi bộ phát đã tắt (2 dòng mới mang ngày 18/11, vẫn hợp lệ).
 
 ### T−90 · Kích hoạt DAG 5
@@ -360,7 +360,7 @@ sleep 10; tail -3 ~/phat.log
 
 ### T−8 · Mồi 2 sản phẩm
 
-Mỗi sản phẩm 1 lượt “xem”, để trang sản phẩm in được “ĐÃ CẬP NHẬT sau N giây” ở bước 4.
+Mỗi sản phẩm 1 lượt “xem”, để T−5 kiểm tra được luồng thịnh hành đang ghi. (Từ 17/11 trang sản phẩm đo trên cửa sổ của chính lần bấm, nên “ĐÃ CẬP NHẬT sau N giây” hiện cả khi sản phẩm đã có lượt thêm giỏ từ trước.)
 
 **[Cửa sổ 1 · labsoe-11]**
 ```bash
@@ -379,7 +379,7 @@ curl -s -m 30 -X POST http://10.68.71.149:8000/api/su-kien -H "Content-Type: app
 ```bash
 curl -s -m 120 http://10.68.71.149:8000/api/thinh-hanh/102605
 ```
-✅ Có `cua_so_ket_thuc` và `"so_luot_them_gio": 0` (hoặc 1–2). ⚠️ Từ **3** trở lên thì bước 4 dùng `320844`. Chạy **một lần**, chờ tối đa 2 phút.
+✅ Có `cua_so_ket_thuc` (giờ UTC của phút tới): cửa sổ 15 phút đang chạy chứa lượt xem vừa mồi; số thêm giỏ bao nhiêu cũng được. ⚠️ Ra `{}`: luồng chưa ghi kịp, chờ 1–2 phút rồi chạy lại một lần; vẫn `{}` thì `bash scripts/luong.sh trang_thai`. Chạy **một lần**, chờ tối đa 2 phút.
 
 - [ ] Tab 6 → F5: khối **Đang thịnh hành** đủ 10 sản phẩm.
 - [ ] Tab 3 → Overview: **Message Count** tăng sau mỗi lần F5.
@@ -421,6 +421,8 @@ Tâm nhấn **Alt+Tab** sang trình duyệt, tab 1.
 
 ⚠️ Có 4 ứng dụng (thêm `bd03-tai-lap-huan-luyen`): DAG 5 chưa xong, nói “the reproduction job is still running; we come back to it at the end”.
 
+⚠️ Bị hỏi về dấu **X đỏ** của `kn_pipeline_hang_ngay` (lượt 15/11 02:00): sensor `cho_du_lieu_ngay_moi` của lượt đó chờ một ngày dữ liệu mới không bao giờ tới (bộ phát tắt trong lúc dời gốc hồ dữ liệu `/lake` → `/lakehouse` tối 15/11), nên nhóm đánh dấu Failed sáng 16/11, các task sau Skipped; DAG tạm dừng từ đó. Nói: “That run waited for a new day of data while we were moving the lakehouse root, so we marked it failed; the nightly DAG has been paused since.”
+
 ### Bước 1 · Chất lượng mô hình (1:30 · tiêu chí 1, 2)
 
 1. Tab 5 <http://10.68.71.149:8000/mo-hinh>: bảng so sánh → dòng **Ngưỡng đạt**.
@@ -456,19 +458,17 @@ Tab 5, cuộn xuống mục cuối **OPTIMIZE / ZORDER**, chỉ 2 dòng `truoc` 
 ### Bước 4 · Vòng khép kín ≤ 90 giây (2:00 · tiêu chí 4, 5)
 
 1. **Ctrl+T**, dán link (**thay mã user**): `http://10.68.71.149:8000/san-pham/102605?u=moi_xxxxxxxx`
-2. Đọc ô **Trạng thái trong bảng thịnh hành**: “… · thêm giỏ 0”.
-3. Bấm **Thêm vào giỏ** 3 lần **liền nhau trong ~2 giây**.
+2. Đọc ô **Trạng thái trong bảng thịnh hành**: “Cửa sổ 15 phút HH:MM → HH:MM · xem … · thêm giỏ X” (giờ Việt Nam; X bao nhiêu cũng được).
+3. Bấm **Thêm vào giỏ** 3 lần **liền nhau trong ~2 giây**. Hiện dòng cam “Đang chờ … N giây”, đếm từng giây.
 4. Tab 3 Kafka UI → **Messages** → **Seek Type = Timestamp**, đúng phút vừa bấm → **Search** gõ mã user → **Submit** → bấm **+** một dòng. *(bỏ được: chỉ nói)*
-5. Quay lại tab sản phẩm, chờ **“ĐÃ CẬP NHẬT sau N giây”** → **Ctrl+W** đóng tab.
+5. Quay lại tab sản phẩm, chờ dòng xanh **“ĐÃ CẬP NHẬT sau N giây (… ĐẠT)”** (giữ nguyên tới lần bấm sau), đọc N → **Ctrl+W** đóng tab.
 
 > The closed loop. On a product that almost nobody views, we click “Add to cart” three times. Every click goes to Kafka; here they are in Kafka UI, keyed by our new user, with source “web”. Within about fifteen seconds the first stream writes them to bronze, so they become training data for tonight’s model. The trending stream updates its fifteen-minute window and merges into gold every twenty seconds. The page polls every five seconds and prints the delay: the target is ninety seconds, and we measured fifty-one.
 
-⚠️ **Chờ quá 60 giây chưa thấy “ĐÃ CẬP NHẬT”:** để nguyên tab sản phẩm, làm luôn bước 5, xong quay lại đọc kết quả. Trang vẫn tự hỏi khi nằm ở tab nền và tính N từ lúc bấm, nên số giây vẫn đúng.
+⚠️ **Chờ quá 60 giây chưa thấy “ĐÃ CẬP NHẬT”:** để nguyên tab sản phẩm, làm luôn bước 5, xong quay lại đọc kết quả. Trang vẫn tự hỏi khi nằm ở tab nền, tính N từ lần bấm đầu và giữ dòng kết quả, nên quay lại vẫn đọc được.
 
 ⚠️ **Nếu lỗi khác:**
-- Số tăng nhưng không có “ĐÃ CẬP NHẬT”: quên mồi; con số vẫn là bằng chứng.
-- Chỉ tăng 1–2: 3 lần bấm vắt qua ranh giới phút; các cửa sổ trước chứa đủ 3.
-- Luồng có thể đã chết:
+- Dòng cam đếm quá 90 giây (“quá 90 giây: kiểm tra luồng thịnh hành”) — luồng có thể đã chết:
 
 **[Cửa sổ 1 · labsoe-11]**
 ```bash
@@ -589,7 +589,7 @@ Tâm **Alt+Tab** về slide, sang **slide 2**. Trình duyệt để nguyên (dù
 | `curl` không in gì | Không chạy lặp; chờ 1–2 phút, chạy **một lần** với `-m 180` | Dùng giao diện |
 | Kafka UI không ra tin | Seek Type = Timestamp đúng phút, gõ mã user, **Submit** | Bỏ qua, dùng trang sản phẩm |
 | Giờ lệch 7 tiếng | “UTC, add seven hours” | – |
-| Airflow có ô đỏ | Triggerer cố ý tắt; lỗi cũ đã ghi trong báo cáo | – |
+| Airflow có ô đỏ | Triggerer cố ý tắt; X đỏ của DAG 1 lượt 15/11 (xem bước 0); lỗi cũ đã ghi trong báo cáo | – |
 | Mất mạng | Slide + ảnh chụp (nói ngày chụp) | Video buổi tập |
 | Máy chiếu không nhận | Win + P → Duplicate; đổi độ phân giải | PDF slide từ USB trên máy phòng |
 
@@ -643,7 +643,7 @@ pgrep -f "phat_lai_su_kie[n]" || echo DA_TAT
 | ☐ | T−15 | ____ | p-value: ________ | Tab 7 |
 | ☐ | T−10 | ____ | `pgrep` → `nohup … phat_lai_su_kien.py …` → `tail` | Cửa sổ 2 |
 | ☐ | T−8 | ____ | Mồi 102605, 320844 | Cửa sổ 1 |
-| ☐ | T−5 | ____ | `thinh-hanh/102605` (< 3) · trending đủ 10 · Message Count tăng | Cửa sổ 1, tab 6, 3 |
+| ☐ | T−5 | ____ | `thinh-hanh/102605` có `cua_so_ket_thuc` · trending đủ 10 · Message Count tăng | Cửa sổ 1, tab 6, 3 |
 
 **Thứ tự:** mở đầu → demo (~14 phút, bước 0–7, làm đủ cả phần “bỏ được”) → chuyển slide → thuyết trình → hỏi đáp
 

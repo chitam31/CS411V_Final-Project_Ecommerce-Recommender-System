@@ -98,6 +98,24 @@ def test_thinh_hanh_cap_nhat_sau_them_gio(web):
     assert c.get("/api/thinh-hanh/sp200").json()["so_luot_them_gio"] == truoc + 1
     assert json.dumps(c.get("/api/thinh-hanh").json())
 
+    # Trang sản phẩm đo độ trễ trên cửa sổ bắt đầu ở phút của lần bấm (tham số bat_dau_ms).
+    phut = 60000
+    r = c.post("/api/su-kien", json={"ma_nguoi_dung": "x", "ma_san_pham": "sp201", "loai": "them_gio"}).json()
+    bd = (r["luc_ms"] - 10000) // phut * phut
+    d = c.get("/api/thinh-hanh/sp201", params={"bat_dau_ms": bd}).json()
+    assert d["so_luot_them_gio"] == 1 and d["cua_so_bat_dau_ms"] == bd
+    assert d["cua_so_ket_thuc_ms"] - d["cua_so_bat_dau_ms"] == 15 * phut
+    # Cửa sổ bắt đầu sau lần bấm chưa có lượt nào; sản phẩm chưa ai bấm cũng vậy.
+    assert c.get("/api/thinh-hanh/sp201", params={"bat_dau_ms": bd + 20 * phut}).json() == {}
+    assert c.get("/api/thinh-hanh/sp202", params={"bat_dau_ms": bd}).json() == {}
+    # Không tham số: cửa sổ đang chạy, có mốc epoch để trình duyệt đổi sang giờ địa phương.
+    hien = c.get("/api/thinh-hanh/sp201").json()
+    assert hien["cua_so_ket_thuc_ms"] > r["luc_ms"] - 1000 and hien["cua_so_bat_dau_ms"] <= r["luc_ms"]
+    # Mã trang: đo bằng cửa sổ của lần bấm và giữ dòng kết quả (lỗi buổi tập 17/11).
+    html = c.get("/san-pham/sp201?u=x").text
+    assert "bat_dau_ms=" in html and 'id="do-tre"' in html and "ĐÃ CẬP NHẬT sau" in html
+    assert "soThemGioTruoc" not in html
+
 
 def test_anh_minh_hoa_va_ghi_chu(web):
     """Lớp minh họa (RetailRocket ẩn danh): ảnh SVG hợp lệ, tất định, có chữ "ảnh minh họa", chân trang nói rõ."""

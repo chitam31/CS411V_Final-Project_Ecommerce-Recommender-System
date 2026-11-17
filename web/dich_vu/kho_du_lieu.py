@@ -160,16 +160,33 @@ class KhoDelta:
 
         return self.dem_thinh_hanh.lay("top", tinh)[:n]
 
-    def thinh_hanh_san_pham(self, ma_san_pham):
-        """Dòng thịnh hành mới nhất của một sản phẩm (để đo độ trễ vòng khép kín). Không đệm."""
+    def thinh_hanh_san_pham(self, ma_san_pham, bat_dau_ms=None):
+        """Một dòng thịnh hành của sản phẩm cho trang sản phẩm. Không đệm.
+
+        Không truyền bat_dau_ms: cửa sổ 15 phút đang chạy, tức cửa sổ kết thúc sớm nhất sau
+        thời điểm hiện tại, chứa mọi sự kiện của 15 phút gần nhất (None nếu không có).
+        Cửa sổ mới nhất theo cua_so_ket_thuc thì không dùng được: cửa sổ trượt nên cửa sổ đó
+        bắt đầu ở phút của sự kiện cuối, chỉ chứa sự kiện từ phút ấy, và số đếm tụt xuống.
+
+        bat_dau_ms (mốc phút, epoch ms): đúng cửa sổ bắt đầu ở phút đó. Trang sản phẩm dùng
+        cửa sổ bắt đầu ở phút của lần bấm để đo độ trễ: cửa sổ này chỉ chứa sự kiện từ phút
+        đó trở đi, nên lượt thêm giỏ cũ hơn không làm sai phép đo.
+        """
         from pyspark.sql import functions as F
 
         if not self._co_bang("gold.thinh_hanh_15p"):
             return None
+        th = self._doc("gold.thinh_hanh_15p").filter(F.col("ma_san_pham") == str(ma_san_pham))
+        if bat_dau_ms is not None:
+            moc = F.timestamp_seconds(F.lit(int(bat_dau_ms) // 60000 * 60))
+            th = th.filter(F.col("cua_so_bat_dau") == moc)
+        else:
+            th = th.filter(F.col("cua_so_ket_thuc") > F.timestamp_seconds(F.lit(int(time.time()))))
         r = (
-            self._doc("gold.thinh_hanh_15p")
-            .filter(F.col("ma_san_pham") == str(ma_san_pham))
-            .orderBy(F.desc("cua_so_ket_thuc"))
+            th.orderBy("cua_so_ket_thuc")
+            # Epoch ms để trình duyệt tự đổi sang giờ địa phương (chuỗi giờ của Spark ở đây là UTC).
+            .withColumn("cua_so_bat_dau_ms", F.col("cua_so_bat_dau").cast("long") * 1000)
+            .withColumn("cua_so_ket_thuc_ms", F.col("cua_so_ket_thuc").cast("long") * 1000)
             .first()
         )
         return _dong(r) if r else None

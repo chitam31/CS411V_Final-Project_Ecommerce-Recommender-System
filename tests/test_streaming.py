@@ -53,7 +53,7 @@ def test_bo_sung_danh_muc(spark):
     assert chuan_hoa_su_kien(tho, dm).first()["ma_danh_muc"] == "1051"
 
 
-def test_cua_so_truot_15_phut(spark):
+def test_cua_so_truot_15_phut(spark, monkeypatch):
     t = datetime(2026, 11, 10, 10, 7, 30)
     tho = dong_kafka(spark, [{"timestamp": TS, "visitorid": 1, "event": "view", "itemid": 9},
                              {"timestamp": TS, "visitorid": 2, "event": "addtocart", "itemid": 9},
@@ -62,6 +62,43 @@ def test_cua_so_truot_15_phut(spark):
     assert len(cua_so) == 15  # cửa sổ 15 phút, bước 1 phút -> mỗi sự kiện thuộc 15 cửa sổ
     assert all(r["so_luot_xem"] == 1 and r["so_luot_them_gio"] == 1 for r in cua_so)
     assert all(r["cua_so_ket_thuc"] - r["cua_so_bat_dau"] == timedelta(minutes=15) for r in cua_so)
+
+    # Web đọc gold.thinh_hanh_15p: cửa sổ đang chạy và cửa sổ của lần bấm (buổi tập 17/11).
+    # 8 lượt thêm giỏ lúc 02:08 (buổi trước), bấm thêm 1 lượt lúc 02:20:05. Cửa sổ mới nhất theo
+    # cua_so_ket_thuc chỉ còn 1 lượt nên trang cũ (so với 8) không bao giờ báo "ĐÃ CẬP NHẬT";
+    # trang mới đo trên cửa sổ bắt đầu ở phút của lần bấm.
+    from pyspark.sql import functions as F
+
+    from dich_vu import kho_du_lieu
+    from dich_vu.kho_du_lieu import KhoDelta
+
+    goc = 1794880800  # 2026-11-17 02:00:00 UTC, epoch giây
+    su_kien = [(goc + 8 * 60 + 10, "addtocart")] * 8 + [(goc + 20 * 60 + 5, "addtocart"), (goc + 20 * 60 + 6, "view")]
+    tho = spark.createDataFrame(
+        [(json.dumps({"timestamp": TS, "visitorid": 1, "event": e, "itemid": "102605"}), "t", 0, i, s)
+         for i, (s, e) in enumerate(su_kien)],
+        "value string, kafka_topic string, kafka_partition int, kafka_offset long, giay long",
+    ).withColumn("kafka_ts", F.timestamp_seconds("giay"))
+    bang = gom_cua_so(lay_su_kien(tho))
+
+    kho = KhoDelta()
+    monkeypatch.setattr(kho, "_co_bang", lambda ten: True)
+    monkeypatch.setattr(kho, "_doc", lambda ten, phien_ban=None: bang)
+    bay_gio = [goc + 20 * 60 + 30]
+    monkeypatch.setattr(kho_du_lieu.time, "time", lambda: bay_gio[0])
+
+    # Cửa sổ đang chạy [02:06, 02:21): đủ 15 phút gần nhất, cả lượt cũ lẫn lượt mới.
+    hien = kho.thinh_hanh_san_pham("102605")
+    assert hien["cua_so_bat_dau_ms"] == (goc + 6 * 60) * 1000 and hien["cua_so_ket_thuc_ms"] == (goc + 21 * 60) * 1000
+    assert (hien["so_luot_them_gio"], hien["so_luot_xem"]) == (9, 1)
+    # Cửa sổ của lần bấm (trang lùi 10 giây: 02:19:55 -> phút 02:19): chỉ có lượt mới.
+    lan_bam = kho.thinh_hanh_san_pham("102605", bat_dau_ms=(goc + 19 * 60 + 55) * 1000)
+    assert lan_bam["so_luot_them_gio"] == 1 and lan_bam["cua_so_bat_dau_ms"] == (goc + 19 * 60) * 1000
+    assert kho.thinh_hanh_san_pham("102605", bat_dau_ms=(goc + 25 * 60) * 1000) is None
+    assert kho.thinh_hanh_san_pham("999999") is None
+    # 15 phút sau lượt cuối thì không còn cửa sổ đang chạy.
+    bay_gio[0] = goc + 36 * 60
+    assert kho.thinh_hanh_san_pham("102605") is None
 
 
 def test_cong_thuc_diem(spark):

@@ -272,8 +272,9 @@ def create_app(kho=None, gui=None, phien=None):
         return lam_giau(kho.thinh_hanh(n))
 
     @app.get("/api/thinh-hanh/{ma_san_pham}")
-    def api_thinh_hanh_san_pham(ma_san_pham: str):
-        return kho.thinh_hanh_san_pham(ma_san_pham) or {}
+    def api_thinh_hanh_san_pham(ma_san_pham: str, bat_dau_ms: Optional[int] = None):
+        """Không tham số: cửa sổ 15 phút đang chạy. bat_dau_ms: cửa sổ bắt đầu ở phút đó (đo độ trễ)."""
+        return kho.thinh_hanh_san_pham(ma_san_pham, bat_dau_ms) or {}
 
     @app.get("/api/ab/ket-qua")
     def api_ab():

@@ -198,10 +198,10 @@ ND.push(sauBang());
 ND.push(muc2("0.5 Số liệu dùng trong demo"));
 ND.push(bang(["Mục", "Giá trị"], [
   ["User nhóm A / nhóm B", "`1287993` (toàn ô ALS) / `270018` (ô 3, 6, 8 là Thịnh hành)"],
-  ["Sản phẩm vòng khép kín", "Chính `102605`, dự phòng `320844`. Cả hai được **mồi** ở mốc T−8 (mục 3.8)"],
+  ["Sản phẩm vòng khép kín", "Chính `102605`, dự phòng `320844`. Cả hai được **mồi** ở mốc T−8 (mục 3.8) để T−5 kiểm tra luồng thịnh hành"],
   ["Mô hình đang phục vụ", "`als_v2_r20261111T190002`: features v4, rank 50, regParam 1,0, alpha 40, NDCG@10 = 0,0680. Số liệu trùng hoàn toàn với `als_v2_r20261110T230924` trong báo cáo"],
   ["Tái lập đã có sẵn", "6 dòng, đều **CÓ**. Hai dòng ngày 12/11 (features v4): lệch 3,55·10⁻¹⁵ và 1,78·10⁻¹⁵"],
-  ["Giờ trên màn hình", "Airflow hiện giờ Việt Nam. Bảng tái lập, cửa sổ thịnh hành và Spark UI của từng ứng dụng ghi giờ **UTC**: cộng 7 tiếng"],
+  ["Giờ trên màn hình", "Airflow và ô thịnh hành của trang sản phẩm hiện giờ Việt Nam. Bảng tái lập, kết quả `curl` và Spark UI của từng ứng dụng ghi giờ **UTC**: cộng 7 tiếng"],
 ], [26, 74]));
 ND.push(sauBang());
 
@@ -283,7 +283,7 @@ ND.push(bang(["DAG", "Công tắc phải là", "Ghi chú"], [
   ["`kn_pipeline_hang_ngay` (DAG 1)", "**Tạm dừng** (xám)", "Giữ tạm dừng tới khi nộp bài xong, để màn hình khớp báo cáo"],
   ["`kn_giam_sat_streaming`", "Tạm dừng", "Có thể bật trong lúc bộ phát chạy ngày 19/11 (mục 3.7)"],
   ["`kn_tinh_ab`", "Bật", "Chạy mỗi giờ"],
-  ["`kn_bao_tri`", "Bật", "Chạy 04:00 mỗi ngày; xóa dòng thịnh hành cũ hơn 2 ngày, nên phải mồi sản phẩm (mục 3.8)"],
+  ["`kn_bao_tri`", "Bật", "Chạy 04:00 mỗi ngày; xóa dòng thịnh hành cũ hơn 2 ngày"],
   ["`kn_tai_lap` (DAG 5)", "Bật", "Chỉ chạy khi kích hoạt tay (mục 3.1)"],
 ], [33, 22, 45]));
 ND.push(sauBang());
@@ -347,7 +347,7 @@ ND.push(bang(["Mốc", "Giờ", "Việc", "Ở đâu", "Ai", "Xong"], [
   ["T−2", "", "Chiếu slide 1 (tiêu đề); trình duyệt để sẵn ở tab 1; điện thoại im lặng", "Máy chiếu", "Cả hai", "☐"],
 ], [9, 10, 41, 21, 10, 9]));
 ND.push(sauBang());
-ND.push(y("**Nhóm lên muộn hơn T** (các nhóm khác trình bày trước): vẫn ổn. Bộ phát chạy khoảng 4 giờ; sản phẩm đã mồi vẫn dùng được, vì trang sản phẩm so với dòng thịnh hành **mới nhất** của sản phẩm, dòng đó cũ bao lâu cũng được."));
+ND.push(y("**Nhóm lên muộn hơn T** (các nhóm khác trình bày trước): vẫn ổn. Bộ phát chạy khoảng 4 giờ; trang sản phẩm đo độ trễ trên cửa sổ của chính lần bấm nên không phụ thuộc lúc mồi (mồi chỉ để T−5 kiểm tra luồng)."));
 ND.push(y("**T rơi vào buổi sáng sớm**: kích hoạt DAG 5 từ nhà bằng cách B ở mục 3.1 (chỉ cần SSH vào cửa sổ 1), hoặc kích hoạt tối 18/11 sau khi bộ phát đã tắt. Khi đó 2 dòng mới mang ngày 18/11, vẫn là bằng chứng hợp lệ."));
 
 ND.push(muc2("3.1 T−90 · Kích hoạt DAG 5 (tái lập huấn luyện)"));
@@ -420,14 +420,14 @@ ND.push(y("Ý nghĩa tham số: `1438387200000` là 01/08/2015 (48 ngày cuối 
 ND.push(y("Tùy chọn: ở tab 4 bật công tắc `kn_giam_sat_streaming`; tắt lại sau buổi demo (mục 9.1)."));
 
 ND.push(muc2("3.8 T−8 · Mồi 2 sản phẩm demo (cửa sổ 1)"));
-ND.push(doan("Gửi 1 lượt **xem** cho mỗi sản phẩm để sản phẩm có sẵn một dòng trong bảng thịnh hành với số thêm giỏ bằng 0. Nhờ vậy, ở bước 4 trang sản phẩm mới in được dòng “ĐÃ CẬP NHẬT sau N giây”.", { keepNext: true }));
+ND.push(doan("Gửi 1 lượt **xem** cho mỗi sản phẩm để T−5 kiểm tra được luồng thịnh hành đang ghi vào gold. Trang sản phẩm đo độ trễ trên cửa sổ của chính lần bấm, nên dòng “ĐÃ CẬP NHẬT sau N giây” hiện cả khi sản phẩm đã có lượt thêm giỏ từ trước (sửa sau buổi tập 17/11).", { keepNext: true }));
 L(C1, MOI("102605"));
 L(C1, MOI("320844"));
 ND.push(mongDoi("Mỗi lệnh ra `{\"da_gui\":true,\"luc_ms\":…,\"so_tuong_tac_phien\":…}`."));
 
 ND.push(muc2("3.9 T−5 · Kiểm tra lần cuối"));
 L(C1, `curl -s -m 120 ${WEB}/api/thinh-hanh/102605`);
-ND.push(mongDoi("Có `cua_so_ket_thuc` (giờ UTC của vài phút tới) và `\"so_luot_them_gio\": 0` (hoặc 1–2). Nếu số thêm giỏ **≥ 3** thì dùng `320844` cho bước 4 (thay số trong lệnh trên để kiểm tra). Chạy **một lần**, chờ tối đa 2 phút; không chạy lặp lại."));
+ND.push(mongDoi("Có `cua_so_ket_thuc` (giờ UTC của phút tới): cửa sổ 15 phút đang chạy chứa lượt xem vừa mồi. Số thêm giỏ bao nhiêu cũng được. Ra `{}` nghĩa là luồng chưa ghi kịp: chờ 1–2 phút rồi chạy lại **một lần**; vẫn `{}` thì `bash scripts/luong.sh trang_thai`. Chạy **một lần**, chờ tối đa 2 phút; không chạy lặp lại."));
 M("tab 6 · Trang chủ", `${WEB}/`);
 ND.push(mongDoi("Nhấn F5: khối **“Đang thịnh hành”** có đủ 10 sản phẩm, không chỉ 1–2 món."));
 M("tab 3 · Kafka UI", KAFKA);
@@ -503,6 +503,7 @@ buoc({
   loi: [
     "Có **4** ứng dụng (còn `bd03-tai-lap-huan-luyen`): DAG 5 chưa xong. Nói: “the reproduction job is still running; we come back to it at the end”.",
     "Một worker hoặc DataNode chết: không cần làm gì, Spark chạy lại task, HDFS còn bản sao thứ hai.",
+    "Bị hỏi về dấu **X đỏ** của `kn_pipeline_hang_ngay` (lượt 15/11 02:00): sensor `cho_du_lieu_ngay_moi` của lượt đó chờ một ngày dữ liệu mới không bao giờ tới (bộ phát tắt trong lúc dời gốc hồ dữ liệu `/lake` → `/lakehouse` tối 15/11), nên nhóm đánh dấu Failed sáng 16/11, các task sau Skipped; DAG tạm dừng từ đó. Nói: “That run waited for a new day of data while we were moving the lakehouse root, so we marked it failed; the nightly DAG has been paused since.”",
   ],
 });
 
@@ -561,19 +562,17 @@ buoc({
   lam: [
     "Nhấn **Ctrl+T**, dán link trang sản phẩm đã mồi, **thay đúng mã user** của bước 3:",
     { tab: "tab mới · trang sản phẩm", url: `${WEB}/san-pham/102605?u=moi_xxxxxxxx` },
-    "Đọc ô **Trạng thái trong bảng thịnh hành**: “… · thêm giỏ 0”.",
-    "Bấm **Thêm vào giỏ** 3 lần **liền nhau trong khoảng 2 giây**.",
+    "Đọc ô **Trạng thái trong bảng thịnh hành**: “Cửa sổ 15 phút HH:MM → HH:MM · xem … · thêm giỏ X” (giờ Việt Nam; X là số của 15 phút gần nhất, bao nhiêu cũng được).",
+    "Bấm **Thêm vào giỏ** 3 lần **liền nhau trong khoảng 2 giây**. Dưới ô hiện dòng cam “Đang chờ bảng thịnh hành ghi nhận lần bấm lúc … N giây”, đếm từng giây.",
     "(bỏ được: chỉ nói) Tab 3 Kafka UI → **Messages** → **Seek Type = Timestamp**, đúng phút vừa bấm → **Search** gõ mã user → **Submit** → bấm **+** ở một dòng.",
-    "Quay lại tab sản phẩm, chờ **“ĐÃ CẬP NHẬT sau N giây”**, rồi **Ctrl+W** đóng tab.",
+    "Quay lại tab sản phẩm, chờ dòng xanh **“ĐÃ CẬP NHẬT sau N giây (… ĐẠT)”** (dòng này giữ nguyên tới lần bấm sau), đọc N, rồi **Ctrl+W** đóng tab.",
   ],
-  thay: ["Kafka UI: 3 dòng có Key = mã user, `\"nguon\": \"web\"`, `\"loai\": \"them_gio\"`.", "Trang sản phẩm: “thêm giỏ 3 · **ĐÃ CẬP NHẬT sau N giây**”, N ≤ 90 (ngày 11/11 đo được 51 giây)."],
+  thay: ["Kafka UI: 3 dòng có Key = mã user, `\"nguon\": \"web\"`, `\"loai\": \"them_gio\"`.", "Trang sản phẩm: số thêm giỏ tăng 3 và dòng xanh “**ĐÃ CẬP NHẬT sau N giây** (bấm lúc …; mục tiêu ≤ 90 giây: ĐẠT)”, N ≤ 90 (ngày 11/11 đo được 51 giây)."],
   noi: ["The closed loop. On a product that almost nobody views, we click “Add to cart” three times. Every click goes to Kafka; here they are in Kafka UI, keyed by our new user, with source “web”. Within about fifteen seconds the first stream writes them to bronze, so they become training data for tonight’s model. The trending stream updates its fifteen-minute window and merges into gold every twenty seconds. The page polls every five seconds and prints the delay: the target is ninety seconds, and we measured fifty-one."],
   yc: ["Bấm trên web → Kafka (nguồn `web`).", "Kafka → bronze khoảng 10–15 giây: click thành dữ liệu huấn luyện đêm nay.", "Cửa sổ 15 phút trượt 1 phút, MERGE vào gold mỗi 20 giây; ngưỡng **90 giây**."],
   loi: [
-    "**Chờ quá 60 giây chưa thấy “ĐÃ CẬP NHẬT”:** để nguyên tab sản phẩm, làm luôn bước 5, xong quay lại đọc kết quả. Trang vẫn tự hỏi khi nằm ở tab nền và tính N từ lúc bấm, nên số giây vẫn đúng.",
-    "Số thêm giỏ tăng nhưng không có chữ “ĐÃ CẬP NHẬT”: sản phẩm chưa được mồi; con số vẫn là bằng chứng.",
-    "Số thêm giỏ chỉ tăng 1–2: 3 lần bấm vắt qua ranh giới phút; các cửa sổ trước chứa đủ 3.",
-    "Luồng có thể đã chết: kiểm tra ở cửa sổ 1 (checkpoint giữ offset nên click vừa bấm vẫn được tính):",
+    "**Chờ quá 60 giây chưa thấy “ĐÃ CẬP NHẬT”:** để nguyên tab sản phẩm, làm luôn bước 5, xong quay lại đọc kết quả. Trang vẫn tự hỏi khi nằm ở tab nền, tính N từ lần bấm đầu và giữ dòng kết quả, nên quay lại vẫn đọc được.",
+    "Dòng cam đếm quá 90 giây (“quá 90 giây: kiểm tra luồng thịnh hành”) — luồng có thể đã chết: kiểm tra ở cửa sổ 1 (checkpoint giữ offset nên click vừa bấm vẫn được tính):",
     [C1, "bash scripts/luong.sh trang_thai"],
     [C1, "bash scripts/luong.sh khoi_dong thinh_hanh"],
     "Trang sản phẩm không mở được: gửi “Thêm giỏ” thẳng qua API. Lệnh tự chờ tới giây :03 của phút kế tiếp:",
@@ -676,12 +675,12 @@ ND.push(bang(["Dấu hiệu", "Nguyên nhân thường gặp", "Xử lý trong 1
   ["Trang tải được một nửa rồi treo", "Lỗi MTU trên đường ZeroTier (đứng ngoài lab, qua 4G)", "Đường hầm (mục 2.4), mở `http://localhost:8001`", "Phát Wi-Fi từ điện thoại rồi dùng đường hầm"],
   ["`ssh` treo, báo `banner exchange`", "Mạng ngoài lab chập chờn", "Ctrl+C, chạy lại", "`ssh -J labsoe-18 labsoe-11`"],
   ["Khối thịnh hành chỉ 1–2 món", "Bộ phát chưa chạy hoặc đã dừng; luồng thịnh hành chết", "Cửa sổ 2: `tail -3 ~/phat.log`. Cửa sổ 1: `bash scripts/luong.sh trang_thai`", "Bộ phát dừng: làm lại mục 3.7. Luồng chết: cửa sổ 1 `bash scripts/luong.sh khoi_dong thinh_hanh`"],
-  ["Không hiện “ĐÃ CẬP NHẬT” sau 90 giây", "Chưa mồi sản phẩm; luồng đang micro-batch dài hoặc đã chết", "Làm bước 5 trong lúc chờ; đọc số “thêm giỏ”; kiểm tra luồng như dòng trên", "Lệnh API dự phòng hoặc `demo_vong_khep_kin.py` (bước 4); nói số 51 giây đã đo"],
+  ["Không hiện “ĐÃ CẬP NHẬT” sau 90 giây", "Luồng thịnh hành đang micro-batch dài hoặc đã chết", "Làm bước 5 trong lúc chờ; đọc số “thêm giỏ”; kiểm tra luồng như dòng trên", "Lệnh API dự phòng hoặc `demo_vong_khep_kin.py` (bước 4); nói số 51 giây đã đo"],
   ["`curl` không in gì", "Hết thời gian `-m`; với `-s`, curl im lặng khi bị cắt", "Không chạy lại liên tục; chờ 1–2 phút rồi chạy **một lần** với `-m 180`", "Bỏ qua, dùng giao diện"],
   ["Kafka UI không ra tin của web", "Chưa bấm Submit; mốc thời gian quá xa", "Seek Type = Timestamp đúng phút vừa bấm, gõ mã user, **Submit**; bấm **Next** nếu cần", "Bỏ qua Kafka UI, dùng trang sản phẩm"],
   ["Giờ trên bảng lệch 7 tiếng", "Bảng Delta và Spark UI ghi giờ UTC", "Nói: “UTC, add seven hours”", "—"],
   ["Spark có thêm ứng dụng `bd03-tai-lap-huan-luyen`", "DAG 5 chưa xong", "Bình thường; không chạy thêm job tay nào", "Ở bước 6 dùng các dòng cũ"],
-  ["Airflow có ô đỏ", "Triggerer (cố ý tắt); lần chạy lỗi cũ (sự cố 24, 31)", "Giải thích: không có deferrable operator; lỗi cũ đã ghi trong báo cáo", "—"],
+  ["Airflow có ô đỏ", "Triggerer (cố ý tắt); lần chạy lỗi cũ (sự cố 24, 31); X đỏ của DAG 1 lượt 15/11 (bước 0)", "Giải thích: không có deferrable operator; lỗi cũ đã ghi trong báo cáo", "—"],
   ["Một worker hoặc DataNode chết", "Wi-Fi lab chập chờn", "Không cần làm gì: Spark chạy lại task, HDFS còn bản sao thứ hai", "Xử lý sau buổi demo"],
   ["Mất toàn bộ mạng", "Wi-Fi phòng hoặc ZeroTier", "Chuyển sang slide và ảnh chụp (nói rõ ngày chụp)", "Mở video buổi tập"],
   ["Máy chiếu không nhận laptop", "Đầu chuyển, độ phân giải", "Win + P → Duplicate; 1920×1080 hoặc 1280×720", "Mở PDF slide từ USB trên máy của phòng"],
@@ -808,10 +807,10 @@ ND.push(bang(["#", "Hiện tượng ngày 12/11", "Nguyên nhân", "Cách làm t
   ["1", "DAG 5 chạy **1 giờ 16 phút** (lần trước 19 phút); web treo gần 40 phút", "DAG 5 (ALS 16 lõi) chạy cùng lúc với bộ phát 90 giây/ngày (khoảng 200 sự kiện/giây); labsoe-18 vừa là worker vừa chạy web", "Kích hoạt DAG 5 ở **T−90, khi bộ phát chưa chạy**. Chỉ bật bộ phát khi DAG 5 đã xanh"],
   ["2", "Bộ phát làm cụm nặng", "90 giây/ngày là tốc độ cao nhất từng dùng", "Phát ở **300 giây/ngày** (khoảng 60 sự kiện/giây): khối thịnh hành vẫn đầy, tải giảm 3 lần"],
   ["3", "Trang sản phẩm xoay mãi; `curl` không in gì", "Trang sản phẩm **tự hỏi bảng thịnh hành mỗi 5 giây**, mỗi lần là một truy vấn Spark không đệm trên `local[2]` của web; các truy vấn xếp hàng", "Chỉ mở trang sản phẩm **đúng lúc demo**, đóng ngay khi xong. Không chạy `curl` liên tục"],
-  ["4", "“ĐÃ CẬP NHẬT sau N giây” có thể không hiện", "Trang chỉ in dòng này khi sản phẩm **đã có dòng** trong bảng thịnh hành trước khi bấm. DAG bảo trì xóa dòng cũ hơn 2 ngày", "**Mồi** sản phẩm bằng 1 lượt “xem” ở T−8, kiểm tra ở T−5"],
-  ["5", "Số thêm giỏ tăng ít hơn số lần bấm", "3 lần gửi **vắt qua ranh giới phút**; cửa sổ mới nhất chỉ chứa lần thứ 3", "Bấm 3 lần **liền nhau trong 2 giây**. Lệnh dự phòng tự chờ tới giây :03 của phút kế tiếp"],
+  ["4", "“ĐÃ CẬP NHẬT sau N giây” có thể không hiện", "Trang chỉ in dòng này khi sản phẩm **đã có dòng** trong bảng thịnh hành trước khi bấm. DAG bảo trì xóa dòng cũ hơn 2 ngày", "Từ 17/11 trang đo trên cửa sổ bắt đầu ở phút của lần bấm, không cần dòng cũ. Vẫn mồi ở T−8 để T−5 kiểm tra luồng"],
+  ["5", "Số thêm giỏ tăng ít hơn số lần bấm", "3 lần gửi **vắt qua ranh giới phút**; cửa sổ mới nhất chỉ chứa lần thứ 3", "Từ 17/11 ô trạng thái hiện cửa sổ 15 phút đang chạy, chứa đủ 3 lần bấm. Vẫn bấm liền nhau; lệnh dự phòng tự chờ tới giây :03 của phút kế tiếp"],
   ["6", "Kafka UI không lọc ra tin của web", "Gõ từ khóa nhưng **chưa bấm Submit**; quét từ mốc quá xa", "Seek Type = **Timestamp** đúng phút vừa bấm, gõ mã user, **bấm Submit**"],
-  ["7", "Giờ trên bảng tái lập và cửa sổ thịnh hành lệch 7 tiếng", "Các bảng Delta và Spark UI ghi giờ UTC", "Nói trước: “UTC, cộng 7 tiếng”"],
+  ["7", "Giờ trên bảng tái lập và cửa sổ thịnh hành lệch 7 tiếng", "Các bảng Delta và Spark UI ghi giờ UTC", "Trang sản phẩm đổi sang giờ Việt Nam (17/11). Bảng tái lập, Spark UI: nói trước “UTC, cộng 7 tiếng”"],
   ["8", "Bộ phát chạy thì DAG 1 sẽ tự huấn luyện lại lúc 02:00", "Sensor của DAG 1 thấy dữ liệu mới trong bronze", "**Tạm dừng** `kn_pipeline_hang_ngay` tới khi nộp bài để màn hình khớp báo cáo"],
 ], [5, 26, 33, 36]));
 
@@ -827,7 +826,7 @@ ND.push(bang(["Mốc", "Giờ", "Việc", "Ở đâu"], [
   ["T−15", "", "Ghi p-value: ________", "Tab 7"],
   ["T−10", "", "`pgrep` → `nohup … phat_lai_su_kien.py …` → `tail`", "Cửa sổ 2"],
   ["T−8", "", "Mồi 102605 và 320844 (2 lệnh `curl … \"loai\":\"xem\"`)", "Cửa sổ 1"],
-  ["T−5", "", "`curl …/api/thinh-hanh/102605` (thêm giỏ < 3); trending đủ 10", "Cửa sổ 1, tab 6, 3"],
+  ["T−5", "", "`curl …/api/thinh-hanh/102605` có `cua_so_ket_thuc`; trending đủ 10", "Cửa sổ 1, tab 6, 3"],
 ], [10, 11, 54, 25]));
 ND.push(sauBang());
 ND.push(bang(["Tab", "Link"], [

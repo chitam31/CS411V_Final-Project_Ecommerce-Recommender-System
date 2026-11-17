@@ -4,6 +4,7 @@ Bật bằng biến môi trường WEB_CHE_DO=gia. Mọi trang đều hiện dò
 lập" để không ai nhầm số liệu ở đây với kết quả thật của đề tài.
 """
 import random
+import time
 from datetime import date, datetime, timedelta
 
 from common.thong_ke import ztest_hai_ty_le
@@ -36,6 +37,7 @@ class KhoGia:
         }
         self._diem = {k: rnd.random() for k in self._san_pham}
         self._them_gio_moi = {}
+        self._luc_them_gio = {}  # epoch ms của từng lượt thêm giỏ, để giả lập cửa sổ theo phút
         self._goi_y = {}
         ma = list(self._san_pham)
         th = self.thinh_hanh(30)
@@ -73,16 +75,35 @@ class KhoGia:
             for k in top
         ][:n]
 
-    def thinh_hanh_san_pham(self, ma_san_pham):
+    def thinh_hanh_san_pham(self, ma_san_pham, bat_dau_ms=None):
+        """Cùng hợp đồng với KhoDelta: không có bat_dau_ms là cửa sổ đang chạy; có thì là cửa sổ
+        15 phút bắt đầu ở phút đó (None nếu cửa sổ chưa có lượt thêm giỏ nào)."""
+        phut = 60000
+        if bat_dau_ms is not None:
+            bd = int(bat_dau_ms) // phut * phut
+            n = sum(bd <= t < bd + 15 * phut for t in self._luc_them_gio.get(ma_san_pham, []))
+            if not n:
+                return None
+            kt = bd + 15 * phut
+            tg = n
+        else:
+            kt = (int(time.time() * 1000) // phut + 1) * phut
+            bd = kt - 15 * phut
+            tg = self._them_gio_moi.get(ma_san_pham, 0)
         return {
             "ma_san_pham": ma_san_pham,
-            "so_luot_them_gio": self._them_gio_moi.get(ma_san_pham, 0),
-            "cua_so_ket_thuc": datetime.utcnow().isoformat(sep=" ", timespec="seconds"),
+            "so_luot_xem": 0,
+            "so_luot_them_gio": tg,
+            "cua_so_bat_dau": datetime.utcfromtimestamp(bd / 1000).isoformat(sep=" ", timespec="seconds"),
+            "cua_so_ket_thuc": datetime.utcfromtimestamp(kt / 1000).isoformat(sep=" ", timespec="seconds"),
+            "cua_so_bat_dau_ms": bd,
+            "cua_so_ket_thuc_ms": kt,
         }
 
     def ghi_nhan_them_gio(self, ma_san_pham):
         """Chỉ kho giả lập có: mô phỏng việc luồng thịnh hành nhận được sự kiện."""
         self._them_gio_moi[ma_san_pham] = self._them_gio_moi.get(ma_san_pham, 0) + 1
+        self._luc_them_gio.setdefault(ma_san_pham, []).append(int(time.time() * 1000))
 
     # ----- sản phẩm
     def san_pham(self, ma_san_pham):

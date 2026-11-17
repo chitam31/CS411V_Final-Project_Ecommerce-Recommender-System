@@ -201,6 +201,14 @@ Việc nhóm cần chạy trên cụm: `chuyen_lakehouse.sh --chay` từ laptop,
 - Rút kinh nghiệm, đã sửa: (1) khối 4 của `delta_sql.sh` lấy 10 dòng mới nhất nên dòng có click bị đẩy ra ngoài khi trang chủ được mở lại sau cú bấm → xếp `da_click DESC` lên đầu; (2) cột "Phiên bản hiện tại" ở bước 6 giống cột cũ vì DAG 3 mỗi giờ đã tính lại ngày đó → sửa lời thoại; (3) lời ghi chú slide A/B không ghi cứng p của bảng web.
 - Lưu ý vận hành: kiểm tra `thinh-hanh` ở T−5 phải chờ 1–2 phút sau khi mồi (lần này chạy ngay nên ra `{}`); chỉ khởi động lại web khi `che_do` là `gia`, và chạy lệnh đó ở cửa sổ laptop; `kn_giam_sat_streaming` đang bật nên báo lỗi mỗi 15 phút khi bộ phát tắt (báo động giả đã biết) → tạm dừng lại sau buổi tập.
 
+### 17/11/2026: tập lần hai (09:22–09:55)
+
+- `kn_giam_sat_streaming` đã tạm dừng; 5 DataNode `In Service`; tái lập ngày 10, 11, 12 và 15/11 đều TRÙNG KHỚP; truy vấn `gold.nhat_ky_hien_thi` của `moi_311005` ra dòng `da_click = true`.
+- `demo_vong_khep_kin.py` trên `320844` (3 lần thêm giỏ lúc 09:33:43): bảng thịnh hành cập nhật sau **39 giây** → ĐẠT. Luồng và vòng khép kín chạy đúng.
+- Trang sản phẩm `102605` không hiện "ĐÃ CẬP NHẬT sau N giây". Nguyên nhân nằm ở trang, không ở luồng: (1) ô trạng thái lấy cửa sổ có `cua_so_ket_thuc` lớn nhất; với cửa sổ trượt, cửa sổ đó bắt đầu ở phút của sự kiện cuối nên chỉ chứa lượt bấm mới (1), trong khi trang so với số cũ 8 (8 lượt thêm giỏ của buổi tập 09:08) → điều kiện "số mới > số cũ" không bao giờ đúng; (2) khi có hiện thì dòng kết quả bị lượt thăm dò kế tiếp ghi đè sau 5 giây, nên kịch bản "làm bước 5 rồi quay lại đọc" không đọc được.
+- Sửa: API `/api/thinh-hanh/{mã}` trả cửa sổ 15 phút đang chạy (15 phút gần nhất) kèm mốc epoch, và nhận `bat_dau_ms` để đọc đúng cửa sổ bắt đầu ở phút của lần bấm; trang đo trên cửa sổ đó (chỉ chứa sự kiện từ phút bấm, nên không phụ thuộc lượt cũ), đếm giây khi chờ, giữ dòng "ĐÃ CẬP NHẬT sau N giây" tới lần bấm sau, đổi giờ sang giờ Việt Nam, và không gửi truy vấn chồng khi lần trước chưa xong. `demo_vong_khep_kin.py` đo cùng cách. Kiểm thử: thêm kiểm tra vào hai test sẵn có (dựng bảng bằng chính `gom_cua_so` theo đúng tình huống buổi tập), tổng số test giữ nguyên 143. Cần build lại web trên labsoe-18.
+- Dấu X đỏ của `kn_pipeline_hang_ngay` (lượt 15/11 02:00) là lượt đã đánh dấu Failed ngày 16/11 (mục 16/11); đã thêm câu trả lời vào kịch bản bước 0.
+
 ## 4. Lỗi tìm thấy khi phát triển và cách sửa
 
 | # | Lỗi | Phát hiện nhờ | Sửa |
