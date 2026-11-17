@@ -4,29 +4,12 @@ Báo cáo và slide có hai ngôn ngữ, cùng số liệu; báo cáo dựng b�
 
 | Bản | Tệp | Dùng để |
 |---|---|---|
-| **Báo cáo chính, tiếng Việt** (cấu trúc C.3, thân bài 20 trang, tổng 26 trang) | `BD03_Bao_cao_chinh.docx` / `.pdf` | **Bản nộp** |
-| Báo cáo chính, tiếng Anh (dịch đầy đủ bản trên, cùng bố cục và số trang) | `BD03_Main_Report_EN.docx` / `.pdf` | Bản tiếng Anh của bản nộp |
-| Báo cáo đầy đủ (tiếng Việt, 120 trang) | `BD03_Bao_cao_He_thong_goi_y.docx` / `.pdf` | Tài liệu tham khảo chi tiết đi kèm: mọi thí nghiệm, sự cố, phụ lục |
-| Slide bảo vệ, tiếng Anh (27 trang) | `BD03_Slide_bao_ve_EN.pdf` | Xuất từ `slide/project`; bản trình chiếu: deck Slides https://claude.ai/artifact/4PtRMUcx2KVHe6zU3rvWVs |
-| Slide bảo vệ, tiếng Việt (27 trang) | `BD03_Slide_bao_ve_VI.pdf` | Xuất từ `slide/project_vi`; bản trình chiếu: deck Slides https://claude.ai/artifact/2vVdahHbRLbfkPtHwzg8mD |
-| Báo cáo tiếng Anh cũ | `BD03_Recommender_System_Report.docx` / `.pdf` | **Không dùng**: bản trước 15/11, đã được thay bằng `BD03_Main_Report_EN` |
+| **Báo cáo chính, tiếng Việt** (cấu trúc C.3, thân bài 29 trang, tổng 34 trang) | `CS411V_REPORT Final Project_Group Chí Tâm & Quốc Anh_Viet.pdf`| **Bản nộp** |
+| Báo cáo chính, tiếng Anh (dịch đầy đủ bản trên, cùng bố cục và số trang) | `CS411V_REPORT Final Project_Group Chí Tâm & Quốc Anh_Eng.pdf` | Bản tiếng Anh của bản nộp |
+
 
 Hình và biểu đồ ghi nhãn tiếng Anh, dùng chung cho hai ngôn ngữ (chú thích hình theo ngôn ngữ của bản); riêng `c08_eda`, `c09_phan_tich_loi` có hai bản nhãn (`*_en` cho bản tiếng Anh).
 
-| Thư mục / tệp | Nội dung |
-|---|---|
-| `noi_dung_chinh/*.md` | Nội dung báo cáo chính (`node tao_bao_cao.js chinh`) |
-| `noi_dung_chinh_en/*.md` | Nội dung báo cáo chính tiếng Anh (`node tao_bao_cao.js chinh en`) |
-| `noi_dung_vi/*.md` | Nội dung báo cáo đầy đủ tiếng Việt (`node tao_bao_cao.js vi`) |
-| `noi_dung/*.md` | Nội dung báo cáo tiếng Anh cũ (không dùng), viết bằng một tập con Markdown (xem chú thích đầu `tao_bao_cao.js`) |
-| `hinh/*.py`, `hinh/*.dot` | Mã vẽ sơ đồ kiến trúc (matplotlib, Graphviz) |
-| `hinh/bieu_do.py` | Biểu đồ kết quả (tuning, baseline, phổ biến, xếp lại, Z-ORDER, A/B, RAM master) |
-| `hinh/cong_thuc.py` | Công thức dưới dạng ảnh (matplotlib mathtext) |
-| `tao_bao_cao.js` | Dựng `.docx` bằng docx-js: đánh số chương/hình/bảng/công thức, tham chiếu chéo `@fig:` `@tab:` `@eq:` `@sec:` |
-| `cap_nhat_muc_luc.py` | Mở `.docx` bằng LibreOffice, cập nhật mục lục, danh mục hình/bảng và xuất PDF |
-| `slide/` | Mã dựng 27 slide bảo vệ (26 slide + 1 dự phòng, có lời ghi chú cho người nói): `python3 gen.py` (tiếng Anh, `project/`), `python3 gen_vi.py` (tiếng Việt, `project_vi/`); PDF bằng `dung_thu_slide.py [--vi] --pdf` |
-| `hoi_dap/` | Bộ 49 câu hỏi – đáp dự kiến (tiếng Việt): `node tao_hoi_dap.js` |
-| `kich_ban/` | Buổi 19/11 (demo trước, thuyết trình sau, không giới hạn thời gian): `KICH_BAN_DEMO_19_11.md` (bản thực hiện) và `node tao_kich_ban_demo_19_11.js` (bản docx); kịch bản demo và thuyết trình chi tiết theo 27 slide, có giải thích từng biểu đồ trên slide và trên web: `node tao_noi_dung_thuyet_trinh.js` (nội dung ở `noi_dung_demo_chi_tiet.js`, `noi_dung_thuyet_trinh_chi_tiet.js`). `tao_kich_ban.js`, `tao_kich_ban_demo.js` là bản cũ (20 phút, 12/11) |
 
 ## Dựng lại
 
