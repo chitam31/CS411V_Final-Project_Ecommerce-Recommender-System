@@ -1,4 +1,4 @@
-# MO_HINH.md — Thẻ mô hình của hệ khuyến nghị bd03
+# MO_HINH.md — Thẻ mô hình của hệ khuyến nghị bd03 
 
 Tài liệu mô tả **mô hình đã được thiết kế và hiện thực như thế nào**, cơ sở lý thuyết, cách đánh giá và các giới hạn. Phần số liệu ở mục 12 để trống: chỉ được điền sau khi chạy thật trên cụm với dữ liệu RetailRocket.
 
