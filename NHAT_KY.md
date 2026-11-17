@@ -1,4 +1,4 @@
-# NHAT_KY.md — Nhật ký thực hiện đề tài 3 (bd03_khuyen_nghi)
+# NHAT_KY.md — Nhật ký thực hiện đề tài 3 (bd03_khuyen_nghi) 
 
 Nhật ký ghi lại những gì đã làm, những lỗi đã tìm thấy và cách sửa, các quyết định thiết kế và **trạng thái kiểm chứng thật** của từng phần. Phần cuối (mục 7) là bảng để nhóm ghi tiếp kết quả các lần chạy trên cụm.
 
