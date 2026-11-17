@@ -1,4 +1,4 @@
-"""Tiện ích dùng chung cho 5 DAG của đề tài 3 (Airflow 3.3.1, airflow.sdk).
+"""Tiện ích dùng chung cho 5 DAG của đề tài 3 (Airflow 3.3.1, airflow.sdk)
 
 Airflow chỉ ĐIỀU PHỐI: mọi bước nặng là một spark-submit vào cụm qua ha_tang/spark/submit.sh
 (docker exec vào container spark-master). Mỗi job in một dòng JSON ở cuối stdout; BashOperator
