@@ -515,10 +515,10 @@ bash ha_tang/spark/submit.sh nhanh kiem_tra/tim_su_kien_bronze.py --ma-nguoi-dun
 ### Bước 6 · Tái lập VERSION AS OF (1:15 · tiêu chí 7)
 
 1. Tab 8 <http://10.68.71.149:8000/tai-lap>: bảng A/B, chọn một ngày cũ → **Chạy lại** (10–30 giây).
-2. Chỉ cột **Lệch** = 0 và cột **Phiên bản hiện tại (không time travel)** khác số.
+2. Chỉ cột **Lệch** = 0. Cột **Phiên bản hiện tại (không time travel)** thường giống cột cũ: DAG 3 chạy mỗi giờ đã tính lại ngày đó; nó chỉ khác khi ngày đó có lượt hiển thị mới sau lượt `kn_tinh_ab` gần nhất.
 3. Kéo xuống **Tái lập huấn luyện mô hình**: **2 dòng mới nhất**, **CÓ**.
 
-> Reproduction with Delta time travel. Re-running an old day reads the impression log VERSION AS OF the recorded version: every metric matches with zero deviation, while the current version, in the last column, gives different numbers. Below is DAG 5, which we triggered before class: it retrained the deployed model on the recorded feature version with the same seed, and the metrics match to within ten to the minus fifteen, which is only floating-point rounding.
+> Reproduction with Delta time travel. Re-running an old day reads the impression log VERSION AS OF the recorded version: every metric matches with zero deviation. The last column reads the current version instead; it changes as soon as new impressions arrive for that day, which is exactly why every result stores the version it read. Below is DAG 5, which we triggered before class: it retrained the deployed model on the recorded feature version with the same seed, and the metrics match to within ten to the minus fifteen, which is only floating-point rounding.
 
 ⚠️ **Không** bấm Kích hoạt kn_tai_lap. DAG 5 chưa xong: chỉ 2 dòng ngày 12/11 (lệch 3,55·10⁻¹⁵ và 1,78·10⁻¹⁵). Chạy lại A/B > 30 giây: nói phần huấn luyện trước.
 

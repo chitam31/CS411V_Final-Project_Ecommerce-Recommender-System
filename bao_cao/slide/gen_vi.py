@@ -369,7 +369,7 @@ slide("abtest", tieu_de("Thực nghiệm và lakehouse", "A/B: trộn sản ph�
       "phỏng bằng mô hình nhấp phụ thuộc vị trí và gắn nhãn là mô phỏng. Trên 350 nghìn lượt hiển thị, B có tỷ lệ nhấp thấp hơn có ý "
       "nghĩa, p bằng 0,015, và không khác biệt về chuyển đổi. Coi người dùng là đơn vị, bootstrap theo người dùng vẫn cho p bằng 0,029. "
       "Kết luận chỉ đúng trong giả định của mô phỏng, vốn không ưu đãi sản phẩm thịnh hành. Bảng điều khiển trực tiếp, đã xem trong "
-      "demo, còn tính cả 230 lượt hiển thị thật trên web ngày 11/11, nên hiển thị p bằng 0,0135 trên tám ngày.")
+      "demo, còn tính cả các lượt hiển thị thật trên web từ ngày 11/11, nên p hơi khác, khoảng 0,014.")
 
 # ------------------------------------------------------------------ 17. Delta Lake
 slide("delta", tieu_de("Thực nghiệm và lakehouse", "Các tính năng Delta Lake được dùng") +

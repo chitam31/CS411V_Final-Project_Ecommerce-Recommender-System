@@ -194,6 +194,13 @@ Việc nhóm cần chạy trên cụm: `chuyen_lakehouse.sh --chay` từ laptop,
 - 11:18 backfill DAG 3 trên cụm (`airflow backfill create`, 06:00–08:00 ngày 15/11, `--reprocess-behavior completed`): 3 lượt success, đúng lượt 00:00 UTC chạy job với `--tu-ngay 2026-11-15` (33 giây), hai lượt kia bị `cong_backfill` bỏ qua (`10_backfill_dag3.txt`).
 - Hai quan sát khác: DAG giám sát báo động giả khi bộ phát tắt (không có cửa sổ thịnh hành mới; luồng không bị gián đoạn). DAG 1 có một lượt `running` treo từ trưa 15/11, cần đánh dấu thất bại trước khi bật lại DAG 1.
 
+### 17/11/2026: tập demo từ laptop (08:53–09:15)
+
+- Cụm ổn: 6 máy SSH được, 5 DataNode, 5 worker, 34 lõi; 3 luồng chạy liên tục 26,8 giờ; web `che_do: delta`.
+- Đã làm đủ các bước của kịch bản: bộ phát bật rồi tắt; mồi `102605`, `320844`; người dùng mới `moi_311005` (chiến lược `it_tuong_tac` sau khi thêm giỏ); user `270018` nhóm B (ô 3, 6, 8 thịnh hành); bảng A/B trên web p (CTR) = 0,01382, chuyển đổi p = 0,7431 (có cả lượt hiển thị thật trên web, nên khác 0,015 của 7 ngày mô phỏng); tái lập ngày 15/11 `VERSION AS OF 70` trùng khớp trong 4,35 giây; Trigger `kn_tinh_ab` xanh sau 58 giây; `cay_hdfs.sh` và `delta_sql.sh demo` đủ bốn khối.
+- Rút kinh nghiệm, đã sửa: (1) khối 4 của `delta_sql.sh` lấy 10 dòng mới nhất nên dòng có click bị đẩy ra ngoài khi trang chủ được mở lại sau cú bấm → xếp `da_click DESC` lên đầu; (2) cột "Phiên bản hiện tại" ở bước 6 giống cột cũ vì DAG 3 mỗi giờ đã tính lại ngày đó → sửa lời thoại; (3) lời ghi chú slide A/B không ghi cứng p của bảng web.
+- Lưu ý vận hành: kiểm tra `thinh-hanh` ở T−5 phải chờ 1–2 phút sau khi mồi (lần này chạy ngay nên ra `{}`); chỉ khởi động lại web khi `che_do` là `gia`, và chạy lệnh đó ở cửa sổ laptop; `kn_giam_sat_streaming` đang bật nên báo lỗi mỗi 15 phút khi bộ phát tắt (báo động giả đã biết) → tạm dừng lại sau buổi tập.
+
 ## 4. Lỗi tìm thấy khi phát triển và cách sửa
 
 | # | Lỗi | Phát hiện nhờ | Sửa |

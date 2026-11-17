@@ -74,10 +74,10 @@ case "$LENH" in
       "SELECT thoi_diem, loai, khoa, phien_ban_delta, trung_khop FROM $TL ORDER BY thoi_diem DESC LIMIT 3"
     )
     if [ -n "$U" ]; then
-      CAU+=("# 4. Ghi ngược qua Kafka: impression và click mới nhất của $U trong gold.nhat_ky_hien_thi"
+      CAU+=("# 4. Ghi ngược qua Kafka: impression và click mới nhất của $U trong gold.nhat_ky_hien_thi (dòng có click lên đầu)"
             "SELECT ma_hien_thi, vi_tri, ma_san_pham, thoi_diem_hien_thi, da_click, da_mua FROM $HT
              WHERE ma_nguoi_dung = '$U' AND thoi_diem_hien_thi >= current_timestamp() - INTERVAL 2 HOURS
-             ORDER BY thoi_diem_hien_thi DESC, vi_tri LIMIT 10")
+             ORDER BY da_click DESC, thoi_diem_hien_thi DESC, vi_tri LIMIT 10")
     fi
     chay "${CAU[@]}" ;;
   sql)

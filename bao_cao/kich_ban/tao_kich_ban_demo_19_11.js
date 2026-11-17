@@ -605,11 +605,11 @@ buoc({
   lam: [
     { tab: "tab 8 · Tái lập thí nghiệm", url: `${WEB}/tai-lap` },
     "Ở bảng A/B, chọn một ngày cũ → bấm **Chạy lại**. Chờ 10–30 giây.",
-    "Chỉ cột **Lệch** = 0 và cột **Phiên bản hiện tại (không time travel)** cho số khác.",
+    "Chỉ cột **Lệch** = 0. Cột **Phiên bản hiện tại (không time travel)** thường giống cột cũ: DAG 3 chạy mỗi giờ đã tính lại ngày đó; nó chỉ khác khi ngày đó có lượt hiển thị mới sau lượt `kn_tinh_ab` gần nhất.",
     "Kéo xuống bảng **Tái lập huấn luyện mô hình**: **2 dòng mới nhất**, cột Trùng khớp **CÓ**.",
   ],
   thay: ["A/B: mọi chỉ số lệch 0, kết luận trùng khớp.", "Huấn luyện: 2 dòng của lượt hôm nay, lệch cỡ 10⁻¹⁵, **CÓ** (giờ UTC)."],
-  noi: ["Reproduction with Delta time travel. Re-running an old day reads the impression log VERSION AS OF the recorded version: every metric matches with zero deviation, while the current version, in the last column, gives different numbers. Below is DAG 5, which we triggered before class: it retrained the deployed model on the recorded feature version with the same seed, and the metrics match to within ten to the minus fifteen, which is only floating-point rounding."],
+  noi: ["Reproduction with Delta time travel. Re-running an old day reads the impression log VERSION AS OF the recorded version: every metric matches with zero deviation. The last column reads the current version instead; it changes as soon as new impressions arrive for that day, which is exactly why every result stores the version it read. Below is DAG 5, which we triggered before class: it retrained the deployed model on the recorded feature version with the same seed, and the metrics match to within ten to the minus fifteen, which is only floating-point rounding."],
   yc: ["A/B: đọc `gold.nhat_ky_hien_thi` bằng `versionAsOf` đã ghi, chạy lại cùng hàm tổng hợp và z-test → lệch 0.", "Huấn luyện (DAG 5): features `VERSION AS OF` + cùng siêu tham số, hạt giống 42 → lệch ~10⁻¹⁵ (dung sai 10⁻⁶).", "Lịch sử Delta giữ 30 ngày nên VACUUM hằng đêm không xóa phiên bản cũ."],
   loi: [
     "**Không** bấm Kích hoạt kn_tai_lap trong buổi demo.",

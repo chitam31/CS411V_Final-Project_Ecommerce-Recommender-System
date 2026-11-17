@@ -391,7 +391,7 @@ slide("abtest", tieu_de("Experiment and lakehouse", "A/B test: blending trending
       "significantly lower click-through rate, p equals 0.015, and no difference in conversion. Treating the user as the unit, a "
       "bootstrap over users still gives p equals 0.029. The conclusion holds only under the "
       "assumptions of the simulation, which gives trending items no bonus. The live dashboard, shown in the demo, also counts the 230 real web "
-      "impressions logged on 11 November, which is why it reads p equals 0.0135 over eight days.")
+      "impressions logged since 11 November, which is why its p-value is slightly different, about 0.014.")
 
 # ------------------------------------------------------------------ 17. Delta Lake
 slide("delta", tieu_de("Experiment and lakehouse", "Delta Lake features in use") +
