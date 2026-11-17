@@ -1,4 +1,4 @@
-"""kiem_tra/bootstrap_ab.py - kiểm định A/B lấy USER làm đơn vị (bổ sung 11/11/2026).
+"""kiem_tra/bootstrap_ab.py - kiểm định A/B lấy USER làm đơn vị (bổ sung 11/11/2026). 
 
 Kết quả chính của báo cáo (CTR A 2,094 % – B 1,978 %, p = 0,015) dùng z-test hai tỷ lệ theo
 impression, tức coi 350.160 impression là độc lập. Trong mô phỏng, mỗi user có nhiều phiên và
