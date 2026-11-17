@@ -1,4 +1,4 @@
-# conf/ — cấu hình dùng chung (mục A.5 đề cương)
+# conf/ — cấu hình dùng chung (mục A.5 đề cương)  
 
 | Tệp | Là gì | Nguồn thật |
 |---|---|---|
