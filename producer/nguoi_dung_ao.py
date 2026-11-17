@@ -1,4 +1,4 @@
-"""producer/nguoi_dung_ao.py - người dùng ảo truy cập web thật (traffic "mo_phong_web").
+"""producer/nguoi_dung_ao.py - người dùng ảo truy cập web thật (traffic "mo_phong_web"). 
 
 Khác với transform/mo_phong_hien_thi.py (sinh impression hàng loạt bằng Spark), script này
 đi qua toàn bộ vòng thật: web -> Kafka topic hien-thi -> streaming/ghi_hien_thi.py -> CDF ->
