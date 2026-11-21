@@ -23,7 +23,8 @@ M = TNR
 # Hình: (tài sản đã tải lên deck tiếng Việt, rộng, cao theo tỉ lệ, tệp nguồn trong bao_cao/hinh). Sơ đồ và biểu đồ là SVG vector
 # (chữ đã đổi thành đường cong) nên chiếu lên màn hình lớn hay phóng to PDF vẫn nét; ảnh chụp màn hình giữ PNG.
 IMG = {
-    "f01b": ("/_blob/197067dfcc5fa3ebf2a127beda8ee03a", 2220, 972, "f01b_kien_truc_ngang.svg"),
+    "f01c": ("/_blob/d14fae1f12833883d4a09efc918661d1", 2220, 1050, "f01c_vai_tro_luong_vi.svg"),
+    "f04c": ("/_blob/2018e5b82cfdbc941f3ec50b13a5c801", 2220, 858, "f04c_luu_tru_tinh_toan_vi.svg"),
     "f02": ("/_blob/32e0721e5ceac86d3534e998b05bdaf4", 2220, 966, "f02_cum.svg"),
     "f05b": ("/_blob/8ff58e383f84e4760ab24b3d0ba7f72f", 2220, 798, "f05b_dag1_ngang.svg"),
     "f07": ("/_blob/a24f5c1ebd90391999e6ffa0baea8e0b", 2220, 1026, "f07_luong.svg"),
@@ -213,12 +214,15 @@ slide("dataset", tieu_de("Dữ liệu và kiến trúc", "Dữ liệu nhấp chu
       "thời gian: tháng cuối là tập kiểm tra.")
 
 # ------------------------------------------------------------------ 5. Kiến trúc
-slide("architecture", tieu_de("Dữ liệu và kiến trúc", "Sáu lớp, một chiều dòng dữ liệu") +
-      '<div style="display:flex;justify-content:center">' + hinh("f01b", "Kiến trúc phân lớp: nguồn, Kafka, xử lý luồng, lakehouse, theo lô, phục vụ và điều phối", cao=606, the=False) + "</div>",
-      "Kiến trúc có sáu lớp và dữ liệu đi theo một chiều. Sự kiện đến từ producer phát lại và từ ứng dụng web, vào Kafka, được lưu "
-      "trong lakehouse, xử lý bằng các job luồng và job lô của Spark, điều phối bằng Airflow và phục vụ qua ứng dụng web. Mọi thứ "
-      "chạy trong container, và mọi script đọc chung một tệp danh bạ, nên chuyển một vai trò sang máy khác chỉ là sửa một dòng — "
-      "nhóm đã làm đúng như vậy với máy chủ web.")
+# Sửa theo góp ý của GVHD 19/11: tách rõ từng luồng và việc của từng thành phần (cột = thành phần, hàng = luồng).
+slide("architecture", tieu_de("Dữ liệu và kiến trúc", "Mỗi thành phần một việc, mỗi luồng một hàng") +
+      '<div style="display:flex;justify-content:center">' + hinh("f01c", "Kiến trúc theo vai trò: mỗi cột là một thành phần, mỗi hàng là một luồng; Airflow chỉ điều phối các job Spark", cao=596, the=False) + "</div>",
+      "Hình đọc theo hai chiều. Theo cột là việc của từng thành phần: Kafka chỉ thu nhận và đệm sự kiện; Spark làm mọi phép tính; "
+      "HDFS với Delta Lake chỉ lưu trữ bảng và các phiên bản; web phục vụ gợi ý và gửi phản hồi; Airflow ở dải dưới cùng chỉ lên lịch "
+      "và gọi spark-submit, không tự xử lý dữ liệu. Theo hàng là ba luồng. Luồng một chạy liên tục: producer và web đẩy sự kiện vào "
+      "Kafka, ba job Structured Streaming ghi bronze, bảng thịnh hành và nhật ký hiển thị. Luồng hai chạy lô lúc hai giờ sáng: job "
+      "Spark đọc bronze, ghi silver, features rồi gold. Luồng ba là phục vụ: web đọc gold; mọi cú nhấp, thêm giỏ, mua và lượt hiển thị "
+      "lại quay về Kafka, khép kín vòng dữ liệu.")
 
 # ------------------------------------------------------------------ 6. Cụm
 slide("cluster", tieu_de("Dữ liệu và kiến trúc", "Triển khai trên sáu máy phòng lab") +
@@ -228,29 +232,17 @@ slide("cluster", tieu_de("Dữ liệu và kiến trúc", "Triển khai trên sá
       "đều được định cỡ từ số đo thật.")
 
 # ------------------------------------------------------------------ 7. Lakehouse
-tang = [
-    ("Bronze", "#8C5A2B", "su_kien", "Sự kiện thô từ Kafka, Parquet, chỉ ghi thêm, theo ngày"),
-    ("Silver", "#5F6B7A", "tuong_tac", "Khử trùng theo mã và nội dung, lọc bot, gán trọng số; mỗi ngày một tệp"),
-    ("Features", BLUE, "ma_tran_tuong_tac", "Điểm có suy giảm, chia theo thời gian, indexer chỉ nối thêm"),
-    ("Gold", ORANGE, "goi_y_nguoi_dung", "Danh sách phục vụ, cửa sổ thịnh hành, nhật ký hiển thị, A/B và lịch sử mô hình"),
-]
-o = []
-for i, (ten, mau, bang_ten, mo_ta) in enumerate(tang):
-    if i:
-        o.append('<x-shape kind="arrow-right" style="width:56px;height:32px;background:{}"></x-shape>'.format(RULE))
-    o.append(
-        '<div style="flex:1;display:flex;flex-direction:column;gap:14px;background:{c};border:1px solid {r};border-top:8px solid {m};border-radius:14px;padding:28px">'
-        '<h3 style="font-family:{h};font-size:44px;font-weight:600;color:{n}">{t}</h3>'
-        '<p style="font-family:{mo};font-size:24px;color:{m}">{b}</p>'
-        '<p style="font-size:26px;line-height:1.4;color:{tx}">{d}</p></div>'.format(
-            c=CARD, r=RULE, m=mau, h=H, n=NAVY, t=ten, mo=M, b=bang_ten, tx=TEXT, d=mo_ta))
-slide("lakehouse", tieu_de("Dữ liệu và kiến trúc", "Lakehouse kiểu medallion trên HDFS") +
-      '<div style="display:flex;gap:16px;align-items:center">' + "".join(o) + "</div>" +
-      '<div style="display:flex;gap:24px;flex-wrap:wrap;background:{bg2};border-radius:14px;padding:24px 32px">'
-      '<p style="font-size:28px;color:{n}"><b>2.894.238</b> sự kiện → <b>2.882.479</b> dòng silver (139 ngày) → <b>746.350</b> cặp người dùng–sản phẩm → <b>5.300.860</b> dòng phục vụ cho 265.043 người dùng</p></div>'.format(bg2=BG2, n=NAVY),
-      "Lakehouse theo mô hình medallion. Bronze giữ sự kiện thô đúng như nhận được. Silver làm sạch: khử trùng theo mã sự kiện và theo "
-      "nội dung, để việc phát lại không bao giờ nhân đôi dữ liệu, lọc bot và gán trọng số sự kiện. Features chứa ma trận tương tác có "
-      "suy giảm cùng các indexer chỉ nối thêm, còn gold chứa mọi thứ được phục vụ. Mọi bảng trừ bronze đều là Delta Lake.")
+# Sửa theo góp ý của GVHD 19/11: tầng lưu trữ (Bronze, Silver, Gold) ở trên, tầng tính toán (job Spark) ở dưới.
+slide("lakehouse", tieu_de("Dữ liệu và kiến trúc", "Lakehouse: tầng lưu trữ và tầng tính toán") +
+      '<div style="display:flex;justify-content:center">' + hinh("f04c", "Tầng lưu trữ chỉ gồm Bronze, Silver, Gold; mỗi bước chuyển đổi là một job Spark ở tầng tính toán, đọc tầng trên rồi ghi lại", cao=500, the=False) + "</div>" +
+      '<div style="display:flex;justify-content:center;background:{bg2};border-radius:14px;padding:12px 28px">'
+      '<p style="font-size:24px;color:{n}"><b>2.894.238</b> sự kiện → <b>2.882.479</b> dòng silver (139 ngày) → <b>746.350</b> cặp người dùng–sản phẩm → <b>5.300.860</b> dòng phục vụ cho 265.043 người dùng</p></div>'.format(bg2=BG2, n=NAVY),
+      "Lakehouse tách thành hai tầng. Tầng trên là lưu trữ trên HDFS với Delta Lake, chỉ có ba lớp: bronze giữ sự kiện thô đúng như "
+      "nhận được, silver giữ tương tác đã làm sạch, gold giữ mọi bảng được phục vụ. Tầng dưới là tính toán, gồm các job Spark: "
+      "nap_su_kien đưa sự kiện từ Kafka vào bronze; bronze_to_silver đọc bronze, khử trùng theo mã và theo nội dung, lọc bot, rồi ghi "
+      "silver, dòng bị loại vào _quarantine; chuan_bi_ma_tran đọc silver và dựng ma trận đặc trưng; huấn luyện ALS, sinh và trộn gợi "
+      "ý, rồi ghi_gold MERGE vào gold. Hai job luồng thịnh hành và nhật ký hiển thị ghi thẳng vào gold. Features và _quarantine chỉ "
+      "là bảng trung gian của tầng tính toán, không phải một tầng lưu trữ.")
 
 # ------------------------------------------------------------------ 8. Streaming
 slide("streaming", tieu_de("Dữ liệu và kiến trúc", "Ba job Structured Streaming") +

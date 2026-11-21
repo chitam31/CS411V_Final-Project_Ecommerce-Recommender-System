@@ -20,7 +20,8 @@ M = TNR
 # Hình: (đường dẫn tài sản, rộng, cao theo tỉ lệ, tệp nguồn trong bao_cao/hinh). Sơ đồ và biểu đồ là SVG vector
 # (chữ đã đổi thành đường cong) nên chiếu lên màn hình lớn hay phóng to PDF vẫn nét; ảnh chụp màn hình giữ PNG.
 IMG = {
-    "f01b": ("/_blob/3a772df7155058c87d6e7644cea45af0", 2220, 972, "f01b_kien_truc_ngang.svg"),
+    "f01c": ("/_blob/c4d76e847fac71145e9b1030f915ad4f", 2220, 1050, "f01c_vai_tro_luong_en.svg"),
+    "f04c": ("/_blob/105733f0069ea38ec1d9ad0fb1e11f72", 2220, 858, "f04c_luu_tru_tinh_toan_en.svg"),
     "f02": ("/_blob/d898dd0406c5091507c12cc8375e0804", 2220, 966, "f02_cum.svg"),
     "f05b": ("/_blob/b9e878745e8b27b49925a59e9a8ef739", 2220, 798, "f05b_dag1_ngang.svg"),
     "f07": ("/_blob/0a39b751c8359353a6959ec9ec922238", 2220, 1026, "f07_luong.svg"),
@@ -219,12 +220,16 @@ lop = [
     ("Orchestration", "Airflow 3.3.1: five DAGs"),
     ("Serving", "FastAPI web app with a local Spark session, five screens"),
 ]
-slide("architecture", tieu_de("Data and architecture", "Six layers, one direction of flow") +
-      '<div style="display:flex;justify-content:center">' + hinh("f01b", "Layered architecture: sources, Kafka, streaming, lakehouse, batch, serving and orchestration", cao=606, the=False) + "</div>",
-      "The architecture has six layers and data flows in one direction. Events come from the replay producer and from the web "
-      "application, enter Kafka, are stored in the lakehouse, processed by Spark streaming and batch jobs, orchestrated by "
-      "Airflow, and served by the web application. Everything is containerised, and every script reads the same directory "
-      "file, so moving a role to another machine is a one-line change — we actually did that for the web host.")
+# Revised after the supervisor's review on 19/11: separate flows, and what each component does (columns = components, rows = flows).
+slide("architecture", tieu_de("Data and architecture", "One job per component, one row per flow") +
+      '<div style="display:flex;justify-content:center">' + hinh("f01c", "Architecture by role: each column is a component, each row is a flow; Airflow only orchestrates the Spark jobs", cao=596, the=False) + "</div>",
+      "Read the figure in two directions. Down the columns is what each component does: Kafka only ingests and buffers events; "
+      "Spark does all computation; HDFS with Delta Lake only stores tables and their versions; the web serves recommendations and "
+      "sends feedback; Airflow, in the bottom band, only schedules and calls spark-submit and processes no data itself. Across the "
+      "rows are the three flows. Flow one is continuous: the producer and the web push events into Kafka, and three Structured "
+      "Streaming jobs write bronze, the trending table and the impression log. Flow two is the nightly batch at 2 a.m.: Spark jobs "
+      "read bronze and write silver, features and then gold. Flow three is serving: the web reads gold, and every click, "
+      "add-to-cart, purchase and impression goes back to Kafka, closing the loop.")
 
 # ------------------------------------------------------------------ 6. Cụm
 cum = [
@@ -241,30 +246,18 @@ slide("cluster", tieu_de("Data and architecture", "Deployed on six laboratory ma
       "of RAM and is shared with other groups, so every memory setting was sized from measurements.")
 
 # ------------------------------------------------------------------ 7. Lakehouse
-tang = [
-    ("Bronze", "#8C5A2B", "su_kien", "Raw events from Kafka, Parquet, append-only, by date"),
-    ("Silver", "#5F6B7A", "tuong_tac", "Deduplicated by id and content, bot filter, weights; one file per date"),
-    ("Features", BLUE, "ma_tran_tuong_tac", "Decayed scores, temporal split, append-only indexers"),
-    ("Gold", ORANGE, "goi_y_nguoi_dung", "Served lists, trending windows, impression log, A/B and model history"),
-]
-o = []
-for i, (ten, mau, bang_ten, mo_ta) in enumerate(tang):
-    if i:
-        o.append('<x-shape kind="arrow-right" style="width:56px;height:32px;background:{}"></x-shape>'.format(RULE))
-    o.append(
-        '<div style="flex:1;display:flex;flex-direction:column;gap:14px;background:{c};border:1px solid {r};border-top:8px solid {m};border-radius:14px;padding:28px">'
-        '<h3 style="font-family:{h};font-size:44px;font-weight:600;color:{n}">{t}</h3>'
-        '<p style="font-family:{mo};font-size:24px;color:{m}">{b}</p>'
-        '<p style="font-size:26px;line-height:1.4;color:{tx}">{d}</p></div>'.format(
-            c=CARD, r=RULE, m=mau, h=H, n=NAVY, t=ten, mo=M, b=bang_ten, tx=TEXT, d=mo_ta))
-slide("lakehouse", tieu_de("Data and architecture", "A medallion lakehouse on HDFS") +
-      '<div style="display:flex;gap:16px;align-items:center">' + "".join(o) + "</div>" +
-      '<div style="display:flex;gap:24px;flex-wrap:wrap;background:{bg2};border-radius:14px;padding:24px 32px">'
-      '<p style="font-size:28px;color:{n}"><b>2,894,238</b> events → <b>2,882,479</b> silver rows (139 days) → <b>746,350</b> user–item pairs → <b>5,300,860</b> served rows for 265,043 users</p></div>'.format(bg2=BG2, n=NAVY),
-      "The lakehouse follows the medallion pattern. Bronze keeps raw events exactly as received. Silver cleans them: "
-      "deduplication by event id and by content, so that a replay never doubles the data, a bot filter, and event weights. "
-      "Features hold the decayed interaction matrix with append-only indexers, and gold holds everything that is served. "
-      "Every table except bronze is Delta Lake.")
+# Revised after the supervisor's review on 19/11: storage layer (Bronze, Silver, Gold) on top, compute layer (Spark jobs) below.
+slide("lakehouse", tieu_de("Data and architecture", "Lakehouse: a storage layer and a compute layer") +
+      '<div style="display:flex;justify-content:center">' + hinh("f04c", "Storage holds only Bronze, Silver and Gold; each transformation is a Spark job below that reads the layer above and writes back", cao=500, the=False) + "</div>" +
+      '<div style="display:flex;justify-content:center;background:{bg2};border-radius:14px;padding:12px 28px">'
+      '<p style="font-size:24px;color:{n}"><b>2,894,238</b> events → <b>2,882,479</b> silver rows (139 days) → <b>746,350</b> user–item pairs → <b>5,300,860</b> served rows for 265,043 users</p></div>'.format(bg2=BG2, n=NAVY),
+      "The lakehouse has two layers. The upper one is storage on HDFS with Delta Lake and has only three tiers: bronze keeps raw "
+      "events exactly as received, silver keeps cleaned interactions, gold keeps every table that is served. The lower one is "
+      "compute, made of Spark jobs: nap_su_kien moves events from Kafka into bronze; bronze_to_silver reads bronze, deduplicates by "
+      "id and by content, filters bots and writes silver, with rejected rows going to _quarantine; chuan_bi_ma_tran reads silver and "
+      "builds the feature matrix; ALS training, recommendation generation and blending follow, and ghi_gold MERGEs into gold. The "
+      "two streaming jobs for trending and the impression log write straight into gold. Features and _quarantine are only "
+      "intermediate tables of the compute layer, not a storage tier.")
 
 # ------------------------------------------------------------------ 8. Streaming
 luong = [

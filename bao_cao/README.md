@@ -8,7 +8,7 @@ Báo cáo và slide có hai ngôn ngữ, cùng số liệu; báo cáo dựng b�
 | Báo cáo chính, tiếng Anh (dịch đầy đủ bản trên, cùng bố cục và số trang) | `CS411V_REPORT Final Project_Group Chí Tâm & Quốc Anh_Eng.pdf` | Bản tiếng Anh của bản nộp |
 
 
-Hình và biểu đồ ghi nhãn tiếng Anh, dùng chung cho hai ngôn ngữ (chú thích hình theo ngôn ngữ của bản); riêng `c08_eda`, `c09_phan_tich_loi` có hai bản nhãn (`*_en` cho bản tiếng Anh).
+Hình và biểu đồ ghi nhãn tiếng Anh, dùng chung cho hai ngôn ngữ (chú thích hình theo ngôn ngữ của bản); riêng `c08_eda`, `c09_phan_tich_loi` có hai bản nhãn (`*_en` cho bản tiếng Anh), và hai hình sửa theo góp ý của GVHD ngày 19/11 có nhãn riêng cho từng ngôn ngữ (`*_vi`, `*_en`): `f01c_vai_tro_luong` (Hình 2.1, slide 5: mỗi cột là một thành phần và việc nó làm, mỗi hàng là một luồng) và `f04c_luu_tru_tinh_toan` (Hình 4.1, slide 7: tầng lưu trữ Bronze, Silver, Gold ở trên, tầng tính toán là các job Spark ở dưới).
 
 
 ## Dựng lại
